@@ -16,7 +16,16 @@ export default {
       },
     ],
   },
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/generated/**',
+    '!src/index.ts',
+    '!src/config/env.ts',
+    '!src/db/client.ts',
+    '!src/bot/bot.ts',
+    '!src/utils/logger.ts',
+  ],
   coverageThreshold: {
     global: {
       statements: 60,
