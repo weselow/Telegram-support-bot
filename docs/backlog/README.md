@@ -8,7 +8,7 @@
 |---|--------|--------|-----------|
 | [001](../solutions/001-project-init/001-project-init.md) | Инициализация проекта | DONE | Высокий |
 | [002](../solutions/002-docker-setup/002-docker-setup.md) | Docker-композиция | DONE | Высокий |
-| [003](tasks/003-database-schema.md) | Prisma-схема и миграции | TODO | Высокий |
+| [003](../solutions/003-database-schema/003-database-schema.md) | Prisma-схема и миграции | DONE | Высокий |
 | [004](tasks/004-basic-bot.md) | Базовый бот | TODO | Высокий |
 
 ### Этап 2: Основной функционал
