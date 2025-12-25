@@ -32,12 +32,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/007-mirror-topic-to-user/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Фильтрация сообщений бота
-> - Определение "системных" сообщений
-> - Обработка ошибок доставки
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/007-mirror-topic-to-user
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/007-mirror-topic-to-user
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/007-mirror-topic-to-user/decisions.md` записывай:
+- Фильтрация сообщений бота
+- Определение "системных" сообщений
+- Обработка ошибок доставки
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(007): зеркалирование topic → user"
+git checkout main
+git merge feature/007-mirror-topic-to-user
+```

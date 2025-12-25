@@ -33,12 +33,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/002-docker-setup/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Выбор базовых образов
-> - Настройки production vs development
-> - Проблемы и их решения
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/002-docker-setup
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/002-docker-setup
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/002-docker-setup/decisions.md` записывай:
+- Выбор базовых образов
+- Настройки production vs development
+- Проблемы и их решения
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(002): docker-композиция"
+git checkout main
+git merge feature/002-docker-setup
+```

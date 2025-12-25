@@ -38,12 +38,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/016-sentry-integration/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Какие события логировать
-> - Уровни логирования
-> - PII и приватность данных
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/016-sentry-integration
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/016-sentry-integration
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/016-sentry-integration/decisions.md` записывай:
+- Какие события логировать
+- Уровни логирования
+- PII и приватность данных
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(016): Sentry интеграция"
+git checkout main
+git merge feature/016-sentry-integration
+```

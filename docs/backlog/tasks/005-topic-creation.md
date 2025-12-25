@@ -38,12 +38,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/005-topic-creation/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Формат названия топика
-> - Формат карточки тикета
-> - Обработка ошибок Telegram API
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/005-topic-creation
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/005-topic-creation
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/005-topic-creation/decisions.md` записывай:
+- Формат названия топика
+- Формат карточки тикета
+- Обработка ошибок Telegram API
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(005): создание топика при первом сообщении"
+git checkout main
+git merge feature/005-topic-creation
+```

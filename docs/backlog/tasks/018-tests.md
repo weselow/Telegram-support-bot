@@ -42,12 +42,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/018-tests/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Стратегия тестирования
-> - Как мокать Telegram API
-> - Тестовая БД (SQLite, Docker PostgreSQL)
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/018-tests
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/018-tests
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/018-tests/decisions.md` записывай:
+- Стратегия тестирования
+- Как мокать Telegram API
+- Тестовая БД (SQLite, Docker PostgreSQL)
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(018): тесты"
+git checkout main
+git merge feature/018-tests
+```

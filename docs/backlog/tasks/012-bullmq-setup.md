@@ -35,12 +35,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/012-bullmq-setup/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Структура очередей
-> - Настройки повторных попыток
-> - Стратегия обработки ошибок
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/012-bullmq-setup
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/012-bullmq-setup
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/012-bullmq-setup/decisions.md` записывай:
+- Структура очередей
+- Настройки повторных попыток
+- Стратегия обработки ошибок
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(012): BullMQ + Redis интеграция"
+git checkout main
+git merge feature/012-bullmq-setup
+```

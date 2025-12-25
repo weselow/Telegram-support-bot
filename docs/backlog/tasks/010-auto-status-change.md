@@ -35,12 +35,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/010-auto-status-change/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Когда показывать кнопку "Решено" клиенту
-> - Нужно ли подтверждение закрытия
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/010-auto-status-change
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/010-auto-status-change
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/010-auto-status-change/decisions.md` записывай:
+- Когда показывать кнопку "Решено" клиенту
+- Нужно ли подтверждение закрытия
 - Edge cases (быстрые последовательные сообщения)
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(010): автоматическая смена статусов"
+git checkout main
+git merge feature/010-auto-status-change
+```

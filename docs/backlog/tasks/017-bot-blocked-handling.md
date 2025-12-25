@@ -34,12 +34,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/017-bot-blocked-handling/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Формат уведомления
-> - Нужно ли менять статус
-> - Как обрабатывать разблокировку
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/017-bot-blocked-handling
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/017-bot-blocked-handling
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/017-bot-blocked-handling/decisions.md` записывай:
+- Формат уведомления
+- Нужно ли менять статус
+- Как обрабатывать разблокировку
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(017): обработка блокировки бота"
+git checkout main
+git merge feature/017-bot-blocked-handling
+```

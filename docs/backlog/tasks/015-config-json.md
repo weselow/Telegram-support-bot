@@ -41,12 +41,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/015-config-json/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Структура JSON
-> - Нужен ли hot-reload
-> - Валидация (JSON Schema, Zod)
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/015-config-json
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/015-config-json
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/015-config-json/decisions.md` записывай:
+- Структура JSON
+- Нужен ли hot-reload
+- Валидация (JSON Schema, Zod)
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(015): конфигурация из config.json"
+git checkout main
+git merge feature/015-config-json
+```

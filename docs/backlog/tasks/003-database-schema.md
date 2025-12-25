@@ -34,12 +34,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/003-database-schema/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Выбор типов данных
-> - Индексы и их обоснование
-> - Изменения схемы в процессе разработки
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/003-database-schema
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/003-database-schema
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/003-database-schema/decisions.md` записывай:
+- Выбор типов данных
+- Индексы и их обоснование
+- Изменения схемы в процессе разработки
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(003): prisma-схема и миграции"
+git checkout main
+git merge feature/003-database-schema
+```

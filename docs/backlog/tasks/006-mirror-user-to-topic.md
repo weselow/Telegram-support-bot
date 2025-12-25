@@ -34,12 +34,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/006-mirror-user-to-topic/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Способ копирования разных типов сообщений
-> - Обработка caption у медиа
-> - Лимиты Telegram API
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/006-mirror-user-to-topic
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/006-mirror-user-to-topic
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/006-mirror-user-to-topic/decisions.md` записывай:
+- Способ копирования разных типов сообщений
+- Обработка caption у медиа
+- Лимиты Telegram API
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(006): зеркалирование user → topic"
+git checkout main
+git merge feature/006-mirror-user-to-topic
+```

@@ -37,12 +37,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/008-ticket-card-buttons/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Формат callback_data
-> - Какие кнопки показывать в каком статусе
-> - Формат уведомлений о смене статуса
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/008-ticket-card-buttons
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/008-ticket-card-buttons
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/008-ticket-card-buttons/decisions.md` записывай:
+- Формат callback_data
+- Какие кнопки показывать в каком статусе
+- Формат уведомлений о смене статуса
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(008): карточка тикета с кнопками"
+git checkout main
+git merge feature/008-ticket-card-buttons
+```

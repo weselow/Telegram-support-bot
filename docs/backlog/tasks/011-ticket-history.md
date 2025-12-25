@@ -35,12 +35,32 @@
 
 ---
 
-## История решений
+## Начало работы
 
-> При начале работы над задачей создай папку:
-> `docs/solutions/011-ticket-history/`
->
-> В ней веди файл `decisions.md` с историей принятых решений:
-> - Какие данные хранить в old_value/new_value
-> - Формат хранения question
-> - Нужен ли просмотр истории через бота
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/011-ticket-history
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/011-ticket-history
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/011-ticket-history/decisions.md` записывай:
+- Какие данные хранить в old_value/new_value
+- Формат хранения question
+- Нужен ли просмотр истории через бота
+
+### 4. По завершении
+
+```bash
+git add .
+git commit -m "feat(011): история событий тикета"
+git checkout main
+git merge feature/011-ticket-history
+```
