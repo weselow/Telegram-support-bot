@@ -1,6 +1,8 @@
 import type { Context } from 'grammy';
 import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
+import { mirrorUserMessage } from '../../services/message.service.js';
+import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
 export async function privateMessageHandler(ctx: Context): Promise<void> {
@@ -51,5 +53,10 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     }
   }
 
-  // TODO: Task 006 - Mirror message to topic
+  try {
+    const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+    await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
+  } catch (error) {
+    logger.error({ error, tgUserId: ctx.from.id }, 'Failed to mirror message');
+  }
 }

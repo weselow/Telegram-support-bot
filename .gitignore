@@ -32,3 +32,6 @@ prisma/*.db
 prisma/*.db-journal
 
 /src/generated/prisma
+
+# Claude Code
+.claude/agents/
