@@ -2,10 +2,17 @@ import { Bot, GrammyError, HttpError } from 'grammy';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { startHandler } from './handlers/start.js';
+import { privateMessageHandler } from './handlers/message.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
 bot.command('start', startHandler);
+
+// Handle private messages (DM)
+bot.on('message').filter(
+  (ctx) => ctx.chat.type === 'private',
+  privateMessageHandler
+);
 
 bot.catch((err) => {
   const ctx = err.ctx;
