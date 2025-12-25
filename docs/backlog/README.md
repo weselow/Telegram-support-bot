@@ -7,7 +7,7 @@
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
 | [001](../solutions/001-project-init/001-project-init.md) | Инициализация проекта | DONE | Высокий |
-| [002](tasks/002-docker-setup.md) | Docker-композиция | TODO | Высокий |
+| [002](../solutions/002-docker-setup/002-docker-setup.md) | Docker-композиция | DONE | Высокий |
 | [003](tasks/003-database-schema.md) | Prisma-схема и миграции | TODO | Высокий |
 | [004](tasks/004-basic-bot.md) | Базовый бот | TODO | Высокий |
 

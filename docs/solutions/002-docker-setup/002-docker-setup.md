@@ -1,7 +1,7 @@
 # Задача 002: Docker-композиция
 
 **Этап:** 1 - Фундамент
-**Статус:** TODO
+**Статус:** DONE
 **Приоритет:** Высокий
 
 ## Описание
@@ -10,15 +10,15 @@
 
 ## Подзадачи
 
-- [ ] Создание Dockerfile для Node.js приложения
-- [ ] Создание docker-compose.yml с сервисами:
-  - [ ] app (Node.js бот)
-  - [ ] postgres (PostgreSQL 16)
-  - [ ] redis (Redis 7)
-- [ ] Настройка volumes для персистентности данных
-- [ ] Настройка networks
-- [ ] Создание docker-compose.override.yml для dev-режима
-- [ ] Проверка запуска всех сервисов
+- [x] Создание Dockerfile для Node.js приложения
+- [x] Создание docker-compose.yml с сервисами:
+  - [x] app (Node.js бот)
+  - [x] postgres (PostgreSQL 16)
+  - [x] redis (Redis 7)
+- [x] Настройка volumes для персистентности данных
+- [x] Настройка networks
+- [x] Создание docker-compose.override.yml для dev-режима
+- [x] Проверка запуска всех сервисов
 
 ## Зависимости
 
