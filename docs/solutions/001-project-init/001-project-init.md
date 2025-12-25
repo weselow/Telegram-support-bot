@@ -1,7 +1,7 @@
 # Задача 001: Инициализация проекта
 
 **Этап:** 1 - Фундамент
-**Статус:** TODO
+**Статус:** DONE
 **Приоритет:** Высокий
 
 ## Описание
@@ -10,13 +10,13 @@
 
 ## Подзадачи
 
-- [ ] Инициализация package.json
-- [ ] Настройка TypeScript (tsconfig.json)
-- [ ] Настройка ESLint + Prettier
-- [ ] Установка основных зависимостей (grammy, prisma, bullmq, pino)
-- [ ] Создание структуры папок (src/, config/, tests/)
-- [ ] Создание .env.example
-- [ ] Настройка scripts в package.json (dev, build, start, test, lint)
+- [x] Инициализация package.json
+- [x] Настройка TypeScript (tsconfig.json)
+- [x] Настройка ESLint + Prettier
+- [x] Установка основных зависимостей (grammy, prisma, bullmq, pino)
+- [x] Создание структуры папок (src/, config/, tests/)
+- [x] Создание .env.example
+- [x] Настройка scripts в package.json (dev, build, start, test, lint)
 
 ## Зависимости
 
