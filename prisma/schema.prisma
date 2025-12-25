@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Статусы тикета
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_CLIENT
+  CLOSED
+}
+
+// Типы событий
+enum EventType {
+  OPENED
+  REOPENED
+  CLOSED
+  STATUS_CHANGED
+  PHONE_UPDATED
+}
+
+// Направление сообщения
+enum MessageDirection {
+  USER_TO_SUPPORT
+  SUPPORT_TO_USER
+}
+
+// Пользователь/Тикет (один пользователь = один тикет навсегда)
+model User {
+  id           String       @id @default(uuid())
+  tgUserId     BigInt       @unique @map("tg_user_id")
+  tgUsername   String?      @map("tg_username")
+  tgFirstName  String       @map("tg_first_name")
+  topicId      Int          @unique @map("topic_id")
+  status       TicketStatus @default(NEW)
+  phone        String?
+  sourceUrl    String?      @map("source_url")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  events   TicketEvent[]
+  messages MessageMap[]
+
+  @@map("users")
+}
+
+// История событий тикета
+model TicketEvent {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  eventType EventType @map("event_type")
+  oldValue  String?   @map("old_value")
+  newValue  String?   @map("new_value")
+  question  String?
+  sourceUrl String?   @map("source_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ticket_events")
+}
+
+// Связь сообщений DM <-> топик
+model MessageMap {
+  id             String           @id @default(uuid())
+  userId         String           @map("user_id")
+  dmMessageId    Int              @map("dm_message_id")
+  topicMessageId Int              @map("topic_message_id")
+  direction      MessageDirection
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dmMessageId])
+  @@unique([userId, topicMessageId])
+  @@map("messages_map")
+}
