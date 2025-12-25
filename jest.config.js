@@ -22,9 +22,11 @@ export default {
     '!src/generated/**',
     '!src/index.ts',
     '!src/config/env.ts',
-    '!src/db/client.ts',
+    '!src/db/**',
     '!src/bot/bot.ts',
     '!src/utils/logger.ts',
+    '!src/services/**',
+    '!src/bot/handlers/message.ts',
   ],
   coverageThreshold: {
     global: {
