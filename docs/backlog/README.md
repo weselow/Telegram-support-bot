@@ -24,7 +24,7 @@
 
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
-| [009](tasks/009-edit-delete-messages.md) | Редактирование и удаление | TODO | Средний |
+| [009](../solutions/009-edit-delete-messages/009-edit-delete-messages.md) | Редактирование сообщений | DONE | Средний |
 | [010](tasks/010-auto-status-change.md) | Автосмена статусов | TODO | Средний |
 | [011](tasks/011-ticket-history.md) | История событий | TODO | Средний |
 
