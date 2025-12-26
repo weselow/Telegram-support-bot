@@ -1,3 +1,5 @@
+name: support-bot
+
 services:
   app:
     build:
