@@ -7,6 +7,7 @@ services:
       target: builder
     volumes:
       - ./src:/app/src:ro
+      - ./config:/app/config:ro
       - ./prisma:/app/prisma:ro
       - ./package.json:/app/package.json:ro
       - ./tsconfig.json:/app/tsconfig.json:ro

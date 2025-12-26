@@ -1,4 +1,4 @@
-# Build stage
+# Build stage (keeps dev dependencies for development)
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev for build)
+# Install all dependencies (including dev)
 RUN npm ci
 
 # Copy Prisma schema and config, generate client
@@ -14,13 +14,11 @@ COPY prisma ./prisma
 COPY prisma.config.ts ./
 RUN npx prisma generate
 
-# Copy source code and build
+# Copy source code, config, and build
 COPY tsconfig.json ./
 COPY src ./src
+COPY config ./config
 RUN npm run build
-
-# Prune dev dependencies
-RUN npm prune --production
 
 # Production stage
 FROM node:22-alpine AS production
@@ -31,12 +29,18 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy built files, dependencies, and prisma
+# Copy package files and install production deps only
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy Prisma and generate client
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npx prisma generate
+
+# Copy built files and config from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./
+COPY --from=builder /app/config ./config
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./
