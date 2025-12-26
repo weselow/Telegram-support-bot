@@ -26,7 +26,7 @@
 |---|--------|--------|-----------|
 | [009](../solutions/009-edit-delete-messages/009-edit-delete-messages.md) | Редактирование сообщений | DONE | Средний |
 | [010](../solutions/010-auto-status-change/010-auto-status-change.md) | Автосмена статусов | DONE | Средний |
-| [011](tasks/011-ticket-history.md) | История событий | TODO | Средний |
+| [011](../solutions/011-ticket-history/011-ticket-history.md) | История событий | DONE | Средний |
 
 ### Этап 4: SLA и автоматизация
 
