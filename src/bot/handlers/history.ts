@@ -3,6 +3,7 @@ import type { EventType, TicketStatus } from '../../generated/prisma/client.js';
 import { findUserByTopicId } from '../../services/ticket.service.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { STATUS_LABELS } from '../../constants/status.js';
+import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 
 const EVENT_LABELS: Record<EventType, string> = {
@@ -67,7 +68,7 @@ const MAX_EVENTS = 20;
 export async function historyHandler(ctx: Context): Promise<void> {
   const topicId = ctx.message?.message_thread_id;
   if (!topicId) {
-    await ctx.reply('Эта команда работает только в топиках.');
+    await ctx.reply(messages.history.topicOnly);
     return;
   }
 
@@ -75,7 +76,7 @@ export async function historyHandler(ctx: Context): Promise<void> {
     const user = await findUserByTopicId(topicId);
     if (!user) {
       logger.warn({ topicId }, 'History requested for unknown topic');
-      await ctx.reply('Пользователь не найден для этого топика.', {
+      await ctx.reply(messages.history.userNotFound, {
         message_thread_id: topicId,
       });
       return;
@@ -84,7 +85,7 @@ export async function historyHandler(ctx: Context): Promise<void> {
     const events = await eventRepository.findByUserId(user.id);
 
     if (events.length === 0) {
-      await ctx.reply('📋 История пуста.', {
+      await ctx.reply(messages.history.empty, {
         message_thread_id: topicId,
       });
       return;
@@ -106,7 +107,7 @@ export async function historyHandler(ctx: Context): Promise<void> {
     logger.debug({ userId: user.id, eventCount: events.length }, 'History displayed');
   } catch (error) {
     logger.error({ error, topicId }, 'Failed to fetch ticket history');
-    await ctx.reply('⚠️ Не удалось загрузить историю. Попробуйте позже.', {
+    await ctx.reply(messages.history.loadError, {
       message_thread_id: topicId,
     });
   }

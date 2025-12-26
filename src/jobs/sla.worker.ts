@@ -10,14 +10,16 @@ import {
   formatAdminMentions,
   sendDmToAdmins,
 } from '../services/group.service.js';
+import { messages, formatMessage } from '../config/messages.js';
+import { settings } from '../config/settings.js';
 import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
 
 const SLA_MESSAGES = {
-  first: '⏰ SLA: 10 минут без ответа',
-  second: '⚠️ SLA: 30 минут без ответа',
-  escalation: '🚨 SLA BREACH: 2 часа без ответа!',
+  first: formatMessage(messages.sla.first, { minutes: settings.sla.firstReminderMinutes }),
+  second: formatMessage(messages.sla.second, { minutes: settings.sla.secondReminderMinutes }),
+  escalation: formatMessage(messages.sla.escalation, { hours: settings.sla.escalationMinutes / 60 }),
 } as const;
 
 async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
@@ -62,11 +64,12 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
 
   if (level === 'escalation') {
     const groupIdForLink = String(supportGroupId).replace('-100', '');
-    const dmMessage =
-      `🚨 *SLA BREACH*\n\n` +
-      `Тикет без ответа более 2 часов!\n` +
-      `Пользователь: ${user.tgFirstName}\n` +
-      `[Открыть тикет](https://t.me/c/${groupIdForLink}/${String(topicId)})`;
+    const topicLink = `https://t.me/c/${groupIdForLink}/${String(topicId)}`;
+    const dmMessage = formatMessage(messages.sla.dmEscalation, {
+      hours: settings.sla.escalationMinutes / 60,
+      firstName: user.tgFirstName,
+      topicLink,
+    });
 
     await sendDmToAdmins(bot.api, admins, dmMessage);
   }

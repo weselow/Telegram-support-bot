@@ -4,6 +4,7 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../../services/topic.service.js';
 import { startAutocloseTimer, cancelAutocloseTimer } from '../../services/autoclose.service.js';
+import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { STATUS_LABELS } from '../../constants/status.js';
 
@@ -32,7 +33,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
 
   const parsed = parseCallbackData(ctx.callbackQuery.data);
   if (!parsed) {
-    await ctx.answerCallbackQuery({ text: 'Неизвестная команда' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.unknownCommand });
     return;
   }
 
@@ -40,12 +41,12 @@ export async function callbackHandler(ctx: Context): Promise<void> {
 
   const user = await userRepository.findById(userId);
   if (!user) {
-    await ctx.answerCallbackQuery({ text: 'Пользователь не найден' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.userNotFound });
     return;
   }
 
   if (user.status === status) {
-    await ctx.answerCallbackQuery({ text: 'Статус уже установлен' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.statusAlreadySet });
     return;
   }
 
@@ -94,15 +95,20 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       await cancelAutocloseTimer(userId, user.topicId);
     }
 
-    await ctx.answerCallbackQuery({ text: `Статус изменён на "${STATUS_LABELS[status]}"` });
+    await ctx.answerCallbackQuery({
+      text: formatMessage(messages.callbacks.statusChanged, { status: STATUS_LABELS[status] }),
+    });
 
     if (ctx.chat) {
-      let notification = `📝 Статус изменён: ${STATUS_LABELS[oldStatus]} → ${STATUS_LABELS[status]}`;
+      let notification = formatMessage(messages.status.changed, {
+        oldStatus: STATUS_LABELS[oldStatus],
+        newStatus: STATUS_LABELS[status],
+      });
       if (cardUpdateFailed) {
-        notification += '\n⚠️ Не удалось обновить карточку тикета';
+        notification += '\n' + messages.status.cardUpdateFailed;
       }
       if (autocloseTimerFailed) {
-        notification += '\n⚠️ Не удалось запустить таймер автозакрытия';
+        notification += '\n' + messages.status.autocloseTimerFailed;
       }
       try {
         await ctx.api.sendMessage(ctx.chat.id, notification, {
@@ -116,7 +122,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
     logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed, autocloseTimerFailed }, 'Ticket status changed');
   } catch (error) {
     logger.error({ error, userId, status }, 'Failed to update ticket status');
-    await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' }).catch((err: unknown) => {
+    await ctx.answerCallbackQuery({ text: messages.callbacks.statusChangeError }).catch((err: unknown) => {
       logger.error({ error: err, userId }, 'Failed to answer error callback');
     });
   }

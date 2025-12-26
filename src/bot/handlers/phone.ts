@@ -3,6 +3,7 @@ import type { Context } from 'grammy';
 import type { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'grammy/types';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
+import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 
 export function buildPhoneConfirmKeyboard(
@@ -11,17 +12,17 @@ export function buildPhoneConfirmKeyboard(
 ): InlineKeyboardMarkup | ReplyKeyboardMarkup {
   if (hasPhone) {
     return new InlineKeyboard()
-      .text('✅ Телефон актуален', `phone_confirm:${userId}`)
-      .text('📱 Изменить', `phone_change:${userId}`);
+      .text(messages.buttons.phoneConfirm, `phone_confirm:${userId}`)
+      .text(messages.buttons.phoneChange, `phone_change:${userId}`);
   }
-  return new Keyboard().requestContact('📱 Отправить контакт').oneTime().resized();
+  return new Keyboard().requestContact(messages.buttons.sendContact).oneTime().resized();
 }
 
 export function buildPhoneConfirmMessage(phone: string | null): string {
   if (phone) {
-    return `📞 Ваш телефон: ${phone}\n\nПодтвердите, что номер актуален, или обновите его.`;
+    return formatMessage(messages.phone.requestWithPhone, { phone });
   }
-  return '📱 Пожалуйста, поделитесь вашим номером телефона для связи.';
+  return messages.phone.requestWithoutPhone;
 }
 
 export async function phoneConfirmHandler(ctx: Context): Promise<void> {
@@ -38,16 +39,16 @@ export async function phoneConfirmHandler(ctx: Context): Promise<void> {
   const user = await userRepository.findById(userId);
 
   if (!user) {
-    await ctx.answerCallbackQuery({ text: 'Пользователь не найден' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.userNotFound });
     return;
   }
 
   if (user.tgUserId !== BigInt(ctx.from.id)) {
-    await ctx.answerCallbackQuery({ text: 'Это не ваш тикет' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.notYourTicket });
     return;
   }
 
-  await ctx.answerCallbackQuery({ text: 'Спасибо! Номер подтверждён' });
+  await ctx.answerCallbackQuery({ text: messages.callbacks.phoneConfirmed });
 
   try {
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
@@ -72,12 +73,12 @@ export async function phoneChangeHandler(ctx: Context): Promise<void> {
   const user = await userRepository.findById(userId);
 
   if (!user) {
-    await ctx.answerCallbackQuery({ text: 'Пользователь не найден' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.userNotFound });
     return;
   }
 
   if (user.tgUserId !== BigInt(ctx.from.id)) {
-    await ctx.answerCallbackQuery({ text: 'Это не ваш тикет' });
+    await ctx.answerCallbackQuery({ text: messages.callbacks.notYourTicket });
     return;
   }
 
@@ -90,8 +91,8 @@ export async function phoneChangeHandler(ctx: Context): Promise<void> {
   }
 
   // Ask for contact
-  await ctx.reply('📱 Пожалуйста, отправьте ваш контакт:', {
-    reply_markup: new Keyboard().requestContact('📱 Отправить контакт').oneTime().resized(),
+  await ctx.reply(messages.phone.sendContact, {
+    reply_markup: new Keyboard().requestContact(messages.buttons.sendContact).oneTime().resized(),
   });
 }
 
@@ -104,14 +105,14 @@ export async function contactHandler(ctx: Context): Promise<void> {
 
   // Verify the contact belongs to the sender
   if (contact.user_id !== ctx.from.id) {
-    await ctx.reply('⚠️ Пожалуйста, отправьте свой контакт, а не чужой.');
+    await ctx.reply(messages.phone.wrongContact);
     return;
   }
 
   const user = await userRepository.findByTgUserId(BigInt(ctx.from.id));
   if (!user) {
     logger.warn({ tgUserId: ctx.from.id }, 'Contact received from unknown user');
-    await ctx.reply('Произошла ошибка. Пожалуйста, напишите нам сообщение для начала.');
+    await ctx.reply(messages.phone.noTicket);
     return;
   }
 
@@ -119,7 +120,7 @@ export async function contactHandler(ctx: Context): Promise<void> {
   const newPhone = contact.phone_number;
 
   if (oldPhone === newPhone) {
-    await ctx.reply('✅ Ваш номер телефона уже сохранён.');
+    await ctx.reply(messages.phone.alreadySaved);
     return;
   }
 
@@ -132,7 +133,7 @@ export async function contactHandler(ctx: Context): Promise<void> {
     newValue: newPhone,
   });
 
-  await ctx.reply('✅ Номер телефона обновлён. Спасибо!');
+  await ctx.reply(messages.phone.updated);
 
   logger.info({ userId: user.id, oldPhone, newPhone }, 'Phone updated');
 }

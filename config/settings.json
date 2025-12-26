@@ -1,0 +1,10 @@
+{
+  "sla": {
+    "firstReminderMinutes": 10,
+    "secondReminderMinutes": 30,
+    "escalationMinutes": 120
+  },
+  "autoclose": {
+    "days": 7
+  }
+}

@@ -1,14 +1,12 @@
 import { scheduleAutocloseJob, cancelAutocloseJob } from '../jobs/queues.js';
 import { logger } from '../utils/logger.js';
-
-// 7 days in milliseconds
-const AUTOCLOSE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
+import { autocloseTimings, settings } from '../config/settings.js';
 
 export async function startAutocloseTimer(userId: string, topicId: number): Promise<boolean> {
-  logger.info({ userId, topicId }, 'Starting autoclose timer (7 days)');
+  logger.info({ userId, topicId, days: settings.autoclose.days }, 'Starting autoclose timer');
 
   try {
-    await scheduleAutocloseJob({ userId, topicId }, AUTOCLOSE_DELAY_MS);
+    await scheduleAutocloseJob({ userId, topicId }, autocloseTimings.delayMs);
     logger.debug({ userId, topicId }, 'Autoclose timer scheduled');
     return true;
   } catch (error) {
