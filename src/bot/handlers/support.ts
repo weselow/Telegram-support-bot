@@ -3,6 +3,7 @@ import { findUserByTopicId } from '../../services/ticket.service.js';
 import { mirrorSupportMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
 import { cancelAllSlaTimers } from '../../services/sla.service.js';
+import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 
 export async function supportMessageHandler(ctx: Context): Promise<void> {
@@ -45,7 +46,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');
   } catch (error) {
     logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
-    await ctx.reply('⚠️ Не удалось доставить сообщение пользователю. Попробуйте ещё раз.', {
+    await ctx.reply(messages.support.deliveryFailed, {
       message_thread_id: topicId,
     });
   }

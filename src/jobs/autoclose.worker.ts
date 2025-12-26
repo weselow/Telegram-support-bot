@@ -7,15 +7,14 @@ import { userRepository } from '../db/repositories/user.repository.js';
 import { eventRepository } from '../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../services/topic.service.js';
 import { bot } from '../bot/bot.js';
+import { messages, formatMessage } from '../config/messages.js';
+import { settings } from '../config/settings.js';
 import type { AutocloseJobData } from './queues.js';
 
 let worker: Worker<AutocloseJobData> | null = null;
 
-const CLIENT_MESSAGE =
-  'Ваше обращение было автоматически закрыто из-за отсутствия ответа в течение 7 дней.\n\n' +
-  'Если вопрос всё ещё актуален, просто напишите нам — мы откроем обращение заново.';
-
-const TOPIC_MESSAGE = '// ⏰ Тикет автоматически закрыт (7 дней без ответа клиента)';
+const CLIENT_MESSAGE = formatMessage(messages.autoclose.client, { days: settings.autoclose.days });
+const TOPIC_MESSAGE = formatMessage(messages.autoclose.topic, { days: settings.autoclose.days });
 
 async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   const { userId, topicId } = job.data;

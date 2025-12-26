@@ -8,6 +8,7 @@ import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
+import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 
 export async function privateMessageHandler(ctx: Context): Promise<void> {
@@ -62,15 +63,10 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
       // Start SLA timers for new ticket
       await startSlaTimers(user.id, topic.message_thread_id);
 
-      await ctx.reply(
-        'Спасибо за обращение! Ваш запрос принят в работу. ' +
-          'Сотрудник поддержки свяжется с вами в ближайшее время.'
-      );
+      await ctx.reply(messages.ticketCreated);
     } catch (error) {
       logger.error({ error, tgUserId: ctx.from.id }, 'Failed to create ticket');
-      await ctx.reply(
-        'Произошла ошибка при создании обращения. Пожалуйста, попробуйте позже.'
-      );
+      await ctx.reply(messages.ticketCreateError);
       return;
     }
   }
@@ -88,7 +84,7 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
       const result = await autoChangeStatus(ctx.api, user, 'CLIENT_REOPEN');
       if (result.changed) {
         // Notify support about reopening
-        await ctx.api.sendMessage(supportGroupId, '🔄 Пользователь переоткрыл обращение', {
+        await ctx.api.sendMessage(supportGroupId, messages.reopened, {
           message_thread_id: user.topicId,
         });
 
@@ -114,6 +110,6 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     await autoChangeStatus(ctx.api, user, 'CLIENT_REPLY');
   } catch (error) {
     logger.error({ error, tgUserId: ctx.from.id }, 'Failed to mirror message');
-    await ctx.reply('Не удалось доставить сообщение. Пожалуйста, попробуйте ещё раз.');
+    await ctx.reply(messages.deliveryFailed);
   }
 }
