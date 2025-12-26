@@ -6,12 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 At start read ALL project standards files. This is MANDATORY:
 
-**Core Standards (READ FIRST):**
+**Core Standards (READ ALWAYS):**
 - @docs/standards/GLOBAL-implementation-standard.md
-
-**Additional Standards (READ ALWAYS):** 
 - @docs/standards/testing-standards.md
 - @docs/standards/tdd-standard.md
+- @docs/standards/git-workflow-standard.md
  
 CRITICAL: After EVERY summarize or compacting conversation, you MUST:
 1. Show message " == SUMMARIZE IS COMPLETED =="
