@@ -13,6 +13,9 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        diagnostics: {
+          ignoreCodes: [151002],
+        },
       },
     ],
   },
@@ -21,7 +24,6 @@ export default {
     '!src/**/*.d.ts',
     '!src/generated/**',
     '!src/index.ts',
-    '!src/config/env.ts',
     '!src/db/**',
     '!src/bot/bot.ts',
     '!src/utils/logger.ts',
@@ -35,7 +37,10 @@ export default {
     '!src/bot/handlers/private-callback.ts',
     '!src/bot/handlers/history.ts',
     '!src/constants/**',
-    '!src/config/**',
+    '!src/config/env.ts',
+    '!src/config/sentry.ts',
+    '!src/config/settings.ts',
+    '!src/config/redis.ts',
     '!src/jobs/**',
   ],
   coverageThreshold: {
