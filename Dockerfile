@@ -9,11 +9,13 @@ COPY package*.json ./
 # Install all dependencies (including dev for build)
 RUN npm ci
 
-# Copy source code
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Copy source code and build
 COPY tsconfig.json ./
 COPY src ./src
-
-# Build TypeScript
 RUN npm run build
 
 # Prune dev dependencies
@@ -28,10 +30,15 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy built files and production dependencies
+# Copy built files, dependencies, and prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 # Set ownership
 RUN chown -R nodejs:nodejs /app
@@ -40,4 +47,4 @@ USER nodejs
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

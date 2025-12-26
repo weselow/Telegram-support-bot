@@ -7,8 +7,9 @@ services:
       target: builder
     volumes:
       - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
       - ./package.json:/app/package.json:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
-    command: npm run dev
+    command: sh -c "npx prisma migrate deploy && npm run dev"
     environment:
       - NODE_ENV=development

@@ -33,17 +33,16 @@ docker compose up -d
 - PostgreSQL на порту `5433`
 - Redis на порту `6380`
 - Бот в режиме разработки
+- **Миграции БД применятся автоматически**
 
-### 4. Применить миграции
-
-```bash
-npm install
-npm run db:migrate
-```
-
-### 5. Проверить работу
+### 4. Проверить работу
 
 Отправьте `/start` боту в Telegram.
+
+Логи:
+```bash
+docker compose logs -f app
+```
 
 ---
 
@@ -55,6 +54,8 @@ npm run db:migrate
 
 ```bash
 docker compose up -d postgres redis
+npm install
+npm run db:migrate   # только первый раз или после новых миграций
 npm run dev
 ```
 
