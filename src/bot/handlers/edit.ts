@@ -35,6 +35,12 @@ export async function supportEditHandler(ctx: Context): Promise<void> {
     return;
   }
 
+  // Filter internal messages (not forwarded to user)
+  const text = ctx.editedMessage.text ?? ctx.editedMessage.caption ?? '';
+  if (text.startsWith('//') || text.startsWith('#internal')) {
+    return;
+  }
+
   // Get topic ID from message
   const topicId = ctx.editedMessage.message_thread_id;
   if (!topicId) {
