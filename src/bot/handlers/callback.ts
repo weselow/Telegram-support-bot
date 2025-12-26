@@ -88,14 +88,20 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       if (cardUpdateFailed) {
         notification += '\n⚠️ Не удалось обновить карточку тикета';
       }
-      await ctx.api.sendMessage(ctx.chat.id, notification, {
-        message_thread_id: user.topicId,
-      });
+      try {
+        await ctx.api.sendMessage(ctx.chat.id, notification, {
+          message_thread_id: user.topicId,
+        });
+      } catch (notifyError) {
+        logger.error({ error: notifyError, userId, topicId: user.topicId }, 'Failed to send status notification');
+      }
     }
 
     logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed }, 'Ticket status changed');
   } catch (error) {
     logger.error({ error, userId, status }, 'Failed to update ticket status');
-    await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' }).catch(() => undefined);
+    await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' }).catch((err: unknown) => {
+      logger.error({ error: err, userId }, 'Failed to answer error callback');
+    });
   }
 }
