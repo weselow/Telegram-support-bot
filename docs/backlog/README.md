@@ -48,6 +48,14 @@
 
 ---
 
+## Технический долг (Выполнено)
+
+| # | Задача | Статус |
+|---|--------|--------|
+| [TD-026](../solutions/td-026-migrate-npm-to-pnpm/td-026-migrate-npm-to-pnpm.md) | Миграция npm → pnpm | DONE |
+
+---
+
 ## Идеи на будущее
 
 - [Web-чат интеграция](ideas/web-chat-integration.md)

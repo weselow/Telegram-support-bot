@@ -30,14 +30,14 @@ Telegram-бот техподдержки для сайта. Пользовате
 
 ```bash
 # Запуск тестов (Vitest)
-npm test                                    # Все тесты
-npm test -- src/config                      # Тесты по пути
-npm run test:watch                          # Watch mode
-npm run test:coverage                       # С покрытием (>60%)
+pnpm test                                    # Все тесты
+pnpm test src/config                         # Тесты по пути
+pnpm run test:watch                          # Watch mode
+pnpm run test:coverage                       # С покрытием (>60%)
 
 # Проверки
-npm run typecheck                           # TypeScript компиляция
-npm run lint                                # Линтинг
+pnpm run typecheck                           # TypeScript компиляция
+pnpm run lint                                # Линтинг
 ```
 
 ## Architecture
@@ -77,7 +77,7 @@ npm run lint                                # Линтинг
 
 ### Перед завершением задачи
 ```bash
-npm run lint && npm run typecheck && npm test && npm run test:coverage
+pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test:coverage
 ```
 
 ## Special Rules

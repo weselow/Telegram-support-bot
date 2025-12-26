@@ -67,9 +67,9 @@ docker compose up -d
 docker compose up -d postgres redis
 
 # 2. На хосте (в терминале проекта)
-npm install
-npm run db:migrate   # первый раз или после новых миграций
-npm run dev          # бот с hot-reload
+pnpm install
+pnpm run db:migrate   # первый раз или после новых миграций
+pnpm run dev          # бот с hot-reload
 ```
 
 Преимущество: изменения в коде применяются мгновенно без пересборки Docker.
@@ -108,7 +108,7 @@ ports:
   - "5434:5432"  # другой порт хоста
 ```
 
-И обновите `.env.local`:
+И обновите `.env`:
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5434/support_bot
 ```
@@ -158,16 +158,16 @@ docker compose build --no-cache app
 
 ```bash
 # Применить миграции
-npm run db:migrate
+pnpm run db:migrate
 
 # Открыть Prisma Studio (GUI)
-npm run db:studio
+pnpm run db:studio
 
 # Сгенерировать клиент после изменения schema.prisma
-npm run db:generate
+pnpm run db:generate
 
 # Сбросить БД (удалит все данные!)
-npx prisma migrate reset
+pnpm exec prisma migrate reset
 ```
 
 ---
