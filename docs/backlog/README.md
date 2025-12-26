@@ -33,7 +33,7 @@
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
 | [012](../solutions/012-bullmq-setup/012-bullmq-setup.md) | BullMQ + Redis | DONE | Средний |
-| [013](tasks/013-sla-timers.md) | SLA-таймеры | TODO | Средний |
+| [013](../solutions/013-sla-timers/013-sla-timers.md) | SLA-таймеры | DONE | Средний |
 | [014](tasks/014-autoclose.md) | Автозакрытие 7 дней | TODO | Средний |
 
 ### Этап 5: Полировка
