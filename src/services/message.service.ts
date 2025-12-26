@@ -134,21 +134,30 @@ const sendTextToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   });
 };
 
-const sendPhotoToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
+const sendPhotoToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.photo || msg.photo.length === 0) return null;
   const photo = msg.photo[msg.photo.length - 1];
   if (!photo) return null;
-  return api.sendPhoto(chatId, photo.file_id, buildDmOptions(msg.caption));
+  return api.sendPhoto(chatId, photo.file_id, {
+    ...buildDmOptions(msg.caption),
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
-const sendVideoToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
+const sendVideoToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.video) return null;
-  return api.sendVideo(chatId, msg.video.file_id, buildDmOptions(msg.caption));
+  return api.sendVideo(chatId, msg.video.file_id, {
+    ...buildDmOptions(msg.caption),
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
-const sendDocumentToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
+const sendDocumentToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.document) return null;
-  return api.sendDocument(chatId, msg.document.file_id, buildDmOptions(msg.caption));
+  return api.sendDocument(chatId, msg.document.file_id, {
+    ...buildDmOptions(msg.caption),
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
 const sendVoiceToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
@@ -156,9 +165,12 @@ const sendVoiceToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   return api.sendVoice(chatId, msg.voice.file_id);
 };
 
-const sendAudioToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
+const sendAudioToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.audio) return null;
-  return api.sendAudio(chatId, msg.audio.file_id, buildDmOptions(msg.caption));
+  return api.sendAudio(chatId, msg.audio.file_id, {
+    ...buildDmOptions(msg.caption),
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
 const sendVideoNoteToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
@@ -171,9 +183,12 @@ const sendStickerToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   return api.sendSticker(chatId, msg.sticker.file_id);
 };
 
-const sendAnimationToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
+const sendAnimationToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.animation) return null;
-  return api.sendAnimation(chatId, msg.animation.file_id, buildDmOptions(msg.caption));
+  return api.sendAnimation(chatId, msg.animation.file_id, {
+    ...buildDmOptions(msg.caption),
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
 const sendContactToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
