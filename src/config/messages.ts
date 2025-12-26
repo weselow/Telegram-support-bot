@@ -50,6 +50,7 @@ const messagesSchema = z.object({
 
   support: z.object({
     deliveryFailed: z.string(),
+    botBlocked: z.string(),
   }),
 
   callbacks: z.object({

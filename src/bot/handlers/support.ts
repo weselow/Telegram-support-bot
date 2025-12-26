@@ -1,4 +1,5 @@
 import type { Context } from 'grammy';
+import { GrammyError } from 'grammy';
 import { findUserByTopicId } from '../../services/ticket.service.js';
 import { mirrorSupportMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
@@ -6,6 +7,15 @@ import { cancelAllSlaTimers } from '../../services/sla.service.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { captureError, addBreadcrumb } from '../../config/sentry.js';
+
+function isBotBlockedError(error: unknown): boolean {
+  return (
+    error instanceof GrammyError &&
+    error.error_code === 403 &&
+    typeof error.description === 'string' &&
+    error.description.includes('blocked by the user')
+  );
+}
 
 export async function supportMessageHandler(ctx: Context): Promise<void> {
   if (!ctx.from || !ctx.message) {
@@ -49,9 +59,27 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');
   } catch (error) {
     captureError(error, { topicId, userId: user.id, action: 'mirrorSupportMessage' });
-    logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
-    await ctx.reply(messages.support.deliveryFailed, {
-      message_thread_id: topicId,
-    });
+
+    if (isBotBlockedError(error)) {
+      logger.warn({ topicId, userId: user.id }, 'Bot blocked by user');
+      try {
+        await ctx.reply(messages.support.botBlocked, {
+          message_thread_id: topicId,
+        });
+      } catch (notifyError) {
+        captureError(notifyError, { topicId, userId: user.id, action: 'notifyBotBlocked' });
+        logger.error({ error: notifyError, topicId }, 'Failed to notify about bot blocked');
+      }
+    } else {
+      logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
+      try {
+        await ctx.reply(messages.support.deliveryFailed, {
+          message_thread_id: topicId,
+        });
+      } catch (notifyError) {
+        captureError(notifyError, { topicId, userId: user.id, action: 'notifyDeliveryFailed' });
+        logger.error({ error: notifyError, topicId }, 'Failed to notify about delivery failure');
+      }
+    }
   }
 }
