@@ -6,15 +6,16 @@ import type { AutocloseJobData } from './queues.js';
 
 let worker: Worker<AutocloseJobData> | null = null;
 
-function processAutocloseJob(job: Job<AutocloseJobData>): void {
+async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   const { userId, topicId } = job.data;
 
   logger.info({ userId, topicId, jobId: job.id }, 'Processing autoclose job');
 
   // TODO: Implement autoclose logic in task 014
   // - Check if ticket is still in WAITING_CLIENT status
-  // - Check last activity timestamp
+  // - Check last activity timestamp from tickets table
   // - Close ticket if no activity for 7 days
+  await Promise.resolve();
 }
 
 export function startAutocloseWorker(): Worker<AutocloseJobData> {
@@ -33,6 +34,10 @@ export function startAutocloseWorker(): Worker<AutocloseJobData> {
 
   worker.on('failed', (job, error) => {
     logger.error({ jobId: job?.id, error }, 'Autoclose job failed');
+  });
+
+  worker.on('error', (error) => {
+    logger.error({ error }, 'Autoclose worker error');
   });
 
   logger.info('Autoclose worker started');

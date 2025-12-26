@@ -6,7 +6,8 @@ import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
 
-function processSlaJob(job: Job<SlaJobData>): void {
+// SLA levels: first = 10 min, second = 30 min, escalation = 2 hours
+async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   const { userId, topicId, level } = job.data;
 
   logger.info({ userId, topicId, level, jobId: job.id }, 'Processing SLA job');
@@ -15,6 +16,7 @@ function processSlaJob(job: Job<SlaJobData>): void {
   // - Check if ticket is still open
   // - Send reminder to support group
   // - Schedule next level if needed
+  await Promise.resolve();
 }
 
 export function startSlaWorker(): Worker<SlaJobData> {
@@ -33,6 +35,10 @@ export function startSlaWorker(): Worker<SlaJobData> {
 
   worker.on('failed', (job, error) => {
     logger.error({ jobId: job?.id, error }, 'SLA job failed');
+  });
+
+  worker.on('error', (error) => {
+    logger.error({ error }, 'SLA worker error');
   });
 
   logger.info('SLA worker started');
