@@ -2,21 +2,76 @@ import { Worker } from 'bullmq';
 import type { Job } from 'bullmq';
 import { getRedisConnection } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
+import { userRepository } from '../db/repositories/user.repository.js';
+import { bot } from '../bot/bot.js';
+import {
+  getGroupAdmins,
+  formatAdminMentions,
+  sendDmToAdmins,
+} from '../services/group.service.js';
 import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
 
-// SLA levels: first = 10 min, second = 30 min, escalation = 2 hours
+const SLA_MESSAGES = {
+  first: '⏰ SLA: 10 минут без ответа',
+  second: '⚠️ SLA: 30 минут без ответа',
+  escalation: '🚨 SLA BREACH: 2 часа без ответа!',
+} as const;
+
 async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   const { userId, topicId, level } = job.data;
 
   logger.info({ userId, topicId, level, jobId: job.id }, 'Processing SLA job');
 
-  // TODO: Implement SLA notification logic in task 013
-  // - Check if ticket is still open
-  // - Send reminder to support group
-  // - Schedule next level if needed
-  await Promise.resolve();
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    logger.warn({ userId, topicId, level }, 'SLA job: user not found');
+    return;
+  }
+
+  if (user.status === 'CLOSED') {
+    logger.debug({ userId, topicId, level }, 'SLA job: ticket already closed, skipping');
+    return;
+  }
+
+  const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+
+  let admins;
+  try {
+    admins = await getGroupAdmins(bot.api);
+  } catch (error) {
+    logger.error({ error, userId, topicId, level }, 'Failed to get group admins for SLA reminder');
+    throw error;
+  }
+
+  const mentions = formatAdminMentions(admins);
+  const baseMessage = SLA_MESSAGES[level];
+  const message = `// ${baseMessage}\n${mentions}`;
+
+  try {
+    await bot.api.sendMessage(supportGroupId, message, {
+      message_thread_id: topicId,
+      parse_mode: 'Markdown',
+    });
+  } catch (error) {
+    logger.error({ error, userId, topicId, level }, 'Failed to send SLA reminder to topic');
+    throw error;
+  }
+
+  if (level === 'escalation') {
+    const groupIdForLink = String(supportGroupId).replace('-100', '');
+    const dmMessage =
+      `🚨 *SLA BREACH*\n\n` +
+      `Тикет без ответа более 2 часов!\n` +
+      `Пользователь: ${user.tgFirstName}\n` +
+      `[Открыть тикет](https://t.me/c/${groupIdForLink}/${String(topicId)})`;
+
+    await sendDmToAdmins(bot.api, admins, dmMessage);
+  }
+
+  logger.info({ userId, topicId, level }, 'SLA reminder sent');
 }
 
 export function startSlaWorker(): Worker<SlaJobData> {
