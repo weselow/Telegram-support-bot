@@ -11,7 +11,12 @@ At start read ALL project standards files. This is MANDATORY:
 - @docs/standards/testing-standards.md
 - @docs/standards/tdd-standard.md
 - @docs/standards/git-workflow-standard.md
- 
+
+**Backlog Tasks (ОБЯЗАТЕЛЬНО перед началом работы над задачей):**
+- Перед началом работы над любой задачей из `docs/backlog/` — вызвать `/start-task` или прочитать @docs/standards/backlog-workflow-standard.md
+- Определить тип задачи: `tasks/` → `docs/solutions/`, `technical-debt/` → `docs/bugs/`
+- Следовать чеклисту из стандарта
+
 CRITICAL: After EVERY summarize or compacting conversation, you MUST:
 1. Show message " == SUMMARIZE IS COMPLETED =="
 2. Reload ALL standards files listed above
