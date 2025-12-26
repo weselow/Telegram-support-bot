@@ -40,7 +40,7 @@
 
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
-| [015](tasks/015-config-json.md) | Конфиг из config.json | TODO | Низкий |
+| [015](../solutions/015-config-json/015-config-json.md) | Конфиг из config.json | DONE | Низкий |
 | [016](tasks/016-sentry-integration.md) | Sentry интеграция | TODO | Низкий |
 | [017](tasks/017-bot-blocked-handling.md) | Обработка блокировки | TODO | Низкий |
 | [018](tasks/018-tests.md) | Тесты | TODO | Средний |
