@@ -1,4 +1,5 @@
 import type { Context } from 'grammy';
+import { GrammyError } from 'grammy';
 import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
@@ -122,6 +123,20 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     await autoChangeStatus(ctx.api, user, 'CLIENT_REPLY');
   } catch (error) {
     captureError(error, { tgUserId: String(ctx.from.id), userId: user.id, action: 'mirrorMessage' });
+
+    if (error instanceof GrammyError) {
+      if (error.error_code === 429) {
+        logger.warn({ tgUserId: ctx.from.id }, 'Rate limit hit');
+        await ctx.reply(messages.rateLimitError);
+        return;
+      }
+      if (error.error_code === 403) {
+        logger.error({ topicId: user.topicId }, 'Bot removed from support group or topic deleted');
+        await ctx.reply(messages.technicalError);
+        return;
+      }
+    }
+
     logger.error({ error, tgUserId: ctx.from.id }, 'Failed to mirror message');
     await ctx.reply(messages.deliveryFailed);
   }
