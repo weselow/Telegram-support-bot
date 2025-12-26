@@ -83,12 +83,19 @@ BOT_TOKEN=7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 1. Откройте [web.telegram.org](https://web.telegram.org)
 2. Перейдите в группу
-3. ID будет в URL: `https://web.telegram.org/k/#-1001234567890`
-4. Добавьте `-100` в начало: `-1001234567890`
+3. ID будет в URL: `https://web.telegram.org/k/#-1234567890`
+4. Добавьте `-100` после минуса: `-100` + `1234567890` = `-1001234567890`
+
+**Пример:**
+```
+URL:  https://web.telegram.org/k/#-3355719084
+                                   ↓
+ID:   -100 + 3355719084 = -1003355719084
+```
 
 Сохраните ID:
 ```env
-SUPPORT_GROUP_ID=-1001234567890
+SUPPORT_GROUP_ID=-1003355719084
 ```
 
 ---
