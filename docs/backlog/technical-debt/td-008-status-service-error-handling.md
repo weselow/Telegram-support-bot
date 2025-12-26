@@ -38,3 +38,9 @@ interface StatusChangeResult {
 ## Источник
 
 PR review для задачи 010.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

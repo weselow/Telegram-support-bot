@@ -34,3 +34,9 @@ SyntaxError: Cannot use 'import.meta' outside a module
 ## Связанные задачи
 
 - TD-005: Support handler tests
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

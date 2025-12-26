@@ -32,3 +32,9 @@ if (!phoneRegex.test(msg.contact.phone_number)) {
 ## Приоритет
 
 Низкий — nice to have.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

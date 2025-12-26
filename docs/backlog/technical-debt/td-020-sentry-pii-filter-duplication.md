@@ -45,3 +45,9 @@ function filterPII(obj: Record<string, unknown>): Record<string, unknown> {
 ## Источник
 
 Type design review для задачи 016.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

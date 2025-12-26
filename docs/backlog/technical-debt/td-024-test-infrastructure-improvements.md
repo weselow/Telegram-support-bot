@@ -58,3 +58,9 @@ export function createTicketService(deps: { userRepository: IUserRepository }) {
 
 - docs/solutions/018-tests/decisions.md
 - td-021-service-unit-tests.md
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

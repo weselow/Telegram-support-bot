@@ -32,3 +32,9 @@ if (admins.length === 0) {
 ## Источник
 
 PR review для задачи 013.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

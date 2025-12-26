@@ -41,3 +41,9 @@ if (!updated) {
 ## Источник
 
 PR review для задачи 014.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

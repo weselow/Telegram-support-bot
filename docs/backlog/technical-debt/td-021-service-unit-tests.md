@@ -32,3 +32,9 @@ Prisma client использует `import.meta.url`, который не под
 - src/services/message.service.ts
 - src/services/sla.service.ts
 - docs/solutions/018-tests/decisions.md
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

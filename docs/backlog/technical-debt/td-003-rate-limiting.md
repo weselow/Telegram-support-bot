@@ -42,3 +42,9 @@ async function checkRateLimit(userId: string): Promise<boolean> {
 ## Приоритет
 
 Низкий — реализовать при настройке Redis.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

@@ -42,3 +42,9 @@ if (isNaN(port) || port < 1 || port > 65535) {
 ## Источник
 
 Code review для задачи 015.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

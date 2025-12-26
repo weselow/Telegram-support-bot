@@ -34,3 +34,9 @@ jobs:
 
 - Репозиторий должен быть на GitHub
 - Секреты для тестового окружения (если нужны)
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

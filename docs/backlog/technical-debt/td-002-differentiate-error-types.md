@@ -46,3 +46,9 @@ import { GrammyError } from 'grammy';
 ## Приоритет
 
 Средний — улучшает UX и диагностику.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

@@ -33,3 +33,9 @@ Telegram user IDs могут превышать `Number.MAX_SAFE_INTEGER` (2^53 
 ## Источник
 
 PR review для задачи 011.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

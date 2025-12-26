@@ -34,3 +34,9 @@
 ## Приоритет
 
 Средний — реализовать при добавлении тестов.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

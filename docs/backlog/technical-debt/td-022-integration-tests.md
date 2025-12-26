@@ -25,3 +25,9 @@
 
 - src/db/repositories/*.ts
 - src/jobs/*.ts
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)

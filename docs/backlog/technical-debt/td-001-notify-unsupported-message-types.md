@@ -26,3 +26,9 @@ if (result === null) {
 ## Приоритет
 
 Средний — исправить в ближайших задачах.
+
+---
+
+## Перед началом работы
+
+Ознакомься со стандартом: [backlog-workflow-standard.md](../../standards/backlog-workflow-standard.md)
