@@ -62,6 +62,8 @@ function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength - 3) + '...';
 }
 
+const MAX_EVENTS = 20;
+
 export async function historyHandler(ctx: Context): Promise<void> {
   const topicId = ctx.message?.message_thread_id;
   if (!topicId) {
@@ -69,30 +71,43 @@ export async function historyHandler(ctx: Context): Promise<void> {
     return;
   }
 
-  const user = await findUserByTopicId(topicId);
-  if (!user) {
-    await ctx.reply('Пользователь не найден для этого топика.', {
+  try {
+    const user = await findUserByTopicId(topicId);
+    if (!user) {
+      logger.warn({ topicId }, 'History requested for unknown topic');
+      await ctx.reply('Пользователь не найден для этого топика.', {
+        message_thread_id: topicId,
+      });
+      return;
+    }
+
+    const events = await eventRepository.findByUserId(user.id);
+
+    if (events.length === 0) {
+      await ctx.reply('📋 История пуста.', {
+        message_thread_id: topicId,
+      });
+      return;
+    }
+
+    // Events are ordered desc, take last MAX_EVENTS and reverse for chronological order
+    const limited = events.slice(0, MAX_EVENTS);
+    const chronological = limited.slice().reverse();
+    const formatted = chronological.map(formatEvent).join('\n');
+
+    const header = events.length > MAX_EVENTS
+      ? `📋 История тикета (последние ${String(MAX_EVENTS)} из ${String(events.length)}):\n\n`
+      : '📋 История тикета:\n\n';
+
+    await ctx.reply(header + formatted, {
       message_thread_id: topicId,
     });
-    return;
-  }
 
-  const events = await eventRepository.findByUserId(user.id);
-
-  if (events.length === 0) {
-    await ctx.reply('📋 История пуста.', {
+    logger.debug({ userId: user.id, eventCount: events.length }, 'History displayed');
+  } catch (error) {
+    logger.error({ error, topicId }, 'Failed to fetch ticket history');
+    await ctx.reply('⚠️ Не удалось загрузить историю. Попробуйте позже.', {
       message_thread_id: topicId,
     });
-    return;
   }
-
-  // Events are ordered desc, reverse for chronological order
-  const chronological = events.slice().reverse();
-  const formatted = chronological.map(formatEvent).join('\n');
-
-  await ctx.reply(`📋 История тикета:\n\n${formatted}`, {
-    message_thread_id: topicId,
-  });
-
-  logger.debug({ userId: user.id, eventCount: events.length }, 'History displayed');
 }
