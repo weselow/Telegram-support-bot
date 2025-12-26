@@ -43,7 +43,7 @@
 | [015](../solutions/015-config-json/015-config-json.md) | Конфиг из config.json | DONE | Низкий |
 | [016](../solutions/016-sentry-integration/016-sentry-integration.md) | Sentry интеграция | DONE | Низкий |
 | [017](../solutions/017-bot-blocked-handling/017-bot-blocked-handling.md) | Обработка блокировки | DONE | Низкий |
-| [018](tasks/018-tests.md) | Тесты | TODO | Средний |
+| [018](../solutions/018-tests/018-tests.md) | Тесты | DONE | Средний |
 
 ---
 
