@@ -135,11 +135,26 @@ docker compose restart app
 docker compose down
 
 # Остановить и удалить данные
-docker compose down -v
+docker compose down
+rm -rf .volumes
 
 # Пересобрать образ
 docker compose build --no-cache app
 ```
+
+---
+
+## Данные
+
+Данные PostgreSQL и Redis хранятся локально в папке `.volumes/`:
+
+```
+.volumes/
+├── postgres/    # данные БД
+└── redis/       # данные Redis
+```
+
+Папка добавлена в `.gitignore`.
 
 ---
 
