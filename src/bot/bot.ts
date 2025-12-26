@@ -6,7 +6,8 @@ import { privateMessageHandler } from './handlers/message.js';
 import { supportMessageHandler } from './handlers/support.js';
 import { callbackHandler } from './handlers/callback.js';
 import { privateEditHandler, supportEditHandler } from './handlers/edit.js';
-import { resolveCallbackHandler } from './handlers/resolve.js';
+import { privateCallbackHandler } from './handlers/private-callback.js';
+import { contactHandler } from './handlers/phone.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -30,10 +31,16 @@ bot.on('callback_query:data').filter(
   callbackHandler
 );
 
-// Handle callback queries (resolve button in private chat)
+// Handle callback queries in private chat (resolve, phone confirm/change)
 bot.on('callback_query:data').filter(
   (ctx) => ctx.chat?.type === 'private',
-  resolveCallbackHandler
+  privateCallbackHandler
+);
+
+// Handle contact sharing in private chat
+bot.on('message:contact').filter(
+  (ctx) => ctx.chat.type === 'private',
+  contactHandler
 );
 
 // Handle edited messages in private chat (user → topic)

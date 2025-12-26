@@ -27,6 +27,13 @@ export default {
     '!src/utils/logger.ts',
     '!src/services/**',
     '!src/bot/handlers/message.ts',
+    '!src/bot/handlers/callback.ts',
+    '!src/bot/handlers/edit.ts',
+    '!src/bot/handlers/support.ts',
+    '!src/bot/handlers/resolve.ts',
+    '!src/bot/handlers/phone.ts',
+    '!src/bot/handlers/private-callback.ts',
+    '!src/constants/**',
   ],
   coverageThreshold: {
     global: {

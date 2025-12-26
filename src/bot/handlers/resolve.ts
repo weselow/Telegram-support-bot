@@ -19,7 +19,6 @@ export async function resolveCallbackHandler(ctx: Context): Promise<void> {
 
   const userId = parseResolveCallback(ctx.callbackQuery.data);
   if (!userId) {
-    await ctx.answerCallbackQuery({ text: 'Неизвестная команда' });
     return;
   }
 

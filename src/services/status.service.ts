@@ -5,7 +5,7 @@ import { eventRepository } from '../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from './topic.service.js';
 import { logger } from '../utils/logger.js';
 
-export type StatusTrigger = 'SUPPORT_REPLY' | 'CLIENT_REPLY' | 'CLIENT_RESOLVED';
+export type StatusTrigger = 'SUPPORT_REPLY' | 'CLIENT_REPLY' | 'CLIENT_RESOLVED' | 'CLIENT_REOPEN';
 
 interface StatusChangeResult {
   changed: boolean;
@@ -23,7 +23,16 @@ function getNewStatus(currentStatus: TicketStatus, trigger: StatusTrigger): Tick
   if (trigger === 'CLIENT_RESOLVED' && currentStatus !== 'CLOSED') {
     return 'CLOSED';
   }
+  if (trigger === 'CLIENT_REOPEN' && currentStatus === 'CLOSED') {
+    return 'NEW';
+  }
   return null;
+}
+
+function getEventType(trigger: StatusTrigger): 'CLOSED' | 'REOPENED' | 'STATUS_CHANGED' {
+  if (trigger === 'CLIENT_RESOLVED') return 'CLOSED';
+  if (trigger === 'CLIENT_REOPEN') return 'REOPENED';
+  return 'STATUS_CHANGED';
 }
 
 export async function autoChangeStatus(
@@ -43,7 +52,7 @@ export async function autoChangeStatus(
 
     await eventRepository.create({
       userId: user.id,
-      eventType: newStatus === 'CLOSED' ? 'CLOSED' : 'STATUS_CHANGED',
+      eventType: getEventType(trigger),
       oldValue: oldStatus,
       newValue: newStatus,
     });

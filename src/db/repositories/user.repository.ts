@@ -53,4 +53,11 @@ export const userRepository = {
       where: { topicId },
     });
   },
+
+  async updatePhone(id: string, phone: string): Promise<User> {
+    return prisma.user.update({
+      where: { id },
+      data: { phone },
+    });
+  },
 };

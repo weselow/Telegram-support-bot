@@ -3,6 +3,7 @@ import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
+import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
@@ -71,6 +72,23 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
 
   try {
     const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+
+    // Handle reopening closed tickets
+    if (user.status === 'CLOSED') {
+      const result = await autoChangeStatus(ctx.api, user, 'CLIENT_REOPEN');
+      if (result.changed) {
+        // Notify support about reopening
+        await ctx.api.sendMessage(supportGroupId, '🔄 Пользователь переоткрыл обращение', {
+          message_thread_id: user.topicId,
+        });
+
+        // Ask for phone confirmation
+        await ctx.reply(buildPhoneConfirmMessage(user.phone), {
+          reply_markup: buildPhoneConfirmKeyboard(user.id, !!user.phone),
+        });
+      }
+    }
+
     await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
 
     // Auto change status: WAITING_CLIENT → IN_PROGRESS
