@@ -1,3 +1,4 @@
+import { InlineKeyboard } from 'grammy';
 import type { Api } from 'grammy';
 import type { Message } from 'grammy/types';
 import { messageRepository } from '../db/repositories/message.repository.js';
@@ -22,8 +23,13 @@ type TopicMessageSender = (
 type DmMessageSender = (
   api: Api,
   message: Message,
-  chatId: number
+  chatId: number,
+  userId: string
 ) => Promise<Message | null>;
+
+function buildResolveKeyboard(userId: string): InlineKeyboard {
+  return new InlineKeyboard().text('✅ Спасибо, вопрос решён', `resolve:${userId}`);
+}
 
 function buildTopicOptions(topicId: number, caption?: string): TopicSendOptions {
   const options: TopicSendOptions = { message_thread_id: topicId };
@@ -121,59 +127,61 @@ const topicSenders: TopicMessageSender[] = [
 ];
 
 // DM senders (support → user)
-const sendTextToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendTextToDm: DmMessageSender = async (api, msg, chatId, userId) => {
   if (!msg.text) return null;
-  return api.sendMessage(chatId, msg.text);
+  return api.sendMessage(chatId, msg.text, {
+    reply_markup: buildResolveKeyboard(userId),
+  });
 };
 
-const sendPhotoToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendPhotoToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.photo || msg.photo.length === 0) return null;
   const photo = msg.photo[msg.photo.length - 1];
   if (!photo) return null;
   return api.sendPhoto(chatId, photo.file_id, buildDmOptions(msg.caption));
 };
 
-const sendVideoToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendVideoToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.video) return null;
   return api.sendVideo(chatId, msg.video.file_id, buildDmOptions(msg.caption));
 };
 
-const sendDocumentToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendDocumentToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.document) return null;
   return api.sendDocument(chatId, msg.document.file_id, buildDmOptions(msg.caption));
 };
 
-const sendVoiceToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendVoiceToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.voice) return null;
   return api.sendVoice(chatId, msg.voice.file_id);
 };
 
-const sendAudioToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendAudioToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.audio) return null;
   return api.sendAudio(chatId, msg.audio.file_id, buildDmOptions(msg.caption));
 };
 
-const sendVideoNoteToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendVideoNoteToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.video_note) return null;
   return api.sendVideoNote(chatId, msg.video_note.file_id);
 };
 
-const sendStickerToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendStickerToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.sticker) return null;
   return api.sendSticker(chatId, msg.sticker.file_id);
 };
 
-const sendAnimationToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendAnimationToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.animation) return null;
   return api.sendAnimation(chatId, msg.animation.file_id, buildDmOptions(msg.caption));
 };
 
-const sendContactToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendContactToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.contact) return null;
   return api.sendContact(chatId, msg.contact.phone_number, msg.contact.first_name);
 };
 
-const sendLocationToDm: DmMessageSender = async (api, msg, chatId) => {
+const sendLocationToDm: DmMessageSender = async (api, msg, chatId, _userId) => {
   if (!msg.location) return null;
   return api.sendLocation(chatId, msg.location.latitude, msg.location.longitude);
 };
@@ -230,7 +238,7 @@ export async function mirrorSupportMessage(
   let sentMessage: Message | null = null;
 
   for (const sender of dmSenders) {
-    sentMessage = await sender(api, message, Number(userTgId));
+    sentMessage = await sender(api, message, Number(userTgId), userId);
     if (sentMessage) break;
   }
 

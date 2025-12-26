@@ -1,6 +1,7 @@
 import type { Context } from 'grammy';
 import { findUserByTopicId } from '../../services/ticket.service.js';
 import { mirrorSupportMessage } from '../../services/message.service.js';
+import { autoChangeStatus } from '../../services/status.service.js';
 import { logger } from '../../utils/logger.js';
 
 export async function supportMessageHandler(ctx: Context): Promise<void> {
@@ -35,6 +36,9 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
 
   try {
     await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+
+    // Auto change status: NEW → IN_PROGRESS
+    await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');
   } catch (error) {
     logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
     await ctx.reply('⚠️ Не удалось доставить сообщение пользователю. Попробуйте ещё раз.', {

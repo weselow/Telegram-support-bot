@@ -6,6 +6,7 @@ import { privateMessageHandler } from './handlers/message.js';
 import { supportMessageHandler } from './handlers/support.js';
 import { callbackHandler } from './handlers/callback.js';
 import { privateEditHandler, supportEditHandler } from './handlers/edit.js';
+import { resolveCallbackHandler } from './handlers/resolve.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -23,10 +24,16 @@ bot.on('message').filter(
   supportMessageHandler
 );
 
-// Handle callback queries (status buttons)
+// Handle callback queries (status buttons in support group)
 bot.on('callback_query:data').filter(
   (ctx) => ctx.chat?.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
   callbackHandler
+);
+
+// Handle callback queries (resolve button in private chat)
+bot.on('callback_query:data').filter(
+  (ctx) => ctx.chat?.type === 'private',
+  resolveCallbackHandler
 );
 
 // Handle edited messages in private chat (user → topic)
