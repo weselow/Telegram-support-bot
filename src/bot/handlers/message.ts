@@ -2,6 +2,7 @@ import type { Context } from 'grammy';
 import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
+import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
@@ -36,11 +37,18 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
         question: ctx.message.text,
       });
 
-      await sendTicketCard(ctx.api, topic.message_thread_id, {
-        tgUserId: ctx.from.id,
-        firstName,
-        username: username ?? undefined,
-      });
+      const cardMessageId = await sendTicketCard(
+        ctx.api,
+        topic.message_thread_id,
+        user.id,
+        {
+          tgUserId: ctx.from.id,
+          firstName,
+          username: username ?? undefined,
+        }
+      );
+
+      await userRepository.updateCardMessageId(user.id, cardMessageId);
 
       await ctx.reply(
         'Спасибо за обращение! Ваш запрос принят в работу. ' +

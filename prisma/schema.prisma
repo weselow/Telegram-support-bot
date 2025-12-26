@@ -32,16 +32,17 @@ enum MessageDirection {
 
 // Пользователь/Тикет (один пользователь = один тикет навсегда)
 model User {
-  id           String       @id @default(uuid())
-  tgUserId     BigInt       @unique @map("tg_user_id")
-  tgUsername   String?      @map("tg_username")
-  tgFirstName  String       @map("tg_first_name")
-  topicId      Int          @unique @map("topic_id")
-  status       TicketStatus @default(NEW)
-  phone        String?
-  sourceUrl    String?      @map("source_url")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
+  id            String       @id @default(uuid())
+  tgUserId      BigInt       @unique @map("tg_user_id")
+  tgUsername    String?      @map("tg_username")
+  tgFirstName   String       @map("tg_first_name")
+  topicId       Int          @unique @map("topic_id")
+  cardMessageId Int?         @map("card_message_id")
+  status        TicketStatus @default(NEW)
+  phone         String?
+  sourceUrl     String?      @map("source_url")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
 
   events   TicketEvent[]
   messages MessageMap[]

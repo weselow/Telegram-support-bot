@@ -4,6 +4,7 @@ import { logger } from '../utils/logger.js';
 import { startHandler } from './handlers/start.js';
 import { privateMessageHandler } from './handlers/message.js';
 import { supportMessageHandler } from './handlers/support.js';
+import { callbackHandler } from './handlers/callback.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -19,6 +20,12 @@ bot.on('message').filter(
 bot.on('message').filter(
   (ctx) => ctx.chat.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
   supportMessageHandler
+);
+
+// Handle callback queries (status buttons)
+bot.on('callback_query:data').filter(
+  (ctx) => ctx.chat?.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
+  callbackHandler
 );
 
 bot.catch((err) => {

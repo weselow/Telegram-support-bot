@@ -35,6 +35,19 @@ export const userRepository = {
     });
   },
 
+  async updateCardMessageId(id: string, cardMessageId: number): Promise<User> {
+    return prisma.user.update({
+      where: { id },
+      data: { cardMessageId },
+    });
+  },
+
+  async findById(id: string): Promise<User | null> {
+    return prisma.user.findUnique({
+      where: { id },
+    });
+  },
+
   async findByTopicId(topicId: number): Promise<User | null> {
     return prisma.user.findUnique({
       where: { topicId },
