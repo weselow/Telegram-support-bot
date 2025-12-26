@@ -1,9 +1,7 @@
 import { config } from 'dotenv';
 import { z } from 'zod';
 
-// Load .env.local first (for local development), then .env as fallback
-config({ path: '.env.local' });
-config({ path: '.env' });
+config();
 
 const envSchema = z.object({
   BOT_TOKEN: z.string().min(1, 'BOT_TOKEN is required'),

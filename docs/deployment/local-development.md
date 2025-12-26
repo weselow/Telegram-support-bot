@@ -12,10 +12,10 @@ cd telegram-support-bot
 ### 2. Создать файл окружения
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Отредактировать `.env.local`:
+Отредактировать `.env`:
 ```env
 BOT_TOKEN=ваш_токен_от_botfather
 SUPPORT_GROUP_ID=-100xxxxxxxxxx
@@ -89,11 +89,7 @@ docker compose -f docker-compose.yml up -d
 | Файл | Назначение | Git |
 |------|------------|-----|
 | `.env.example` | Шаблон с примерами | ✅ В репозитории |
-| `.env` | Production конфиг | ❌ Игнорируется |
-| `.env.local` | Локальная разработка | ❌ Игнорируется |
-| `.env.*.local` | Другие локальные | ❌ Игнорируются |
-
-Приоритет загрузки: `.env.local` > `.env`
+| `.env` | Реальный конфиг | ❌ Игнорируется |
 
 ---
 
