@@ -44,6 +44,7 @@
 | [016](../solutions/016-sentry-integration/016-sentry-integration.md) | Sentry интеграция | DONE | Низкий |
 | [017](../solutions/017-bot-blocked-handling/017-bot-blocked-handling.md) | Обработка блокировки | DONE | Низкий |
 | [018](../solutions/018-tests/018-tests.md) | Тесты | DONE | Средний |
+| [019](tasks/019-onboarding-flow.md) | Onboarding Flow с Deep Link | TODO | Высокий |
 
 ---
 
