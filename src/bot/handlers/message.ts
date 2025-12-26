@@ -13,6 +13,11 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     return;
   }
 
+  // Contact messages are handled by contactHandler
+  if (ctx.message.contact) {
+    return;
+  }
+
   const tgUserId = BigInt(ctx.from.id);
   const firstName = ctx.from.first_name;
   const username = ctx.from.username ?? null;

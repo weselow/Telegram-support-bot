@@ -110,6 +110,8 @@ export async function contactHandler(ctx: Context): Promise<void> {
 
   const user = await userRepository.findByTgUserId(BigInt(ctx.from.id));
   if (!user) {
+    logger.warn({ tgUserId: ctx.from.id }, 'Contact received from unknown user');
+    await ctx.reply('Произошла ошибка. Пожалуйста, напишите нам сообщение для начала.');
     return;
   }
 
