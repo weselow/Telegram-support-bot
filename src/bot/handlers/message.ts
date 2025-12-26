@@ -6,6 +6,7 @@ import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
 import { startSlaTimers, cancelAllSlaTimers } from '../../services/sla.service.js';
 import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
+import { checkRateLimit } from '../../services/rate-limit.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
@@ -31,6 +32,13 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   const tgUserId = BigInt(ctx.from.id);
   const firstName = ctx.from.first_name;
   const username = ctx.from.username ?? null;
+
+  // Check rate limit before processing
+  const rateLimitResult = await checkRateLimit(tgUserId);
+  if (!rateLimitResult.allowed) {
+    await ctx.reply(messages.rateLimitError);
+    return;
+  }
 
   let user = await findUserByTgId(tgUserId);
   let isNewUser = false;
