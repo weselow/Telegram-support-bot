@@ -12,6 +12,7 @@ import {
 } from '../services/group.service.js';
 import { messages, formatMessage } from '../config/messages.js';
 import { settings } from '../config/settings.js';
+import { captureError, addBreadcrumb } from '../config/sentry.js';
 import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
@@ -25,6 +26,7 @@ const SLA_MESSAGES = {
 async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   const { userId, topicId, level } = job.data;
 
+  addBreadcrumb('sla', `SLA ${level} reminder`, 'warning', { userId, topicId, level });
   logger.info({ userId, topicId, level, jobId: job.id }, 'Processing SLA job');
 
   const user = await userRepository.findById(userId);
@@ -44,6 +46,7 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   try {
     admins = await getGroupAdmins(bot.api);
   } catch (error) {
+    captureError(error, { userId, topicId, level, action: 'getGroupAdmins' });
     logger.error({ error, userId, topicId, level }, 'Failed to get group admins for SLA reminder');
     throw error;
   }
@@ -58,6 +61,7 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
       parse_mode: 'Markdown',
     });
   } catch (error) {
+    captureError(error, { userId, topicId, level, action: 'sendSlaReminder' });
     logger.error({ error, userId, topicId, level }, 'Failed to send SLA reminder to topic');
     throw error;
   }
@@ -92,10 +96,12 @@ export function startSlaWorker(): Worker<SlaJobData> {
   });
 
   worker.on('failed', (job, error) => {
+    captureError(error, { jobId: job?.id, jobData: job?.data, action: 'slaJobFailed' });
     logger.error({ jobId: job?.id, error }, 'SLA job failed');
   });
 
   worker.on('error', (error) => {
+    captureError(error, { action: 'slaWorkerError' });
     logger.error({ error }, 'SLA worker error');
   });
 

@@ -10,6 +10,7 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
+import { captureError, addBreadcrumb } from '../../config/sentry.js';
 
 export async function privateMessageHandler(ctx: Context): Promise<void> {
   if (!ctx.from || !ctx.message) {
@@ -20,6 +21,11 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   if (ctx.message.contact) {
     return;
   }
+
+  addBreadcrumb('message', 'Incoming private message', 'info', {
+    tgUserId: ctx.from.id,
+    messageType: ctx.message.text ? 'text' : 'media',
+  });
 
   const tgUserId = BigInt(ctx.from.id);
   const firstName = ctx.from.first_name;
@@ -65,6 +71,7 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
 
       await ctx.reply(messages.ticketCreated);
     } catch (error) {
+      captureError(error, { tgUserId: String(ctx.from.id), action: 'createTicket' });
       logger.error({ error, tgUserId: ctx.from.id }, 'Failed to create ticket');
       await ctx.reply(messages.ticketCreateError);
       return;
@@ -109,6 +116,7 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     // Auto change status: WAITING_CLIENT → IN_PROGRESS
     await autoChangeStatus(ctx.api, user, 'CLIENT_REPLY');
   } catch (error) {
+    captureError(error, { tgUserId: String(ctx.from.id), userId: user.id, action: 'mirrorMessage' });
     logger.error({ error, tgUserId: ctx.from.id }, 'Failed to mirror message');
     await ctx.reply(messages.deliveryFailed);
   }

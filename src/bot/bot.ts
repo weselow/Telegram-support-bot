@@ -1,6 +1,7 @@
 import { Bot, GrammyError, HttpError } from 'grammy';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { captureError } from '../config/sentry.js';
 import { startHandler } from './handlers/start.js';
 import { privateMessageHandler } from './handlers/message.js';
 import { supportMessageHandler } from './handlers/support.js';
@@ -78,10 +79,13 @@ bot.catch((err) => {
 
   const e = err.error;
   if (e instanceof GrammyError) {
+    captureError(e, { updateId: ctx.update.update_id, description: e.description, action: 'grammyError' });
     logger.error({ description: e.description }, 'Error in request');
   } else if (e instanceof HttpError) {
+    captureError(e, { updateId: ctx.update.update_id, action: 'httpError' });
     logger.error({ error: e.message }, 'Could not contact Telegram');
   } else {
+    captureError(e, { updateId: ctx.update.update_id, action: 'unknownError' });
     logger.error({ error: e }, 'Unknown error');
   }
 });

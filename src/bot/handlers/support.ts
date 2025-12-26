@@ -5,6 +5,7 @@ import { autoChangeStatus } from '../../services/status.service.js';
 import { cancelAllSlaTimers } from '../../services/sla.service.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
+import { captureError, addBreadcrumb } from '../../config/sentry.js';
 
 export async function supportMessageHandler(ctx: Context): Promise<void> {
   if (!ctx.from || !ctx.message) {
@@ -36,6 +37,8 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     return;
   }
 
+  addBreadcrumb('message', 'Support reply', 'info', { topicId, userId: user.id });
+
   try {
     await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
 
@@ -45,6 +48,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     // Auto change status: NEW → IN_PROGRESS
     await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');
   } catch (error) {
+    captureError(error, { topicId, userId: user.id, action: 'mirrorSupportMessage' });
     logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
     await ctx.reply(messages.support.deliveryFailed, {
       message_thread_id: topicId,

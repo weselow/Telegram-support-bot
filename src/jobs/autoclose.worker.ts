@@ -9,6 +9,7 @@ import { updateTicketCard, type TicketCardData } from '../services/topic.service
 import { bot } from '../bot/bot.js';
 import { messages, formatMessage } from '../config/messages.js';
 import { settings } from '../config/settings.js';
+import { captureError, addBreadcrumb } from '../config/sentry.js';
 import type { AutocloseJobData } from './queues.js';
 
 let worker: Worker<AutocloseJobData> | null = null;
@@ -19,6 +20,7 @@ const TOPIC_MESSAGE = formatMessage(messages.autoclose.topic, { days: settings.a
 async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   const { userId, topicId } = job.data;
 
+  addBreadcrumb('autoclose', 'Autoclose ticket', 'info', { userId, topicId });
   logger.info({ userId, topicId, jobId: job.id }, 'Processing autoclose job');
 
   const user = await userRepository.findById(userId);
@@ -40,6 +42,7 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   try {
     await userRepository.updateStatus(userId, 'CLOSED');
   } catch (error) {
+    captureError(error, { userId, topicId, action: 'autocloseUpdateStatus' });
     logger.error({ error, userId, topicId }, 'Failed to update status to CLOSED');
     throw error;
   }
@@ -52,6 +55,7 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
       newValue: 'CLOSED',
     });
   } catch (error) {
+    captureError(error, { userId, topicId, action: 'autocloseCreateEvent' });
     logger.error({ error, userId, topicId }, 'Failed to create autoclose event');
   }
 
@@ -68,6 +72,7 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
       };
       await updateTicketCard(bot.api, user.cardMessageId, userId, cardData);
     } catch (error) {
+      captureError(error, { userId, topicId, action: 'autocloseUpdateCard' });
       logger.error({ error, userId, topicId }, 'Failed to update ticket card on autoclose');
     }
   }
@@ -75,6 +80,7 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   try {
     await bot.api.sendMessage(Number(user.tgUserId), CLIENT_MESSAGE);
   } catch (error) {
+    captureError(error, { userId, topicId, action: 'autocloseNotifyClient' });
     logger.warn({ error, userId, topicId }, 'Failed to notify client about autoclose');
   }
 
@@ -83,6 +89,7 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
       message_thread_id: topicId,
     });
   } catch (error) {
+    captureError(error, { userId, topicId, action: 'autocloseNotifyTopic' });
     logger.error({ error, userId, topicId }, 'Failed to send autoclose message to topic');
   }
 
@@ -104,10 +111,12 @@ export function startAutocloseWorker(): Worker<AutocloseJobData> {
   });
 
   worker.on('failed', (job, error) => {
+    captureError(error, { jobId: job?.id, jobData: job?.data, action: 'autocloseJobFailed' });
     logger.error({ jobId: job?.id, error }, 'Autoclose job failed');
   });
 
   worker.on('error', (error) => {
+    captureError(error, { action: 'autocloseWorkerError' });
     logger.error({ error }, 'Autoclose worker error');
   });
 
