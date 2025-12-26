@@ -29,9 +29,10 @@ Telegram-бот техподдержки для сайта. Пользовате
 ## Commands
 
 ```bash
-# Запуск тестов
+# Запуск тестов (Vitest)
 npm test                                    # Все тесты
-npm test -- --testPathPattern=[module]      # Тесты модуля
+npm test -- src/config                      # Тесты по пути
+npm run test:watch                          # Watch mode
 npm run test:coverage                       # С покрытием (>60%)
 
 # Проверки
