@@ -48,30 +48,39 @@ docker compose logs -f app
 
 ## Режимы запуска
 
-### Только инфраструктура (PostgreSQL + Redis)
+### Полный стек в Docker (рекомендуется для старта)
 
-Для запуска бота локально через `npm run dev`:
-
-```bash
-docker compose up -d postgres redis
-npm install
-npm run db:migrate   # только первый раз или после новых миграций
-npm run dev
-```
-
-### Полный стек в Docker
+Всё в контейнерах — бот, БД, Redis:
 
 ```bash
 docker compose up -d
 ```
 
+> `docker-compose.override.yml` подхватывается автоматически
+
+### Только инфраструктура (для активной разработки)
+
+БД и Redis в Docker, бот на хосте с hot-reload:
+
+```bash
+# 1. Запустить только БД и Redis
+docker compose up -d postgres redis
+
+# 2. На хосте (в терминале проекта)
+npm install
+npm run db:migrate   # первый раз или после новых миграций
+npm run dev          # бот с hot-reload
+```
+
+Преимущество: изменения в коде применяются мгновенно без пересборки Docker.
+
 ### Production режим
+
+Без dev-оверрайдов:
 
 ```bash
 docker compose -f docker-compose.yml up -d
 ```
-
-(без `docker-compose.override.yml`)
 
 ---
 
