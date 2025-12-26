@@ -4,13 +4,7 @@ import type { ForumTopic } from 'grammy/types';
 import type { TicketStatus } from '../generated/prisma/client.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
-
-const STATUS_LABELS: Record<TicketStatus, string> = {
-  NEW: '🆕 Новый',
-  IN_PROGRESS: '🔧 В работе',
-  WAITING_CLIENT: '⏳ Ждём клиента',
-  CLOSED: '✅ Закрыт',
-};
+import { STATUS_LABELS_WITH_EMOJI } from '../constants/status.js';
 
 function buildStatusKeyboard(userId: string, currentStatus: TicketStatus): InlineKeyboard {
   const keyboard = new InlineKeyboard();
@@ -57,7 +51,7 @@ function formatCardText(data: TicketCardData): string {
     phoneLine +
     sourceLine +
     `\n📅 Создан: ${data.createdAt.toLocaleString('ru-RU')}\n\n` +
-    `Статус: ${STATUS_LABELS[data.status]}`
+    `Статус: ${STATUS_LABELS_WITH_EMOJI[data.status]}`
   );
 }
 

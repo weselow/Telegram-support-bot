@@ -4,15 +4,9 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../../services/topic.service.js';
 import { logger } from '../../utils/logger.js';
+import { STATUS_LABELS } from '../../constants/status.js';
 
 const VALID_STATUSES: TicketStatus[] = ['IN_PROGRESS', 'WAITING_CLIENT', 'CLOSED'];
-
-const STATUS_LABELS: Record<TicketStatus, string> = {
-  NEW: 'Новый',
-  IN_PROGRESS: 'В работе',
-  WAITING_CLIENT: 'Ждём клиента',
-  CLOSED: 'Закрыт',
-};
 
 function parseCallbackData(data: string): { status: TicketStatus; userId: string } | null {
   const parts = data.split(':');
@@ -66,6 +60,8 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       newValue: status,
     });
 
+    let cardUpdateFailed = false;
+
     if (user.cardMessageId) {
       const cardData: TicketCardData = {
         tgUserId: Number(user.tgUserId),
@@ -77,21 +73,29 @@ export async function callbackHandler(ctx: Context): Promise<void> {
         createdAt: user.createdAt,
       };
 
-      await updateTicketCard(ctx.api, user.cardMessageId, userId, cardData);
+      try {
+        await updateTicketCard(ctx.api, user.cardMessageId, userId, cardData);
+      } catch (cardError) {
+        cardUpdateFailed = true;
+        logger.error({ error: cardError, userId, messageId: user.cardMessageId }, 'Failed to update ticket card');
+      }
     }
 
     await ctx.answerCallbackQuery({ text: `Статус изменён на "${STATUS_LABELS[status]}"` });
 
     if (ctx.chat) {
-      const notification = `📝 Статус изменён: ${STATUS_LABELS[oldStatus]} → ${STATUS_LABELS[status]}`;
+      let notification = `📝 Статус изменён: ${STATUS_LABELS[oldStatus]} → ${STATUS_LABELS[status]}`;
+      if (cardUpdateFailed) {
+        notification += '\n⚠️ Не удалось обновить карточку тикета';
+      }
       await ctx.api.sendMessage(ctx.chat.id, notification, {
         message_thread_id: user.topicId,
       });
     }
 
-    logger.info({ userId, oldStatus, newStatus: status }, 'Ticket status changed');
+    logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed }, 'Ticket status changed');
   } catch (error) {
     logger.error({ error, userId, status }, 'Failed to update ticket status');
-    await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' });
+    await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' }).catch(() => undefined);
   }
 }
