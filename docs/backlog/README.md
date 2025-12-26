@@ -17,7 +17,7 @@
 |---|--------|--------|-----------|
 | [005](../solutions/005-topic-creation/005-topic-creation.md) | Создание топика | DONE | Высокий |
 | [006](../solutions/006-mirror-user-to-topic/006-mirror-user-to-topic.md) | Зеркалирование user → topic | DONE | Высокий |
-| [007](tasks/007-mirror-topic-to-user.md) | Зеркалирование topic → user | TODO | Высокий |
+| [007](../solutions/007-mirror-topic-to-user/007-mirror-topic-to-user.md) | Зеркалирование topic → user | DONE | Высокий |
 | [008](tasks/008-ticket-card-buttons.md) | Карточка тикета с кнопками | TODO | Высокий |
 
 ### Этап 3: Расширенный функционал

@@ -3,102 +3,193 @@ import type { Message } from 'grammy/types';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { logger } from '../utils/logger.js';
 
-interface SendOptions {
+interface TopicSendOptions {
   message_thread_id: number;
   caption?: string;
 }
 
-type MessageSender = (
+interface DmSendOptions {
+  caption?: string;
+}
+
+type TopicMessageSender = (
   api: Api,
   message: Message,
   groupId: number,
   topicId: number
 ) => Promise<Message | null>;
 
-function buildOptions(topicId: number, caption?: string): SendOptions {
-  const options: SendOptions = { message_thread_id: topicId };
+type DmMessageSender = (
+  api: Api,
+  message: Message,
+  chatId: number
+) => Promise<Message | null>;
+
+function buildTopicOptions(topicId: number, caption?: string): TopicSendOptions {
+  const options: TopicSendOptions = { message_thread_id: topicId };
   if (caption) {
     options.caption = caption;
   }
   return options;
 }
 
-const sendText: MessageSender = async (api, msg, groupId, topicId) => {
+function buildDmOptions(caption?: string): DmSendOptions {
+  const options: DmSendOptions = {};
+  if (caption) {
+    options.caption = caption;
+  }
+  return options;
+}
+
+// Topic senders (user → support group)
+const sendTextToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.text) return null;
   return api.sendMessage(groupId, msg.text, { message_thread_id: topicId });
 };
 
-const sendPhoto: MessageSender = async (api, msg, groupId, topicId) => {
+const sendPhotoToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.photo || msg.photo.length === 0) return null;
   const photo = msg.photo[msg.photo.length - 1];
   if (!photo) {
     logger.warn({ messageId: msg.message_id }, 'Photo array empty unexpectedly');
     return null;
   }
-  return api.sendPhoto(groupId, photo.file_id, buildOptions(topicId, msg.caption));
+  return api.sendPhoto(groupId, photo.file_id, buildTopicOptions(topicId, msg.caption));
 };
 
-const sendVideo: MessageSender = async (api, msg, groupId, topicId) => {
+const sendVideoToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.video) return null;
-  return api.sendVideo(groupId, msg.video.file_id, buildOptions(topicId, msg.caption));
+  return api.sendVideo(groupId, msg.video.file_id, buildTopicOptions(topicId, msg.caption));
 };
 
-const sendDocument: MessageSender = async (api, msg, groupId, topicId) => {
+const sendDocumentToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.document) return null;
-  return api.sendDocument(groupId, msg.document.file_id, buildOptions(topicId, msg.caption));
+  return api.sendDocument(groupId, msg.document.file_id, buildTopicOptions(topicId, msg.caption));
 };
 
-const sendVoice: MessageSender = async (api, msg, groupId, topicId) => {
+const sendVoiceToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.voice) return null;
   return api.sendVoice(groupId, msg.voice.file_id, { message_thread_id: topicId });
 };
 
-const sendAudio: MessageSender = async (api, msg, groupId, topicId) => {
+const sendAudioToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.audio) return null;
-  return api.sendAudio(groupId, msg.audio.file_id, buildOptions(topicId, msg.caption));
+  return api.sendAudio(groupId, msg.audio.file_id, buildTopicOptions(topicId, msg.caption));
 };
 
-const sendVideoNote: MessageSender = async (api, msg, groupId, topicId) => {
+const sendVideoNoteToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.video_note) return null;
   return api.sendVideoNote(groupId, msg.video_note.file_id, { message_thread_id: topicId });
 };
 
-const sendSticker: MessageSender = async (api, msg, groupId, topicId) => {
+const sendStickerToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.sticker) return null;
   return api.sendSticker(groupId, msg.sticker.file_id, { message_thread_id: topicId });
 };
 
-const sendAnimation: MessageSender = async (api, msg, groupId, topicId) => {
+const sendAnimationToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.animation) return null;
-  return api.sendAnimation(groupId, msg.animation.file_id, buildOptions(topicId, msg.caption));
+  return api.sendAnimation(groupId, msg.animation.file_id, buildTopicOptions(topicId, msg.caption));
 };
 
-const sendContact: MessageSender = async (api, msg, groupId, topicId) => {
+const sendContactToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.contact) return null;
   return api.sendContact(groupId, msg.contact.phone_number, msg.contact.first_name, {
     message_thread_id: topicId,
   });
 };
 
-const sendLocation: MessageSender = async (api, msg, groupId, topicId) => {
+const sendLocationToTopic: TopicMessageSender = async (api, msg, groupId, topicId) => {
   if (!msg.location) return null;
   return api.sendLocation(groupId, msg.location.latitude, msg.location.longitude, {
     message_thread_id: topicId,
   });
 };
 
-const messageSenders: MessageSender[] = [
-  sendText,
-  sendPhoto,
-  sendVideo,
-  sendDocument,
-  sendVoice,
-  sendAudio,
-  sendVideoNote,
-  sendSticker,
-  sendAnimation,
-  sendContact,
-  sendLocation,
+const topicSenders: TopicMessageSender[] = [
+  sendTextToTopic,
+  sendPhotoToTopic,
+  sendVideoToTopic,
+  sendDocumentToTopic,
+  sendVoiceToTopic,
+  sendAudioToTopic,
+  sendVideoNoteToTopic,
+  sendStickerToTopic,
+  sendAnimationToTopic,
+  sendContactToTopic,
+  sendLocationToTopic,
+];
+
+// DM senders (support → user)
+const sendTextToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.text) return null;
+  return api.sendMessage(chatId, msg.text);
+};
+
+const sendPhotoToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.photo || msg.photo.length === 0) return null;
+  const photo = msg.photo[msg.photo.length - 1];
+  if (!photo) return null;
+  return api.sendPhoto(chatId, photo.file_id, buildDmOptions(msg.caption));
+};
+
+const sendVideoToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.video) return null;
+  return api.sendVideo(chatId, msg.video.file_id, buildDmOptions(msg.caption));
+};
+
+const sendDocumentToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.document) return null;
+  return api.sendDocument(chatId, msg.document.file_id, buildDmOptions(msg.caption));
+};
+
+const sendVoiceToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.voice) return null;
+  return api.sendVoice(chatId, msg.voice.file_id);
+};
+
+const sendAudioToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.audio) return null;
+  return api.sendAudio(chatId, msg.audio.file_id, buildDmOptions(msg.caption));
+};
+
+const sendVideoNoteToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.video_note) return null;
+  return api.sendVideoNote(chatId, msg.video_note.file_id);
+};
+
+const sendStickerToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.sticker) return null;
+  return api.sendSticker(chatId, msg.sticker.file_id);
+};
+
+const sendAnimationToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.animation) return null;
+  return api.sendAnimation(chatId, msg.animation.file_id, buildDmOptions(msg.caption));
+};
+
+const sendContactToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.contact) return null;
+  return api.sendContact(chatId, msg.contact.phone_number, msg.contact.first_name);
+};
+
+const sendLocationToDm: DmMessageSender = async (api, msg, chatId) => {
+  if (!msg.location) return null;
+  return api.sendLocation(chatId, msg.location.latitude, msg.location.longitude);
+};
+
+const dmSenders: DmMessageSender[] = [
+  sendTextToDm,
+  sendPhotoToDm,
+  sendVideoToDm,
+  sendDocumentToDm,
+  sendVoiceToDm,
+  sendAudioToDm,
+  sendVideoNoteToDm,
+  sendStickerToDm,
+  sendAnimationToDm,
+  sendContactToDm,
+  sendLocationToDm,
 ];
 
 export async function mirrorUserMessage(
@@ -110,7 +201,7 @@ export async function mirrorUserMessage(
 ): Promise<number | null> {
   let sentMessage: Message | null = null;
 
-  for (const sender of messageSenders) {
+  for (const sender of topicSenders) {
     sentMessage = await sender(api, message, supportGroupId, topicId);
     if (sentMessage) break;
   }
@@ -125,6 +216,34 @@ export async function mirrorUserMessage(
     dmMessageId: message.message_id,
     topicMessageId: sentMessage.message_id,
     direction: 'USER_TO_SUPPORT',
+  });
+
+  return sentMessage.message_id;
+}
+
+export async function mirrorSupportMessage(
+  api: Api,
+  message: Message,
+  userId: string,
+  userTgId: bigint
+): Promise<number | null> {
+  let sentMessage: Message | null = null;
+
+  for (const sender of dmSenders) {
+    sentMessage = await sender(api, message, Number(userTgId));
+    if (sentMessage) break;
+  }
+
+  if (!sentMessage) {
+    logger.warn({ messageId: message.message_id }, 'Unsupported message type, not mirrored to user');
+    return null;
+  }
+
+  await messageRepository.create({
+    userId,
+    dmMessageId: sentMessage.message_id,
+    topicMessageId: message.message_id,
+    direction: 'SUPPORT_TO_USER',
   });
 
   return sentMessage.message_id;

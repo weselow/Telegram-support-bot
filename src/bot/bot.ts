@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { startHandler } from './handlers/start.js';
 import { privateMessageHandler } from './handlers/message.js';
+import { supportMessageHandler } from './handlers/support.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -12,6 +13,12 @@ bot.command('start', startHandler);
 bot.on('message').filter(
   (ctx) => ctx.chat.type === 'private',
   privateMessageHandler
+);
+
+// Handle support group messages (topic → user)
+bot.on('message').filter(
+  (ctx) => ctx.chat.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
+  supportMessageHandler
 );
 
 bot.catch((err) => {
