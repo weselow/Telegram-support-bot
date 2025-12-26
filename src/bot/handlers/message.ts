@@ -106,7 +106,12 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
       }
     }
 
-    await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
+    const mirrorResult = await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
+
+    if (mirrorResult === null) {
+      await ctx.reply(messages.unsupportedMessageType);
+      return;
+    }
 
     // Cancel autoclose timer if user was waiting for client
     if (user.status === 'WAITING_CLIENT') {

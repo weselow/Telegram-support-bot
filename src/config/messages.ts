@@ -7,6 +7,7 @@ const messagesSchema = z.object({
   ticketCreated: z.string(),
   ticketCreateError: z.string(),
   deliveryFailed: z.string(),
+  unsupportedMessageType: z.string(),
   reopened: z.string(),
 
   phone: z.object({

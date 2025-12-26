@@ -52,6 +52,7 @@
 
 | # | Задача | Статус |
 |---|--------|--------|
+| [TD-001](../solutions/td-001-notify-unsupported-message-types/td-001-notify-unsupported-message-types.md) | Уведомление о неподдерживаемых типах сообщений | DONE |
 | [TD-026](../solutions/td-026-migrate-npm-to-pnpm/td-026-migrate-npm-to-pnpm.md) | Миграция npm → pnpm | DONE |
 
 ---
