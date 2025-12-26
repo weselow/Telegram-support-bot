@@ -1,7 +1,9 @@
+import './config/sentry.js';
 import { logger } from './utils/logger.js';
 import { startBot, stopBot } from './bot/bot.js';
 import { connectDatabase, disconnectDatabase } from './db/client.js';
 import { startWorkers, stopWorkers } from './jobs/index.js';
+import { captureError } from './config/sentry.js';
 
 async function main(): Promise<void> {
   logger.info('Telegram Support Bot starting...');
@@ -25,6 +27,7 @@ async function shutdown(): Promise<void> {
     logger.info('Graceful shutdown complete');
     process.exit(0);
   } catch (error) {
+    captureError(error, { action: 'shutdown' });
     logger.error({ error }, 'Error during shutdown');
     process.exit(1);
   }
@@ -34,6 +37,7 @@ process.on('SIGINT', () => void shutdown());
 process.on('SIGTERM', () => void shutdown());
 
 main().catch((error: unknown) => {
+  captureError(error, { action: 'startup' });
   logger.error({ error }, 'Failed to start bot');
   process.exit(1);
 });

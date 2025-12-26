@@ -6,6 +6,7 @@ import { updateTicketCard, type TicketCardData } from '../../services/topic.serv
 import { startAutocloseTimer, cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
+import { captureError } from '../../config/sentry.js';
 import { STATUS_LABELS } from '../../constants/status.js';
 
 const VALID_STATUSES: TicketStatus[] = ['IN_PROGRESS', 'WAITING_CLIENT', 'CLOSED'];
@@ -80,6 +81,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
         await updateTicketCard(ctx.api, user.cardMessageId, userId, cardData);
       } catch (cardError) {
         cardUpdateFailed = true;
+        captureError(cardError, { userId, messageId: user.cardMessageId, action: 'updateTicketCard' });
         logger.error({ error: cardError, userId, messageId: user.cardMessageId }, 'Failed to update ticket card');
       }
     }
@@ -115,14 +117,17 @@ export async function callbackHandler(ctx: Context): Promise<void> {
           message_thread_id: user.topicId,
         });
       } catch (notifyError) {
+        captureError(notifyError, { userId, topicId: user.topicId, action: 'sendStatusNotification' });
         logger.error({ error: notifyError, userId, topicId: user.topicId }, 'Failed to send status notification');
       }
     }
 
     logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed, autocloseTimerFailed }, 'Ticket status changed');
   } catch (error) {
+    captureError(error, { userId, status, action: 'updateTicketStatus' });
     logger.error({ error, userId, status }, 'Failed to update ticket status');
     await ctx.answerCallbackQuery({ text: messages.callbacks.statusChangeError }).catch((err: unknown) => {
+      captureError(err, { userId, action: 'answerCallbackQuery' });
       logger.error({ error: err, userId }, 'Failed to answer error callback');
     });
   }
