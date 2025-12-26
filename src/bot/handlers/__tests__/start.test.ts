@@ -1,9 +1,9 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { Context } from 'grammy';
 import { startHandler } from '../start.js';
 
 type MockContext = {
-  reply: jest.Mock;
+  reply: Mock;
   from?: {
     id: number;
     first_name: string;
@@ -16,7 +16,7 @@ describe('startHandler', () => {
 
   beforeEach(() => {
     mockCtx = {
-      reply: jest.fn<() => Promise<unknown>>().mockResolvedValue({}),
+      reply: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
       from: {
         id: 123456,
         first_name: 'TestUser',
@@ -52,7 +52,7 @@ describe('startHandler', () => {
 
   it('should use default name when from is undefined', async () => {
     const ctxWithoutFrom: MockContext = {
-      reply: jest.fn<() => Promise<unknown>>().mockResolvedValue({}),
+      reply: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
     };
 
     await startHandler(ctxWithoutFrom as unknown as Context);
