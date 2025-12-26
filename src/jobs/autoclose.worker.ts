@@ -2,20 +2,92 @@ import { Worker } from 'bullmq';
 import type { Job } from 'bullmq';
 import { getRedisConnection } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
+import { userRepository } from '../db/repositories/user.repository.js';
+import { eventRepository } from '../db/repositories/event.repository.js';
+import { updateTicketCard, type TicketCardData } from '../services/topic.service.js';
+import { bot } from '../bot/bot.js';
 import type { AutocloseJobData } from './queues.js';
 
 let worker: Worker<AutocloseJobData> | null = null;
+
+const CLIENT_MESSAGE =
+  'Ваше обращение было автоматически закрыто из-за отсутствия ответа в течение 7 дней.\n\n' +
+  'Если вопрос всё ещё актуален, просто напишите нам — мы откроем обращение заново.';
+
+const TOPIC_MESSAGE = '// ⏰ Тикет автоматически закрыт (7 дней без ответа клиента)';
 
 async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
   const { userId, topicId } = job.data;
 
   logger.info({ userId, topicId, jobId: job.id }, 'Processing autoclose job');
 
-  // TODO: Implement autoclose logic in task 014
-  // - Check if ticket is still in WAITING_CLIENT status
-  // - Check last activity timestamp from tickets table
-  // - Close ticket if no activity for 7 days
-  await Promise.resolve();
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    logger.warn({ userId, topicId }, 'Autoclose job: user not found');
+    return;
+  }
+
+  if (user.status !== 'WAITING_CLIENT') {
+    logger.debug(
+      { userId, topicId, status: user.status },
+      'Autoclose job: status changed, skipping'
+    );
+    return;
+  }
+
+  const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+
+  try {
+    await userRepository.updateStatus(userId, 'CLOSED');
+  } catch (error) {
+    logger.error({ error, userId, topicId }, 'Failed to update status to CLOSED');
+    throw error;
+  }
+
+  try {
+    await eventRepository.create({
+      userId,
+      eventType: 'CLOSED',
+      oldValue: 'WAITING_CLIENT',
+      newValue: 'CLOSED',
+    });
+  } catch (error) {
+    logger.error({ error, userId, topicId }, 'Failed to create autoclose event');
+  }
+
+  if (user.cardMessageId) {
+    try {
+      const cardData: TicketCardData = {
+        tgUserId: Number(user.tgUserId),
+        firstName: user.tgFirstName,
+        username: user.tgUsername ?? undefined,
+        phone: user.phone ?? undefined,
+        sourceUrl: user.sourceUrl ?? undefined,
+        status: 'CLOSED',
+        createdAt: user.createdAt,
+      };
+      await updateTicketCard(bot.api, user.cardMessageId, userId, cardData);
+    } catch (error) {
+      logger.error({ error, userId, topicId }, 'Failed to update ticket card on autoclose');
+    }
+  }
+
+  try {
+    await bot.api.sendMessage(Number(user.tgUserId), CLIENT_MESSAGE);
+  } catch (error) {
+    logger.warn({ error, userId, topicId }, 'Failed to notify client about autoclose');
+  }
+
+  try {
+    await bot.api.sendMessage(supportGroupId, TOPIC_MESSAGE, {
+      message_thread_id: topicId,
+    });
+  } catch (error) {
+    logger.error({ error, userId, topicId }, 'Failed to send autoclose message to topic');
+  }
+
+  logger.info({ userId, topicId }, 'Ticket autoclosed successfully');
 }
 
 export function startAutocloseWorker(): Worker<AutocloseJobData> {
