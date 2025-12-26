@@ -4,6 +4,7 @@ import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
 import { startSlaTimers, cancelAllSlaTimers } from '../../services/sla.service.js';
+import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
@@ -103,6 +104,11 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     }
 
     await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
+
+    // Cancel autoclose timer if user was waiting for client
+    if (user.status === 'WAITING_CLIENT') {
+      await cancelAutocloseTimer(user.id, user.topicId);
+    }
 
     // Auto change status: WAITING_CLIENT → IN_PROGRESS
     await autoChangeStatus(ctx.api, user, 'CLIENT_REPLY');

@@ -3,6 +3,7 @@ import type { TicketStatus } from '../../generated/prisma/client.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../../services/topic.service.js';
+import { startAutocloseTimer, cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { logger } from '../../utils/logger.js';
 import { STATUS_LABELS } from '../../constants/status.js';
 
@@ -61,6 +62,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
     });
 
     let cardUpdateFailed = false;
+    let autocloseTimerFailed = false;
 
     if (user.cardMessageId) {
       const cardData: TicketCardData = {
@@ -81,12 +83,26 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       }
     }
 
+    // Manage autoclose timers based on status transitions
+    if (status === 'WAITING_CLIENT') {
+      const timerStarted = await startAutocloseTimer(userId, user.topicId);
+      if (!timerStarted) {
+        autocloseTimerFailed = true;
+        logger.warn({ userId, topicId: user.topicId }, 'Autoclose timer failed to start');
+      }
+    } else if (oldStatus === 'WAITING_CLIENT') {
+      await cancelAutocloseTimer(userId, user.topicId);
+    }
+
     await ctx.answerCallbackQuery({ text: `Статус изменён на "${STATUS_LABELS[status]}"` });
 
     if (ctx.chat) {
       let notification = `📝 Статус изменён: ${STATUS_LABELS[oldStatus]} → ${STATUS_LABELS[status]}`;
       if (cardUpdateFailed) {
         notification += '\n⚠️ Не удалось обновить карточку тикета';
+      }
+      if (autocloseTimerFailed) {
+        notification += '\n⚠️ Не удалось запустить таймер автозакрытия';
       }
       try {
         await ctx.api.sendMessage(ctx.chat.id, notification, {
@@ -97,7 +113,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       }
     }
 
-    logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed }, 'Ticket status changed');
+    logger.info({ userId, oldStatus, newStatus: status, cardUpdateFailed, autocloseTimerFailed }, 'Ticket status changed');
   } catch (error) {
     logger.error({ error, userId, status }, 'Failed to update ticket status');
     await ctx.answerCallbackQuery({ text: 'Ошибка при обновлении статуса' }).catch((err: unknown) => {
