@@ -15,8 +15,10 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   const username = ctx.from.username ?? null;
 
   let user = await findUserByTgId(tgUserId);
+  let isNewUser = false;
 
   if (!user) {
+    isNewUser = true;
     logger.info({ tgUserId: ctx.from.id }, 'New user, creating topic');
 
     try {
@@ -53,10 +55,16 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     }
   }
 
+  // Skip mirroring for new users - first message is saved as question in ticket
+  if (isNewUser) {
+    return;
+  }
+
   try {
     const supportGroupId = Number(env.SUPPORT_GROUP_ID);
     await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
   } catch (error) {
     logger.error({ error, tgUserId: ctx.from.id }, 'Failed to mirror message');
+    await ctx.reply('Не удалось доставить сообщение. Пожалуйста, попробуйте ещё раз.');
   }
 }

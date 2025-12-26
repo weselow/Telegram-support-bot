@@ -42,5 +42,27 @@ src/
 
 ## Обработка ошибок
 
-- Ошибки зеркалирования логируются, но не прерывают работу бота
-- Если тип сообщения не поддерживается, функция возвращает null (сообщение не сохраняется в messages_map)
+- Ошибки зеркалирования логируются И пользователь уведомляется
+- Если тип сообщения не поддерживается — логируется warning, возвращается null
+- Первое сообщение нового пользователя НЕ зеркалируется (сохраняется как question в тикете)
+
+## Архитектура (после рефакторинга)
+
+Использован **handler map pattern** для соответствия стандартам:
+- Главная функция `mirrorUserMessage` — 28 строк (лимит 30)
+- Cyclomatic complexity = 2 (лимит 10)
+- Каждый тип сообщения обрабатывается отдельной функцией `sendXxx`
+
+```typescript
+const messageSenders: MessageSender[] = [
+  sendText, sendPhoto, sendVideo, sendDocument,
+  sendVoice, sendAudio, sendVideoNote, sendSticker,
+  sendAnimation, sendContact, sendLocation,
+];
+
+// Основная функция просто итерирует по handlers
+for (const sender of messageSenders) {
+  sentMessage = await sender(api, message, supportGroupId, topicId);
+  if (sentMessage) break;
+}
+```
