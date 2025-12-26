@@ -5,6 +5,7 @@ import { startHandler } from './handlers/start.js';
 import { privateMessageHandler } from './handlers/message.js';
 import { supportMessageHandler } from './handlers/support.js';
 import { callbackHandler } from './handlers/callback.js';
+import { privateEditHandler, supportEditHandler } from './handlers/edit.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
@@ -26,6 +27,28 @@ bot.on('message').filter(
 bot.on('callback_query:data').filter(
   (ctx) => ctx.chat?.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
   callbackHandler
+);
+
+// Handle edited messages in private chat (user → topic)
+bot.on('edit:text').filter(
+  (ctx) => ctx.chat.type === 'private',
+  privateEditHandler
+);
+
+bot.on('edit:caption').filter(
+  (ctx) => ctx.chat.type === 'private',
+  privateEditHandler
+);
+
+// Handle edited messages in support group (support → user DM)
+bot.on('edit:text').filter(
+  (ctx) => ctx.chat.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
+  supportEditHandler
+);
+
+bot.on('edit:caption').filter(
+  (ctx) => ctx.chat.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
+  supportEditHandler
 );
 
 bot.catch((err) => {

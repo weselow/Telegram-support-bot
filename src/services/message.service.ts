@@ -248,3 +248,75 @@ export async function mirrorSupportMessage(
 
   return sentMessage.message_id;
 }
+
+export async function editMirroredUserMessage(
+  api: Api,
+  editedMessage: Message,
+  userId: string,
+  supportGroupId: number
+): Promise<boolean> {
+  const mapping = await messageRepository.findByDmMessageId(userId, editedMessage.message_id);
+  if (!mapping) {
+    logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited message');
+    return false;
+  }
+
+  try {
+    if (editedMessage.text) {
+      await api.editMessageText(supportGroupId, mapping.topicMessageId, editedMessage.text);
+    } else if (editedMessage.caption !== undefined) {
+      await api.editMessageCaption(supportGroupId, mapping.topicMessageId, {
+        caption: editedMessage.caption,
+      });
+    } else {
+      logger.debug({ messageId: editedMessage.message_id }, 'Edited message has no editable content');
+      return false;
+    }
+
+    logger.info(
+      { dmMessageId: editedMessage.message_id, topicMessageId: mapping.topicMessageId },
+      'User message edit mirrored to topic'
+    );
+    return true;
+  } catch (error) {
+    logger.error({ error, messageId: editedMessage.message_id }, 'Failed to edit mirrored message in topic');
+    return false;
+  }
+}
+
+export async function editMirroredSupportMessage(
+  api: Api,
+  editedMessage: Message,
+  userId: string,
+  userTgId: bigint
+): Promise<boolean> {
+  const mapping = await messageRepository.findByTopicMessageId(userId, editedMessage.message_id);
+  if (!mapping) {
+    logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited support message');
+    return false;
+  }
+
+  try {
+    const chatId = Number(userTgId);
+
+    if (editedMessage.text) {
+      await api.editMessageText(chatId, mapping.dmMessageId, editedMessage.text);
+    } else if (editedMessage.caption !== undefined) {
+      await api.editMessageCaption(chatId, mapping.dmMessageId, {
+        caption: editedMessage.caption,
+      });
+    } else {
+      logger.debug({ messageId: editedMessage.message_id }, 'Edited support message has no editable content');
+      return false;
+    }
+
+    logger.info(
+      { topicMessageId: editedMessage.message_id, dmMessageId: mapping.dmMessageId },
+      'Support message edit mirrored to DM'
+    );
+    return true;
+  } catch (error) {
+    logger.error({ error, messageId: editedMessage.message_id }, 'Failed to edit mirrored message in DM');
+    return false;
+  }
+}
