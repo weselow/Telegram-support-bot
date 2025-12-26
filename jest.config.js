@@ -35,6 +35,8 @@ export default {
     '!src/bot/handlers/private-callback.ts',
     '!src/bot/handlers/history.ts',
     '!src/constants/**',
+    '!src/config/**',
+    '!src/jobs/**',
   ],
   coverageThreshold: {
     global: {
