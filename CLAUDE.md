@@ -13,8 +13,7 @@ At start read ALL project standards files. This is MANDATORY:
 - @docs/standards/git-workflow-standard.md
 
 **Backlog Tasks (ОБЯЗАТЕЛЬНО перед началом работы над задачей):**
-- Перед началом работы над любой задачей из `docs/backlog/` — вызвать `/start-task` или прочитать @docs/standards/backlog-workflow-standard.md
-- Определить тип задачи: `tasks/` → `docs/solutions/`, `technical-debt/` → `docs/bugs/`
+- Перед началом работы над любой задачей из `docs/backlog/` — вызвать навык `start-task` или прочитать @docs/standards/backlog-workflow-standard.md
 - Следовать чеклисту из стандарта
 
 CRITICAL: After EVERY summarize or compacting conversation, you MUST:
