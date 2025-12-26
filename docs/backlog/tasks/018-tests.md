@@ -63,7 +63,11 @@ mkdir -p docs/solutions/018-tests
 - Как мокать Telegram API
 - Тестовая БД (SQLite, Docker PostgreSQL)
 
-### 4. По завершении
+### 4. Перед завершением — код-ревью
+
+Запусти команду `/check-code` для проверки кода перед мержем.
+
+### 5. По завершении
 
 ```bash
 git add .
