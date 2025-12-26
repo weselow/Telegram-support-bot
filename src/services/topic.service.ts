@@ -1,12 +1,64 @@
+import { InlineKeyboard } from 'grammy';
 import type { Api } from 'grammy';
 import type { ForumTopic } from 'grammy/types';
+import type { TicketStatus } from '../generated/prisma/client.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+
+const STATUS_LABELS: Record<TicketStatus, string> = {
+  NEW: '🆕 Новый',
+  IN_PROGRESS: '🔧 В работе',
+  WAITING_CLIENT: '⏳ Ждём клиента',
+  CLOSED: '✅ Закрыт',
+};
+
+function buildStatusKeyboard(userId: string, currentStatus: TicketStatus): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+
+  if (currentStatus !== 'IN_PROGRESS') {
+    keyboard.text('🔧 В работу', `status:IN_PROGRESS:${userId}`);
+  }
+  if (currentStatus !== 'WAITING_CLIENT') {
+    keyboard.text('⏳ Ждём клиента', `status:WAITING_CLIENT:${userId}`);
+  }
+  if (currentStatus !== 'CLOSED') {
+    keyboard.text('✅ Закрыть', `status:CLOSED:${userId}`);
+  }
+
+  return keyboard;
+}
 
 export interface TopicUserInfo {
   tgUserId: number;
   firstName: string;
   username?: string | undefined;
+}
+
+export interface TicketCardData {
+  tgUserId: number;
+  firstName: string;
+  username?: string | undefined;
+  phone?: string | undefined;
+  sourceUrl?: string | undefined;
+  status: TicketStatus;
+  createdAt: Date;
+}
+
+function formatCardText(data: TicketCardData): string {
+  const usernameLine = data.username ? `\n👤 Username: @${data.username}` : '';
+  const phoneLine = data.phone ? `\n📱 Телефон: ${data.phone}` : '';
+  const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${data.sourceUrl}` : '';
+
+  return (
+    `📋 *Тикет*\n\n` +
+    `👤 Пользователь: ${data.firstName}` +
+    usernameLine +
+    `\n🆔 Telegram ID: \`${String(data.tgUserId)}\`` +
+    phoneLine +
+    sourceLine +
+    `\n📅 Создан: ${data.createdAt.toLocaleString('ru-RU')}\n\n` +
+    `Статус: ${STATUS_LABELS[data.status]}`
+  );
 }
 
 function formatTopicName(user: TopicUserInfo): string {
@@ -31,24 +83,26 @@ export async function createTopic(api: Api, user: TopicUserInfo): Promise<ForumT
 export async function sendTicketCard(
   api: Api,
   topicId: number,
+  userId: string,
   user: TopicUserInfo,
   sourceUrl?: string
 ): Promise<number> {
-  const usernameLine = user.username ? `\n👤 Username: @${user.username}` : '';
-  const sourceLine = sourceUrl ? `\n🔗 Источник: ${sourceUrl}` : '';
+  const cardData: TicketCardData = {
+    tgUserId: user.tgUserId,
+    firstName: user.firstName,
+    username: user.username,
+    sourceUrl,
+    status: 'NEW',
+    createdAt: new Date(),
+  };
 
-  const cardText =
-    `📋 *Новый тикет*\n\n` +
-    `👤 Пользователь: ${user.firstName}` +
-    usernameLine +
-    `\n🆔 Telegram ID: \`${String(user.tgUserId)}\`` +
-    sourceLine +
-    `\n📅 Создан: ${new Date().toLocaleString('ru-RU')}\n\n` +
-    `Статус: 🆕 Новый`;
+  const cardText = formatCardText(cardData);
+  const keyboard = buildStatusKeyboard(userId, 'NEW');
 
   const message = await api.sendMessage(env.SUPPORT_GROUP_ID, cardText, {
     message_thread_id: topicId,
     parse_mode: 'Markdown',
+    reply_markup: keyboard,
   });
 
   try {
@@ -58,4 +112,19 @@ export async function sendTicketCard(
   }
 
   return message.message_id;
+}
+
+export async function updateTicketCard(
+  api: Api,
+  messageId: number,
+  userId: string,
+  cardData: TicketCardData
+): Promise<void> {
+  const cardText = formatCardText(cardData);
+  const keyboard = buildStatusKeyboard(userId, cardData.status);
+
+  await api.editMessageText(env.SUPPORT_GROUP_ID, messageId, cardText, {
+    parse_mode: 'Markdown',
+    reply_markup: keyboard,
+  });
 }
