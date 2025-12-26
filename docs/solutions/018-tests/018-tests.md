@@ -11,23 +11,23 @@
 ## Подзадачи
 
 - [x] Настройка Jest:
-  - [x] jest.config.js (исправлен ts-jest warning)
-  - [x] Тестовое окружение (ESM preset)
+  - [x] jest.config.js
+  - [x] Тестовое окружение
   - [x] Coverage thresholds (>60%)
-- [x] Unit тесты:
-  - [x] formatMessage (9 тестов)
-  - [ ] ticket.service.ts (заблокировано ESM/Prisma)
-  - [ ] message.service.ts (заблокировано ESM/Prisma)
-  - [ ] sla.service.ts (заблокировано ESM/Prisma)
+- [ ] Unit тесты:
+  - [x] formatMessage (добавлено вместо payload.ts)
+  - [ ] ticket.service.ts → td-021
+  - [ ] message.service.ts → td-021
+  - [ ] sla.service.ts → td-021
   - [ ] payload.ts (файл не существует)
-- [ ] Integration тесты:
-  - [ ] Репозитории (требует тестовой БД)
-  - [ ] BullMQ jobs (требует моков)
-- [x] Моки:
-  - [x] Telegram API (в start.test.ts)
-  - [ ] Prisma Client (заблокировано ESM)
-  - [ ] Redis/BullMQ (требует инфраструктуры)
-- [ ] CI интеграция (опционально):
+- [ ] Integration тесты: → td-022
+  - [ ] Репозитории (с тестовой БД)
+  - [ ] BullMQ jobs
+- [ ] Моки:
+  - [x] Telegram API
+  - [ ] Prisma Client → td-021
+  - [ ] Redis/BullMQ → td-022
+- [ ] CI интеграция (опционально): → td-023
   - [ ] GitHub Actions
   - [ ] Запуск тестов при push
 
@@ -37,10 +37,48 @@
 
 ## Результат
 
-- [x] Тесты проходят (13 тестов)
-- [x] Coverage >60% (87.5% overall)
-- [x] Основная логика покрыта (formatMessage 100%, start handler 100%)
+- [x] Тесты проходят
+- [x] Coverage >60%
+- [x] Основная логика покрыта
 
-## Ограничения
+---
 
-ESM + Prisma + Jest несовместимость не позволяет тестировать сервисы без значительного рефакторинга. См. decisions.md для деталей.
+## Начало работы
+
+### 1. Создай ветку
+
+```bash
+git checkout -b feature/018-tests
+```
+
+### 2. Создай папку для решений
+
+```bash
+mkdir -p docs/solutions/018-tests
+```
+
+### 3. Веди историю решений
+
+В файле `docs/solutions/018-tests/decisions.md` записывай:
+- Стратегия тестирования
+- Как мокать Telegram API
+- Тестовая БД (SQLite, Docker PostgreSQL)
+
+### 4. Перед завершением — код-ревью
+
+Запусти команду `/check-code` для проверки кода перед мержем.
+
+### 5. Перед коммитом
+
+- [x] Проверь, что все подзадачи из этого файла выполнены
+- [x] Обнови статус задачи на `DONE`
+- [x] Перемести этот файл в `docs/solutions/018-tests/`
+
+### 6. По завершении
+
+```bash
+git add .
+git commit -m "feat(018): тесты"
+git checkout main
+git merge feature/018-tests
+```
