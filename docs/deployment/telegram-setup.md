@@ -88,14 +88,14 @@ BOT_TOKEN=7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 **Пример:**
 ```
-URL:  https://web.telegram.org/k/#-3355719084
+URL:  https://web.telegram.org/k/#-1234567890
                                    ↓
-ID:   -100 + 3355719084 = -1003355719084
+ID:   -100 + 1234567890 = -1001234567890
 ```
 
 Сохраните ID:
 ```env
-SUPPORT_GROUP_ID=-1003355719084
+SUPPORT_GROUP_ID=-1001234567890
 ```
 
 ---
