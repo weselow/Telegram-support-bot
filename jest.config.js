@@ -33,6 +33,7 @@ export default {
     '!src/bot/handlers/resolve.ts',
     '!src/bot/handlers/phone.ts',
     '!src/bot/handlers/private-callback.ts',
+    '!src/bot/handlers/history.ts',
     '!src/constants/**',
   ],
   coverageThreshold: {

@@ -8,10 +8,17 @@ import { callbackHandler } from './handlers/callback.js';
 import { privateEditHandler, supportEditHandler } from './handlers/edit.js';
 import { privateCallbackHandler } from './handlers/private-callback.js';
 import { contactHandler } from './handlers/phone.js';
+import { historyHandler } from './handlers/history.js';
 
 export const bot = new Bot(env.BOT_TOKEN);
 
 bot.command('start', startHandler);
+
+// Handle /history command in support group
+bot.command('history').filter(
+  (ctx) => ctx.chat.type === 'supergroup' && String(ctx.chat.id) === env.SUPPORT_GROUP_ID,
+  historyHandler
+);
 
 // Handle private messages (DM)
 bot.on('message').filter(
