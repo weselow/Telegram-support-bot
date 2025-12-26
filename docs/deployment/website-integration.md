@@ -2,189 +2,158 @@
 
 ## Обзор
 
-Пользователь кликает кнопку "Поддержка" на сайте → открывается Telegram с ботом → бот знает откуда пришёл пользователь.
+Пользователь кликает кнопку "Поддержка" на сайте → переходит через redirect сервис → открывается Telegram с ботом → бот знает откуда пришёл пользователь и его геолокацию.
 
-## Deep Link формат
-
-```
-https://t.me/BOT_USERNAME?start=PAYLOAD
-```
-
-**PAYLOAD** содержит:
-- URL страницы (откуда пришёл пользователь)
-- Timestamp (для проверки актуальности)
-- HMAC подпись (защита от подделки)
-
----
-
-## Генерация ссылки на сервере
-
-### Формат payload
+## Архитектура
 
 ```
-base64url(url) + "." + timestamp + "." + hmac_signature
-```
-
-### Пример на JavaScript (Node.js)
-
-```javascript
-import crypto from 'crypto';
-
-const BOT_USERNAME = 'your_support_bot';
-const SECRET_KEY = process.env.SUPPORT_LINK_SECRET; // секретный ключ
-const LINK_TTL = 24 * 60 * 60; // 24 часа
-
-function generateSupportLink(pageUrl) {
-  const timestamp = Math.floor(Date.now() / 1000);
-
-  // Base64url encode URL
-  const urlEncoded = Buffer.from(pageUrl)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
-  // Create signature
-  const dataToSign = `${urlEncoded}.${timestamp}`;
-  const signature = crypto
-    .createHmac('sha256', SECRET_KEY)
-    .update(dataToSign)
-    .digest('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-    .slice(0, 16); // короткая подпись
-
-  const payload = `${urlEncoded}.${timestamp}.${signature}`;
-
-  return `https://t.me/${BOT_USERNAME}?start=${payload}`;
-}
-
-// Использование
-const link = generateSupportLink('https://example.com/product/123');
-// => https://t.me/your_support_bot?start=aHR0cHM6Ly9leGFtcGxl...
-```
-
-### Пример на PHP
-
-```php
-<?php
-const BOT_USERNAME = 'your_support_bot';
-const SECRET_KEY = 'your-secret-key';
-
-function generateSupportLink(string $pageUrl): string {
-    $timestamp = time();
-
-    // Base64url encode
-    $urlEncoded = rtrim(strtr(base64_encode($pageUrl), '+/', '-_'), '=');
-
-    // Create signature
-    $dataToSign = "{$urlEncoded}.{$timestamp}";
-    $signature = substr(
-        rtrim(strtr(base64_encode(hash_hmac('sha256', $dataToSign, SECRET_KEY, true)), '+/', '-_'), '='),
-        0, 16
-    );
-
-    $payload = "{$urlEncoded}.{$timestamp}.{$signature}";
-
-    return "https://t.me/" . BOT_USERNAME . "?start={$payload}";
-}
+┌─────────────┐     ┌──────────────────────────────┐     ┌──────────────┐
+│    Сайт     │ ──► │  /ask-support endpoint       │ ──► │   Telegram   │
+│   (клик)    │     │  (HTTP сервер в боте)        │     │              │
+└─────────────┘     │                              │     └──────┬───────┘
+                    │  1. Проверка User-Agent      │            │
+                    │  2. Получение IP + Referer   │            │
+                    │  3. GeoIP → город (DaData)   │            │
+                    │  4. Сохранение в Redis       │            │
+                    │  5. Redirect в Telegram      │            │
+                    └──────────────────────────────┘            │
+                                                                ▼
+                                                   ┌────────────────────────┐
+                                                   │  Бот                   │
+                                                   │  - Получает SHORT_ID   │
+                                                   │  - Достаёт из Redis    │
+                                                   │  - Создаёт тикет       │
+                                                   └────────────────────────┘
 ```
 
 ---
 
-## Кнопка на сайте
+## Интеграция на сайте
 
-### HTML
+### Одна ссылка для всех сайтов
 
 ```html
-<a href="https://t.me/your_bot?start=PAYLOAD"
-   target="_blank"
-   class="support-button">
+<a href="https://support.yoursite.com/ask-support" class="support-button">
   💬 Нужна помощь?
 </a>
 ```
 
-### React компонент
+Referer передаётся автоматически браузером.
 
-```jsx
-function SupportButton({ pageUrl }) {
-  const [link, setLink] = useState(null);
+### Важно
 
-  useEffect(() => {
-    fetch('/api/support-link', {
-      method: 'POST',
-      body: JSON.stringify({ url: pageUrl })
-    })
-      .then(res => res.json())
-      .then(data => setLink(data.link));
-  }, [pageUrl]);
+- Ссылка должна быть обычной `<a>`, не через JavaScript
+- Не добавлять `rel="noreferrer"` — иначе Referer не передастся
+- HTTPS → HTTPS работает корректно
 
-  if (!link) return null;
+---
 
-  return (
-    <a href={link} target="_blank" rel="noopener noreferrer">
-      💬 Нужна помощь?
-    </a>
-  );
-}
+## Что собирается
+
+| Данные | Источник | Показывается |
+|--------|----------|--------------|
+| URL страницы | Referer header | Агентам в тикете |
+| IP адрес | X-Forwarded-For | Агентам в тикете |
+| Город | DaData API по IP | Агентам в тикете |
+
+**Пользователю IP не показывается.**
+
+---
+
+## Карточка тикета (для агентов)
+
+```
+👤 Иван Петров (@ivanpetrov)
+📱 +7 999 123-45-67
+🌐 Источник: https://shop.com/product/iphone-15
+📍 IP: 95.67.xx.xx (Саратов)
+📝 Статус: Новый
 ```
 
 ---
 
-## Валидация в боте
+## Защита от ботов
 
-Бот при получении `/start PAYLOAD`:
+Endpoint `/ask-support` проверяет User-Agent и блокирует:
 
-1. **Разбирает payload** на части: `urlEncoded.timestamp.signature`
-2. **Проверяет подпись** — пересчитывает HMAC и сравнивает
-3. **Проверяет timestamp** — не старше 24 часов
-4. **Декодирует URL** — сохраняет как контекст обращения
+- Пустой User-Agent
+- Поисковые боты: Googlebot, Bingbot, YandexBot, Baidu
+- CLI: curl, wget, python-requests, Go-http-client
+- Headless браузеры: HeadlessChrome, PhantomJS
 
-```typescript
-function validatePayload(payload: string): { url: string } | null {
-  const parts = payload.split('.');
-  if (parts.length !== 3) return null;
+При блокировке возвращается 403 Forbidden.
 
-  const [urlEncoded, timestamp, signature] = parts;
+Дополнительно: rate limit 10 запросов в минуту с одного IP.
 
-  // Check timestamp (24h TTL)
-  const ts = parseInt(timestamp, 10);
-  const now = Math.floor(Date.now() / 1000);
-  if (now - ts > 24 * 60 * 60) return null;
+---
 
-  // Verify signature
-  const expectedSig = createHmac(...)...;
-  if (signature !== expectedSig) return null;
+## Переменные окружения
 
-  // Decode URL
-  const url = Buffer.from(urlEncoded, 'base64url').toString('utf8');
+```env
+# Домен для redirect сервиса
+SUPPORT_DOMAIN=support.yoursite.com
 
-  return { url };
-}
+# Username бота (без @)
+BOT_USERNAME=your_support_bot
+
+# DaData API ключ для GeoIP
+DADATA_API_KEY=your-api-key
 ```
 
 ---
 
-## Флоу пользователя
+## Инфраструктура
+
+### Docker Compose
+
+```yaml
+services:
+  bot:
+    # ... существующие настройки
+    ports:
+      - "3000:3000"  # HTTP сервер для /ask-support
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - bot
+
+volumes:
+  caddy_data:
+```
+
+### Caddyfile
 
 ```
-1. Клик по кнопке на сайте
-   ↓
-2. Открывается Telegram → бот
-   ↓
-3. Бот: "Здравствуйте! Вижу, вы пришли со страницы: [Product Name]"
-   ↓
-4. Бот: "Поделитесь номером телефона для связи"
-   [📱 Отправить контакт]  [Пропустить]
-   ↓
-5. Пользователь отправляет контакт (или пропускает)
-   ↓
-6. Бот: "Опишите вашу проблему"
-   ↓
-7. Пользователь пишет сообщение
-   ↓
-8. Создаётся тикет, сообщение пересылается в топик поддержки
+support.yoursite.com {
+    reverse_proxy bot:3000
+}
+```
+
+Caddy автоматически получит SSL сертификат от Let's Encrypt.
+
+---
+
+## Схема данных в Redis
+
+```
+# Redirect данные (TTL 1 час)
+redirect:{shortId} → {
+  url: "https://shop.com/product/123",
+  ip: "95.67.12.34",
+  city: "Саратов"
+}
+
+# GeoIP кеш (TTL 7 дней)
+geoip:{ip} → {
+  city: "Саратов"
+}
 ```
 
 ---
@@ -193,28 +162,31 @@ function validatePayload(payload: string): { url: string } | null {
 
 | Компонент | Статус |
 |-----------|--------|
-| Deep link формат | ✅ Спроектирован |
-| Генерация ссылки (примеры) | ✅ Документация |
-| Поле `sourceUrl` в БД | ✅ Есть в схеме |
-| Валидация payload в боте | ⏳ TODO |
-| Сохранение source URL | ⏳ TODO |
-| Запрос телефона при старте | ⏳ TODO (есть только при реопене) |
-| Полный onboarding flow | ⏳ TODO |
-
-**Текущий флоу:** пользователь пишет любое сообщение → сразу создаётся тикет.
+| Архитектура | ✅ Спроектирована |
+| HTTP endpoint /ask-support | ⏳ TODO (задача 019) |
+| Фильтр ботов | ⏳ TODO |
+| GeoIP через DaData | ⏳ TODO |
+| Кеширование GeoIP | ⏳ TODO |
+| Обработка в startHandler | ⏳ TODO |
+| Карточка тикета с IP/городом | ⏳ TODO |
+| Docker + Caddy | ⏳ TODO |
 
 ---
 
-## Переменные окружения
+## Флоу пользователя
 
-Добавить в `.env`:
-
-```env
-# Secret key for signing support links (generate random string)
-SUPPORT_LINK_SECRET=your-random-secret-key-here
 ```
-
-Сгенерировать ключ:
-```bash
-openssl rand -base64 32
+1. Клик по кнопке на сайте
+   ↓
+2. Redirect через /ask-support
+   ↓
+3. Открывается Telegram → бот с ?start=SHORT_ID
+   ↓
+4. Бот: "Здравствуйте! Опишите вашу проблему"
+   ↓
+5. Пользователь пишет сообщение
+   ↓
+6. Создаётся тикет с данными:
+   - URL источника
+   - IP + город (видны только агентам)
 ```
