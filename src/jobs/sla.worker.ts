@@ -2,9 +2,18 @@ import { Worker } from 'bullmq';
 import type { Job } from 'bullmq';
 import { getRedisConnection } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
+import { userRepository } from '../db/repositories/user.repository.js';
+import { bot } from '../bot/bot.js';
 import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
+
+const SLA_MESSAGES = {
+  first: '// ⏰ SLA: 10 минут без ответа',
+  second: '// ⚠️ SLA: 30 минут без ответа',
+  escalation: '// 🚨 SLA BREACH: 2 часа без ответа!',
+} as const;
 
 // SLA levels: first = 10 min, second = 30 min, escalation = 2 hours
 async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
@@ -12,11 +21,25 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
 
   logger.info({ userId, topicId, level, jobId: job.id }, 'Processing SLA job');
 
-  // TODO: Implement SLA notification logic in task 013
-  // - Check if ticket is still open
-  // - Send reminder to support group
-  // - Schedule next level if needed
-  await Promise.resolve();
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    logger.warn({ userId, topicId, level }, 'SLA job: user not found');
+    return;
+  }
+
+  if (user.status === 'CLOSED') {
+    logger.debug({ userId, topicId, level }, 'SLA job: ticket already closed, skipping');
+    return;
+  }
+
+  const message = SLA_MESSAGES[level];
+  const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+
+  await bot.api.sendMessage(supportGroupId, message, {
+    message_thread_id: topicId,
+  });
+
+  logger.info({ userId, topicId, level }, 'SLA reminder sent');
 }
 
 export function startSlaWorker(): Worker<SlaJobData> {

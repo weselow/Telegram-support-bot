@@ -3,6 +3,7 @@ import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
+import { startSlaTimers } from '../../services/sla.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
@@ -57,6 +58,9 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
 
       await userRepository.updateCardMessageId(user.id, cardMessageId);
 
+      // Start SLA timers for new ticket
+      await startSlaTimers(user.id, topic.message_thread_id);
+
       await ctx.reply(
         'Спасибо за обращение! Ваш запрос принят в работу. ' +
           'Сотрудник поддержки свяжется с вами в ближайшее время.'
@@ -86,6 +90,9 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
         await ctx.api.sendMessage(supportGroupId, '🔄 Пользователь переоткрыл обращение', {
           message_thread_id: user.topicId,
         });
+
+        // Start SLA timers for reopened ticket
+        await startSlaTimers(user.id, user.topicId);
 
         // Ask for phone confirmation
         await ctx.reply(buildPhoneConfirmMessage(user.phone), {
