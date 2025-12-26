@@ -46,12 +46,24 @@ export async function sendDmToAdmins(
     )
   );
 
-  const sent = results.filter((r) => r.status === 'fulfilled').length;
-  const failed = results.filter((r) => r.status === 'rejected').length;
+  let sent = 0;
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      sent++;
+    } else {
+      const admin = admins[index];
+      logger.warn(
+        {
+          adminId: admin?.userId,
+          adminName: admin?.firstName,
+          error: result.reason,
+        },
+        'Failed to send DM to admin (bot not started by user)'
+      );
+    }
+  });
 
-  if (failed > 0) {
-    logger.warn({ sent, failed }, 'Some admin DMs failed (bot not started by user)');
-  } else {
+  if (sent === admins.length) {
     logger.info({ sent }, 'Admin DMs sent successfully');
   }
 }

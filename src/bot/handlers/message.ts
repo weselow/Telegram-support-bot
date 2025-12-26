@@ -3,7 +3,7 @@ import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
-import { startSlaTimers } from '../../services/sla.service.js';
+import { startSlaTimers, cancelAllSlaTimers } from '../../services/sla.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
@@ -91,7 +91,8 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
           message_thread_id: user.topicId,
         });
 
-        // Start SLA timers for reopened ticket
+        // Cancel any stale timers and start fresh SLA timers
+        await cancelAllSlaTimers(user.id, user.topicId);
         await startSlaTimers(user.id, user.topicId);
 
         // Ask for phone confirmation

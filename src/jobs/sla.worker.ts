@@ -37,16 +37,28 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   }
 
   const supportGroupId = Number(env.SUPPORT_GROUP_ID);
-  const admins = await getGroupAdmins(bot.api);
-  const mentions = formatAdminMentions(admins);
 
+  let admins;
+  try {
+    admins = await getGroupAdmins(bot.api);
+  } catch (error) {
+    logger.error({ error, userId, topicId, level }, 'Failed to get group admins for SLA reminder');
+    throw error;
+  }
+
+  const mentions = formatAdminMentions(admins);
   const baseMessage = SLA_MESSAGES[level];
   const message = `// ${baseMessage}\n${mentions}`;
 
-  await bot.api.sendMessage(supportGroupId, message, {
-    message_thread_id: topicId,
-    parse_mode: 'Markdown',
-  });
+  try {
+    await bot.api.sendMessage(supportGroupId, message, {
+      message_thread_id: topicId,
+      parse_mode: 'Markdown',
+    });
+  } catch (error) {
+    logger.error({ error, userId, topicId, level }, 'Failed to send SLA reminder to topic');
+    throw error;
+  }
 
   if (level === 'escalation') {
     const groupIdForLink = String(supportGroupId).replace('-100', '');
