@@ -1,0 +1,27 @@
+# Caddyfile for support bot website integration
+# Replace {$SUPPORT_DOMAIN} with your actual domain
+
+{$SUPPORT_DOMAIN} {
+    # Automatic HTTPS via Let's Encrypt
+
+    # Reverse proxy to the bot's HTTP server
+    reverse_proxy localhost:3000 {
+        # Pass real IP for GeoIP detection
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/support.log
+        format json
+    }
+}

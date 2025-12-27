@@ -34,6 +34,7 @@ export interface TicketCardData {
   username?: string | undefined;
   phone?: string | undefined;
   sourceUrl?: string | undefined;
+  sourceCity?: string | undefined;
   status: TicketStatus;
   createdAt: Date;
 }
@@ -42,6 +43,7 @@ function formatCardText(data: TicketCardData): string {
   const usernameLine = data.username ? `\n👤 Username: @${data.username}` : '';
   const phoneLine = data.phone ? `\n📱 Телефон: ${data.phone}` : '';
   const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${data.sourceUrl}` : '';
+  const cityLine = data.sourceCity ? `\n📍 Город: ${data.sourceCity}` : '';
 
   return (
     `📋 *Тикет*\n\n` +
@@ -50,6 +52,7 @@ function formatCardText(data: TicketCardData): string {
     `\n🆔 Telegram ID: \`${String(data.tgUserId)}\`` +
     phoneLine +
     sourceLine +
+    cityLine +
     `\n📅 Создан: ${data.createdAt.toLocaleString('ru-RU')}\n\n` +
     `Статус: ${STATUS_LABELS_WITH_EMOJI[data.status]}`
   );
@@ -74,18 +77,24 @@ export async function createTopic(api: Api, user: TopicUserInfo): Promise<ForumT
   return topic;
 }
 
+export interface SendTicketCardOptions {
+  sourceUrl?: string | undefined;
+  sourceCity?: string | undefined;
+}
+
 export async function sendTicketCard(
   api: Api,
   topicId: number,
   userId: string,
   user: TopicUserInfo,
-  sourceUrl?: string
+  options?: SendTicketCardOptions
 ): Promise<number> {
   const cardData: TicketCardData = {
     tgUserId: user.tgUserId,
     firstName: user.firstName,
     username: user.username,
-    sourceUrl,
+    sourceUrl: options?.sourceUrl,
+    sourceCity: options?.sourceCity,
     status: 'NEW',
     createdAt: new Date(),
   };

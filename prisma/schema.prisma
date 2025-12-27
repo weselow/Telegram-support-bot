@@ -41,6 +41,7 @@ model User {
   status        TicketStatus @default(NEW)
   phone         String?
   sourceUrl     String?      @map("source_url")
+  sourceCity    String?      @map("source_city")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
