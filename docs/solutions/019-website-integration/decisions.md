@@ -1,59 +1,89 @@
-# Decisions: 019 Website Integration
+# Decisions: Интеграция с сайтом — endpoint /ask-support
 
 ## Контекст
 
-Нужно позволить пользователям переходить в бота с сайта, сохраняя контекст (URL, IP, город).
+Требовалось реализовать интеграцию бота с сайтом: при клике на кнопку "Поддержка" пользователь переходит в Telegram-бота, а бот получает информацию о том, откуда пришёл пользователь (URL, IP, город).
 
 ## Принятые решения
 
-### HTTP фреймворк: Fastify
-- Быстрее Express
-- Лучше TypeScript поддержка
-- Меньше размер
+### HTTP сервер
+- **Fastify** вместо Express — легковеснее, встроенная типизация, лучшая производительность
+- `trustProxy: true` — для корректного получения IP через reverse proxy (Caddy/nginx)
 
-### Архитектура
-- Endpoint `/ask-support` в боте
-- Referer → URL страницы
-- IP из X-Forwarded-For
-- GeoIP через DaData (бесплатный endpoint)
+### Защита от ботов
+- Проверка User-Agent с blocklist поисковых ботов и CLI-инструментов
+- Rate limit 10 req/min по IP (Redis, fail-open при недоступности)
 
-### База данных
-- Добавляем только `sourceCity` в User
-- URL не сохраняем в БД (только передаём в Redis для карточки)
+### GeoIP
+- DaData API (`/suggestions/api/4_1/rs/iplocate/address`)
+- Кеширование в Redis на 7 дней
+- Graceful degradation — если DaData недоступен, продолжаем без города
 
-### DaData
-- Endpoint: `https://suggestions.dadata.ru/suggestions/api/4_1/rs/iplocate/address`
-- Кеш в Redis: 7 дней
-- Сохраняем полный JSON ответа для пересылки на внешний endpoint
+### Передача контекста
+- Short ID (8 hex символов) в deep link: `t.me/BOT?start=abc12345`
+- Данные в Redis с TTL 1 час
+- Атомарное GETDEL при получении (one-time use)
+- Дополнительный контекст пользователя с TTL 24 часа (между /start и первым сообщением)
 
-### Защита
-- User-Agent фильтр (блокируем ботов)
-- Rate limit: 10 req/min по IP
+### Валидация payload
+- Regex `/^[0-9a-f]{8}$/i` для защиты от некорректных данных
 
 ## Что реализовано
 
-- [x] Переменные окружения (BOT_USERNAME, HTTP_PORT, SUPPORT_DOMAIN, DADATA_API_KEY)
-- [x] Prisma schema (sourceCity)
-- [x] HTTP сервер (Fastify) - src/http/server.ts
-- [x] Фильтр ботов - src/http/middleware/bot-filter.ts
-- [x] GeoIP сервис - src/services/geoip.service.ts
-- [x] Endpoint /ask-support - src/http/routes/ask-support.ts
-- [x] Endpoint /health - src/http/routes/health.ts
-- [x] Интеграция в index.ts
-- [x] startHandler с SHORT_ID - src/bot/handlers/start.ts
-- [x] Карточка тикета с IP/городом - src/services/topic.service.ts
-- [x] Тесты - src/http/middleware/__tests__/bot-filter.test.ts
-- [x] Docker/Caddy - docker-compose.yml, Caddyfile.example
-- [x] Документация - .env.example, decisions.md
+- [x] HTTP сервер (Fastify) с endpoints /ask-support и /health
+- [x] Фильтр ботов по User-Agent
+- [x] Rate limit по IP (10 req/min)
+- [x] GeoIP через DaData с кешированием
+- [x] Обработка payload в /start handler
+- [x] Карточка тикета с IP и городом
+- [x] Миграция Prisma для source_city
+- [x] Тесты для bot-filter, rate-limit, start handler
+- [x] Документация docs/deployment/website-integration.md
+
+## Что НЕ реализовано
+
+- [ ] Docker + Caddy конфигурация → отдельная задача инфраструктуры
+- [ ] Мониторинг rate limit → TD-027
+- [ ] Расширенное логирование GeoIP → TD-028
+- [ ] Branded types для IP/URL → TD-029
 
 ## Технические детали
 
-### Redis ключи
+### Схема Redis
+
 ```
-redirect:{shortId} → { url, ip, city, dadataResponse }  TTL 1h
-geoip:{ip} → { city, response }                         TTL 7d
+redirect:{shortId}      → RedirectData (TTL 1h)
+user_context:{tgUserId} → UserRedirectContext (TTL 24h)
+geoip:{ip}              → GeoIpResult (TTL 7d)
+rate:ip:{ip}            → counter (TTL 60s)
 ```
 
-### Порты
-- 3000 — HTTP сервер (Fastify)
-- Caddy проксирует HTTPS → 3000
+### Формат карточки тикета
+
+```
+📋 Тикет
+
+👤 Пользователь: Иван
+👤 Username: @ivanpetrov
+📱 Телефон: +79991234567
+🔗 Источник: https://shop.com/product/123
+🌐 IP: 95.67.12.34 (Саратов)
+📅 Создан: 27.12.2025, 12:30:45
+
+Статус: 🆕 Новый
+```
+
+### Изменённые/созданные файлы
+
+- `src/http/server.ts` — Fastify HTTP сервер
+- `src/http/routes/ask-support.ts` — endpoint /ask-support
+- `src/http/routes/health.ts` — endpoint /health
+- `src/http/middleware/bot-filter.ts` — фильтр ботов
+- `src/services/geoip.service.ts` — GeoIP через DaData
+- `src/services/redirect-context.service.ts` — контекст между /start и сообщением
+- `src/services/rate-limit.service.ts` — добавлен checkIpRateLimit
+- `src/bot/handlers/start.ts` — обработка payload
+- `src/bot/handlers/message.ts` — передача контекста в тикет
+- `src/services/topic.service.ts` — IP+город в карточке
+- `src/config/env.ts` — BOT_USERNAME, DADATA_API_KEY, HTTP_PORT
+- `prisma/schema.prisma` — поле source_city

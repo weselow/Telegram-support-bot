@@ -44,17 +44,20 @@ function formatCardText(data: TicketCardData): string {
   const usernameLine = data.username ? `\n👤 Username: @${data.username}` : '';
   const phoneLine = data.phone ? `\n📱 Телефон: ${data.phone}` : '';
   const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${data.sourceUrl}` : '';
-  const cityLine = data.sourceCity ? `\n📍 Город: ${data.sourceCity}` : '';
-  const ipLine = data.sourceIp ? `\n🌐 IP: \`${data.sourceIp}\`` : '';
+
+  // Combine IP and city: "🌐 IP: 95.67.12.34 (Саратов)" or just IP if no city
+  let ipLine = '';
+  if (data.sourceIp) {
+    const cityPart = data.sourceCity ? ` (${data.sourceCity})` : '';
+    ipLine = `\n🌐 IP: \`${data.sourceIp}\`${cityPart}`;
+  }
 
   return (
     `📋 *Тикет*\n\n` +
     `👤 Пользователь: ${data.firstName}` +
     usernameLine +
-    `\n🆔 Telegram ID: \`${String(data.tgUserId)}\`` +
     phoneLine +
     sourceLine +
-    cityLine +
     ipLine +
     `\n📅 Создан: ${data.createdAt.toLocaleString('ru-RU')}\n\n` +
     `Статус: ${STATUS_LABELS_WITH_EMOJI[data.status]}`
