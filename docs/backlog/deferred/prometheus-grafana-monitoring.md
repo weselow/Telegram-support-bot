@@ -1,6 +1,6 @@
 # Мониторинг через Prometheus/Grafana
 
-**Источник:** TD-025
+**Источник:** TD-025, TD-027
 **Приоритет:** Низкий
 **Тип:** Инфраструктура
 
@@ -27,6 +27,17 @@
 - PostgreSQL query time
 - Memory/CPU usage
 - Queue sizes (BullMQ)
+
+### Silent Failures (из TD-027)
+- GeoIP cache hits/misses
+- GeoIP API errors count
+- Redis connection errors
+- Graceful degradation events (когда fallback сработал)
+
+### Алерты
+- `geoip_api_errors_total > 10/min` — проблемы с DaData API
+- `redis_errors_total > 5/min` — проблемы с Redis
+- `telegram_429_total > 3/min` — rate limiting Telegram API
 
 ## Реализация
 
