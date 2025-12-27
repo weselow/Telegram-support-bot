@@ -65,5 +65,10 @@ export async function sendDmToAdmins(
 
   if (sent === admins.length) {
     logger.info({ sent }, 'Admin DMs sent successfully');
+  } else if (sent === 0 && admins.length > 0) {
+    logger.error(
+      { adminCount: admins.length },
+      'CRITICAL: Failed to send DM to ANY admin during SLA escalation'
+    );
   }
 }
