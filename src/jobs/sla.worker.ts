@@ -51,6 +51,10 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
     throw error;
   }
 
+  if (admins.length === 0) {
+    logger.error({ userId, topicId, level }, 'No human admins found for SLA reminder - notification will be ineffective');
+  }
+
   const mentions = formatAdminMentions(admins);
   const baseMessage = SLA_MESSAGES[level];
   const message = `// ${baseMessage}\n${mentions}`;
