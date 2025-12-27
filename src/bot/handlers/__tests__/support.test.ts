@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { Context } from 'grammy';
 import { GrammyError } from 'grammy';
 import { supportMessageHandler } from '../support.js';
+import { messages } from '../../../config/messages.js';
 
 // Mock dependencies
 vi.mock('../../../services/ticket.service.js', () => ({
@@ -147,6 +148,18 @@ describe('supportMessageHandler', () => {
 
       expect(findUserByTopicId).not.toHaveBeenCalled();
     });
+
+    it('should ignore internal captions starting with #internal', async () => {
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        caption: '#internal Secret photo',
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(findUserByTopicId).not.toHaveBeenCalled();
+    });
   });
 
   describe('user lookup', () => {
@@ -234,7 +247,7 @@ describe('supportMessageHandler', () => {
       await supportMessageHandler(mockCtx as unknown as Context);
 
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining(''),
+        messages.support.botBlocked,
         { message_thread_id: 100 }
       );
     });
@@ -245,9 +258,18 @@ describe('supportMessageHandler', () => {
       await supportMessageHandler(mockCtx as unknown as Context);
 
       expect(mockCtx.reply).toHaveBeenCalledWith(
-        expect.stringContaining(''),
+        messages.support.deliveryFailed,
         { message_thread_id: 100 }
       );
+    });
+
+    it('should not throw when notification reply fails', async () => {
+      mirrorSupportMessage.mockRejectedValue(new Error('Network error'));
+      mockCtx.reply.mockRejectedValue(new Error('Reply also failed'));
+
+      await expect(
+        supportMessageHandler(mockCtx as unknown as Context)
+      ).resolves.not.toThrow();
     });
   });
 });
