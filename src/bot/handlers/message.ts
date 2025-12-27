@@ -98,7 +98,8 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
 
     if (error instanceof GrammyError) {
       if (error.error_code === 429) {
-        logger.warn({ tgUserId: ctx.from.id }, 'Rate limit hit');
+        const retryAfter = error.parameters.retry_after ?? 'unknown';
+        logger.warn({ tgUserId: ctx.from.id, retryAfter }, 'Telegram rate limit hit (429)');
         await ctx.reply(messages.rateLimitError);
         return;
       }
