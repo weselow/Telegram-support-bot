@@ -12,7 +12,7 @@ vi.mock('../../config/redis-client.js', () => ({
 }));
 
 // Import after mocking
-const { checkRateLimit } = await import('../rate-limit.service.js');
+const { checkRateLimit, checkIpRateLimit } = await import('../rate-limit.service.js');
 
 describe('rate-limit.service', () => {
   beforeEach(() => {
@@ -82,6 +82,53 @@ describe('rate-limit.service', () => {
 
       expect(mockRedis.incr).toHaveBeenCalledWith('rate:user:111');
       expect(mockRedis.incr).toHaveBeenCalledWith('rate:user:222');
+    });
+  });
+
+  describe('checkIpRateLimit', () => {
+    it('should allow request when under limit', async () => {
+      mockRedis.incr.mockResolvedValue(1);
+      mockRedis.expire.mockResolvedValue(1);
+      mockRedis.ttl.mockResolvedValue(60);
+
+      const result = await checkIpRateLimit('192.168.1.1');
+
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(9);
+      expect(mockRedis.incr).toHaveBeenCalledWith('rate:ip:192.168.1.1');
+      expect(mockRedis.expire).toHaveBeenCalledWith('rate:ip:192.168.1.1', 60);
+    });
+
+    it('should deny request when over limit', async () => {
+      mockRedis.incr.mockResolvedValue(11);
+      mockRedis.ttl.mockResolvedValue(45);
+
+      const result = await checkIpRateLimit('192.168.1.1');
+
+      expect(result.allowed).toBe(false);
+      expect(result.remaining).toBe(0);
+      expect(result.resetInSeconds).toBe(45);
+    });
+
+    it('should fail open when Redis is unavailable', async () => {
+      mockRedis.incr.mockRejectedValue(new Error('Connection refused'));
+
+      const result = await checkIpRateLimit('192.168.1.1');
+
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(10);
+    });
+
+    it('should handle different IPs correctly', async () => {
+      mockRedis.incr.mockResolvedValue(1);
+      mockRedis.expire.mockResolvedValue(1);
+      mockRedis.ttl.mockResolvedValue(60);
+
+      await checkIpRateLimit('10.0.0.1');
+      await checkIpRateLimit('10.0.0.2');
+
+      expect(mockRedis.incr).toHaveBeenCalledWith('rate:ip:10.0.0.1');
+      expect(mockRedis.incr).toHaveBeenCalledWith('rate:ip:10.0.0.2');
     });
   });
 });

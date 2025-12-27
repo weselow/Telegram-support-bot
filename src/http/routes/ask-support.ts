@@ -5,6 +5,7 @@ import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 import { botFilterHook } from '../middleware/bot-filter.js';
 import { getLocationByIp, type DaDataLocation } from '../../services/geoip.service.js';
+import { checkIpRateLimit } from '../../services/rate-limit.service.js';
 
 const REDIRECT_PREFIX = 'redirect:';
 const REDIRECT_TTL = 60 * 60; // 1 hour in seconds
@@ -27,6 +28,17 @@ export function askSupportRoute(fastify: FastifyInstance): void {
 
   fastify.get('/ask-support', async (request: FastifyRequest, reply: FastifyReply) => {
     const ip = request.ip;
+
+    // Check rate limit by IP
+    const rateLimitResult = await checkIpRateLimit(ip);
+    if (!rateLimitResult.allowed) {
+      reply.header('Retry-After', rateLimitResult.resetInSeconds);
+      return reply.status(429).send({
+        error: 'Too Many Requests',
+        retryAfter: rateLimitResult.resetInSeconds,
+      });
+    }
+
     const referer = request.headers.referer ?? request.headers.referrer ?? null;
 
     // Get GeoIP data

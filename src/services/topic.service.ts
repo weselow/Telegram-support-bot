@@ -35,6 +35,7 @@ export interface TicketCardData {
   phone?: string | undefined;
   sourceUrl?: string | undefined;
   sourceCity?: string | undefined;
+  sourceIp?: string | undefined;
   status: TicketStatus;
   createdAt: Date;
 }
@@ -44,6 +45,7 @@ function formatCardText(data: TicketCardData): string {
   const phoneLine = data.phone ? `\n📱 Телефон: ${data.phone}` : '';
   const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${data.sourceUrl}` : '';
   const cityLine = data.sourceCity ? `\n📍 Город: ${data.sourceCity}` : '';
+  const ipLine = data.sourceIp ? `\n🌐 IP: \`${data.sourceIp}\`` : '';
 
   return (
     `📋 *Тикет*\n\n` +
@@ -53,6 +55,7 @@ function formatCardText(data: TicketCardData): string {
     phoneLine +
     sourceLine +
     cityLine +
+    ipLine +
     `\n📅 Создан: ${data.createdAt.toLocaleString('ru-RU')}\n\n` +
     `Статус: ${STATUS_LABELS_WITH_EMOJI[data.status]}`
   );
@@ -80,6 +83,7 @@ export async function createTopic(api: Api, user: TopicUserInfo): Promise<ForumT
 export interface SendTicketCardOptions {
   sourceUrl?: string | undefined;
   sourceCity?: string | undefined;
+  sourceIp?: string | undefined;
 }
 
 export async function sendTicketCard(
@@ -95,6 +99,7 @@ export async function sendTicketCard(
     username: user.username,
     sourceUrl: options?.sourceUrl,
     sourceCity: options?.sourceCity,
+    sourceIp: options?.sourceIp,
     status: 'NEW',
     createdAt: new Date(),
   };

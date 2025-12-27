@@ -80,6 +80,7 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
         {
           sourceUrl: redirectContext?.sourceUrl ?? undefined,
           sourceCity: redirectContext?.sourceCity ?? undefined,
+          sourceIp: redirectContext?.ip ?? undefined,
         }
       );
 
