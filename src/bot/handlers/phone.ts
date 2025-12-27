@@ -3,6 +3,7 @@ import type { Context } from 'grammy';
 import type { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'grammy/types';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
+import { handleOnboardingContact } from './onboarding.js';
 import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 
@@ -98,6 +99,12 @@ export async function phoneChangeHandler(ctx: Context): Promise<void> {
 
 export async function contactHandler(ctx: Context): Promise<void> {
   if (!ctx.message?.contact || !ctx.from) {
+    return;
+  }
+
+  // Check if this is part of onboarding flow
+  const handledByOnboarding = await handleOnboardingContact(ctx);
+  if (handledByOnboarding) {
     return;
   }
 

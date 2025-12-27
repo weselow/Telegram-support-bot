@@ -45,6 +45,7 @@
 | [017](../solutions/017-bot-blocked-handling/017-bot-blocked-handling.md) | Обработка блокировки | DONE | Низкий |
 | [018](../solutions/018-tests/018-tests.md) | Тесты | DONE | Средний |
 | [019](../solutions/019-website-integration/019-website-integration.md) | Интеграция с сайтом (/ask-support) | DONE | Высокий |
+| [020](../solutions/020-onboarding-flow/020-onboarding-flow.md) | Onboarding Flow для пользователей | DONE | Средний |
 
 ---
 

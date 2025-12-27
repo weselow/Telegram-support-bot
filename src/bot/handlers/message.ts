@@ -1,15 +1,14 @@
 import type { Context } from 'grammy';
 import { GrammyError } from 'grammy';
-import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
-import { createTopic, sendTicketCard } from '../../services/topic.service.js';
+import { findUserByTgId } from '../../services/ticket.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
-import { startSlaTimers, cancelAllSlaTimers } from '../../services/sla.service.js';
+import { cancelAllSlaTimers, startSlaTimers } from '../../services/sla.service.js';
 import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { checkRateLimit } from '../../services/rate-limit.service.js';
-import { getRedirectContext } from '../../services/redirect-context.service.js';
+import { handleOnboarding } from './onboarding.js';
+import { setOnboardingState } from '../../services/onboarding.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
-import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
@@ -31,8 +30,6 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   });
 
   const tgUserId = BigInt(ctx.from.id);
-  const firstName = ctx.from.first_name;
-  const username = ctx.from.username ?? null;
 
   // Check rate limit before processing
   const rateLimitResult = await checkRateLimit(tgUserId);
@@ -41,65 +38,21 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     return;
   }
 
-  let user = await findUserByTgId(tgUserId);
-  let isNewUser = false;
-
-  if (!user) {
-    isNewUser = true;
-    logger.info({ tgUserId: ctx.from.id }, 'New user, creating topic');
-
-    // Get redirect context if user came from website
-    const redirectContext = await getRedirectContext(tgUserId);
-
-    try {
-      const topic = await createTopic(ctx.api, {
-        tgUserId: ctx.from.id,
-        firstName,
-        username: username ?? undefined,
-      });
-
-      user = await createTicket({
-        tgUserId,
-        tgUsername: username,
-        tgFirstName: firstName,
-        topicId: topic.message_thread_id,
-        question: ctx.message.text,
-        sourceUrl: redirectContext?.sourceUrl ?? undefined,
-        sourceCity: redirectContext?.sourceCity ?? undefined,
-      });
-
-      const cardMessageId = await sendTicketCard(
-        ctx.api,
-        topic.message_thread_id,
-        user.id,
-        {
-          tgUserId: ctx.from.id,
-          firstName,
-          username: username ?? undefined,
-        },
-        {
-          sourceUrl: redirectContext?.sourceUrl ?? undefined,
-          sourceCity: redirectContext?.sourceCity ?? undefined,
-          sourceIp: redirectContext?.ip ?? undefined,
-        }
-      );
-
-      await userRepository.updateCardMessageId(user.id, cardMessageId);
-
-      // Start SLA timers for new ticket
-      await startSlaTimers(user.id, topic.message_thread_id);
-
-      await ctx.reply(messages.ticketCreated);
-    } catch (error) {
-      captureError(error, { tgUserId: String(ctx.from.id), action: 'createTicket' });
-      logger.error({ error, tgUserId: ctx.from.id }, 'Failed to create ticket');
-      await ctx.reply(messages.ticketCreateError);
-      return;
-    }
+  // Check if user is in onboarding flow
+  const handledByOnboarding = await handleOnboarding(ctx);
+  if (handledByOnboarding) {
+    return;
   }
 
-  // Skip mirroring for new users - first message is saved as question in ticket
-  if (isNewUser) {
+  // Get existing user
+  const user = await findUserByTgId(tgUserId);
+
+  if (!user) {
+    // User has no ticket yet and is not in onboarding
+    // This can happen if they skip /start and write directly
+    // Start onboarding and send welcome
+    await setOnboardingState(tgUserId, { step: 'awaiting_question' });
+    await ctx.reply(messages.welcome);
     return;
   }
 

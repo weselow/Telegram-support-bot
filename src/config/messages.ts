@@ -4,6 +4,18 @@ import { z } from 'zod';
 
 const messagesSchema = z.object({
   welcome: z.string(),
+
+  onboarding: z.object({
+    ticketCreated: z.string(),
+    askPhoneNew: z.string(),
+    askPhoneExisting: z.string(),
+    askPhoneChange: z.string(),
+    phoneSaved: z.string(),
+    phoneSkipped: z.string(),
+    phoneConfirmed: z.string(),
+    phoneUpdated: z.string(),
+  }),
+
   ticketCreated: z.string(),
   ticketCreateError: z.string(),
   deliveryFailed: z.string(),
@@ -74,6 +86,11 @@ const messagesSchema = z.object({
     phoneConfirm: z.string(),
     phoneChange: z.string(),
     sendContact: z.string(),
+    onboardingSendPhone: z.string(),
+    onboardingSkipPhone: z.string(),
+    onboardingPhoneYes: z.string(),
+    onboardingPhoneChange: z.string(),
+    onboardingKeepOld: z.string(),
   }),
 });
 
