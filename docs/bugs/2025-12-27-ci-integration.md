@@ -22,6 +22,9 @@
 - **Prisma generate** перед тестами
 - **PostgreSQL 16** и **Redis 7** как services для интеграционных тестов
 - Порты: PostgreSQL 5433, Redis 6380 (как в локальном docker-compose)
+- **Timeouts** — 10 мин для lint/unit, 15 мин для integration
+- **Concurrency control** — отмена старых workflows при новом push
+- **Coverage reporting** — отчёт покрытия сохраняется как artifact (7 дней)
 
 ## Изменённые файлы
 
