@@ -40,21 +40,29 @@
 | Файл | Было | Стало | Тестов |
 |------|------|-------|--------|
 | `start.ts` | 50% | 100% | +6 |
-| `ask-support.ts` | 9.37% | 37.5% | +6 |
-| `geoip.service.ts` | - | - | +19 |
-| `redirect-context.service.ts` | - | - | +6 |
+| `ask-support.ts` | 9.37% | 100% | +12 |
+| `geoip.service.ts` | excluded | 97.36% | +19 |
+| `redirect-context.service.ts` | excluded | 100% | +6 |
 
-**Всего:** +37 тестов (96 → 133)
+**Общий coverage:** 86% → **91.62%**
+
+**Всего:** +43 теста (96 → 139)
 
 ## Изменённые файлы
 
 - `src/services/__tests__/geoip.service.test.ts` — создан
 - `src/services/__tests__/redirect-context.service.test.ts` — создан
-- `src/http/routes/__tests__/ask-support.test.ts` — создан
+- `src/http/routes/__tests__/ask-support.test.ts` — создан (+6 route тестов)
 - `src/bot/handlers/__tests__/start.test.ts` — расширен
+- `vitest.config.ts` — обновлён coverage exclude
 
 ## Важно для разработчика
 
-`geoip.service` и `redirect-context.service` исключены из coverage отчёта в `vitest.config.ts` (вместе с `src/services/**`), но тесты существуют и выполняются.
+Coverage exclude обновлён: вместо `'src/services/**'` теперь исключены только конкретные файлы без тестов:
+- `status.service.ts`
+- `autoclose.service.ts`
+- `topic.service.ts`
+- `group.service.ts`
 
-Для добавления их в coverage — убрать `'src/services/**'` из exclude и добавить конкретные файлы.
+Также добавлены исключения для инфраструктурных файлов:
+- `redis-client.ts`, `server.ts`, `health.ts`, `onboarding.ts`
