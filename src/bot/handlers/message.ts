@@ -7,6 +7,7 @@ import { autoChangeStatus } from '../../services/status.service.js';
 import { startSlaTimers, cancelAllSlaTimers } from '../../services/sla.service.js';
 import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { checkRateLimit } from '../../services/rate-limit.service.js';
+import { getRedirectContext } from '../../services/redirect-context.service.js';
 import { buildPhoneConfirmKeyboard, buildPhoneConfirmMessage } from './phone.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { env } from '../../config/env.js';
@@ -47,6 +48,9 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
     isNewUser = true;
     logger.info({ tgUserId: ctx.from.id }, 'New user, creating topic');
 
+    // Get redirect context if user came from website
+    const redirectContext = await getRedirectContext(tgUserId);
+
     try {
       const topic = await createTopic(ctx.api, {
         tgUserId: ctx.from.id,
@@ -60,6 +64,8 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
         tgFirstName: firstName,
         topicId: topic.message_thread_id,
         question: ctx.message.text,
+        sourceUrl: redirectContext?.sourceUrl ?? undefined,
+        sourceCity: redirectContext?.sourceCity ?? undefined,
       });
 
       const cardMessageId = await sendTicketCard(
@@ -70,6 +76,10 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
           tgUserId: ctx.from.id,
           firstName,
           username: username ?? undefined,
+        },
+        {
+          sourceUrl: redirectContext?.sourceUrl ?? undefined,
+          sourceCity: redirectContext?.sourceCity ?? undefined,
         }
       );
 

@@ -3,6 +3,7 @@ import { logger } from './utils/logger.js';
 import { startBot, stopBot } from './bot/bot.js';
 import { connectDatabase, disconnectDatabase } from './db/client.js';
 import { startWorkers, stopWorkers } from './jobs/index.js';
+import { startHttpServer, stopHttpServer } from './http/server.js';
 import { captureError } from './config/sentry.js';
 
 async function main(): Promise<void> {
@@ -14,6 +15,8 @@ async function main(): Promise<void> {
   startWorkers();
   logger.info('Job workers started');
 
+  await startHttpServer();
+
   await startBot();
 }
 
@@ -22,6 +25,7 @@ async function shutdown(): Promise<void> {
 
   try {
     await stopBot();
+    await stopHttpServer();
     await stopWorkers();
     await disconnectDatabase();
     logger.info('Graceful shutdown complete');

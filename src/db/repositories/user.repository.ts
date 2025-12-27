@@ -7,6 +7,7 @@ export interface CreateUserData {
   tgFirstName: string;
   topicId: number;
   sourceUrl?: string | undefined;
+  sourceCity?: string | undefined;
 }
 
 export const userRepository = {
@@ -24,6 +25,7 @@ export const userRepository = {
         tgFirstName: data.tgFirstName,
         topicId: data.topicId,
         sourceUrl: data.sourceUrl ?? null,
+        sourceCity: data.sourceCity ?? null,
       },
     });
   },

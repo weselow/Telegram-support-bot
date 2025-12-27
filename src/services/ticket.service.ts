@@ -9,6 +9,7 @@ export interface CreateTicketData {
   tgFirstName: string;
   topicId: number;
   sourceUrl?: string | undefined;
+  sourceCity?: string | undefined;
   question?: string | undefined;
 }
 
@@ -25,6 +26,7 @@ export async function createTicket(data: CreateTicketData): Promise<User> {
     tgFirstName: data.tgFirstName,
     topicId: data.topicId,
     sourceUrl: data.sourceUrl,
+    sourceCity: data.sourceCity,
   });
 
   await eventRepository.create({
