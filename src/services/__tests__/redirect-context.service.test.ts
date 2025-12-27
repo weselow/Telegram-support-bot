@@ -12,7 +12,7 @@ vi.mock('../../config/redis-client.js', () => ({
 vi.mock('../../utils/logger.js', () => ({
   logger: {
     debug: vi.fn(),
-    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -58,7 +58,7 @@ describe('redirect-context.service', () => {
       );
     });
 
-    it('should log warning but not throw on Redis failure', async () => {
+    it('should log error but not throw on Redis failure', async () => {
       const mockRedis = {
         setex: vi.fn().mockRejectedValue(new Error('Redis error')),
         get: vi.fn(),
@@ -76,7 +76,7 @@ describe('redirect-context.service', () => {
       // Should not throw
       await expect(storeRedirectContext(BigInt(123456), context)).resolves.toBeUndefined();
 
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ tgUserId: '123456' }),
         'Failed to store redirect context',
       );
@@ -120,7 +120,7 @@ describe('redirect-context.service', () => {
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
-    it('should return null and log warning on Redis failure', async () => {
+    it('should return null and log error on Redis failure', async () => {
       const mockRedis = {
         setex: vi.fn(),
         get: vi.fn().mockRejectedValue(new Error('Redis error')),
@@ -131,7 +131,7 @@ describe('redirect-context.service', () => {
       const result = await getRedirectContext(BigInt(123456));
 
       expect(result).toBeNull();
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ tgUserId: '123456' }),
         'Failed to get redirect context',
       );

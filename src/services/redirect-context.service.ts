@@ -23,7 +23,7 @@ export async function storeRedirectContext(
     await redis.setex(cacheKey, CONTEXT_TTL, JSON.stringify(context));
     logger.debug({ tgUserId: tgUserId.toString() }, 'Stored redirect context');
   } catch (error) {
-    logger.warn({ error, tgUserId: tgUserId.toString() }, 'Failed to store redirect context');
+    logger.error({ error, tgUserId: tgUserId.toString() }, 'Failed to store redirect context');
   }
 }
 
@@ -44,7 +44,7 @@ export async function getRedirectContext(
 
     return JSON.parse(data) as UserRedirectContext;
   } catch (error) {
-    logger.warn({ error, tgUserId: tgUserId.toString() }, 'Failed to get redirect context');
+    logger.error({ error, tgUserId: tgUserId.toString() }, 'Failed to get redirect context');
     return null;
   }
 }

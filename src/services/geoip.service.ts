@@ -55,7 +55,7 @@ export async function getLocationByIp(ip: string): Promise<GeoIpResult> {
       };
     }
   } catch (error) {
-    logger.warn({ error, ip }, 'Failed to read GeoIP cache');
+    logger.error({ error, ip }, 'Failed to read GeoIP cache');
   }
 
   // Fetch from DaData
@@ -90,7 +90,7 @@ export async function getLocationByIp(ip: string): Promise<GeoIpResult> {
       await redis.setex(cacheKey, GEOIP_CACHE_TTL, JSON.stringify(data.location));
       logger.debug({ ip }, 'Cached GeoIP response');
     } catch (error) {
-      logger.warn({ error, ip }, 'Failed to cache GeoIP response');
+      logger.error({ error, ip }, 'Failed to cache GeoIP response');
     }
 
     return {
