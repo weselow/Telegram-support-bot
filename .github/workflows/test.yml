@@ -17,6 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    env:
+      # Тестовые значения для валидации конфига при typecheck
+      BOT_TOKEN: "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+      BOT_USERNAME: "test_support_bot"
+      SUPPORT_GROUP_ID: "-1001234567890"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test"
+      REDIS_URL: "redis://localhost:6379"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +53,14 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    env:
+      # Тестовые значения для валидации конфига при запуске тестов
+      BOT_TOKEN: "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+      BOT_USERNAME: "test_support_bot"
+      SUPPORT_GROUP_ID: "-1001234567890"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test"
+      REDIS_URL: "redis://localhost:6379"
 
     steps:
       - uses: actions/checkout@v4
