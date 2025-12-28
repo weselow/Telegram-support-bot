@@ -220,12 +220,18 @@ export async function mirrorUserMessage(
   message: Message,
   userId: string,
   topicId: number,
-  supportGroupId: number
+  supportGroupId: number,
+  options?: { channelPrefix?: 'TG' }
 ): Promise<number | null> {
   let sentMessage: Message | null = null;
 
+  // Add [TG] prefix for text messages when user has both channels linked
+  const messageWithPrefix = options?.channelPrefix === 'TG' && message.text
+    ? { ...message, text: `[TG] ${message.text}` }
+    : message;
+
   for (const sender of topicSenders) {
-    sentMessage = await sender(api, message, supportGroupId, topicId);
+    sentMessage = await sender(api, messageWithPrefix, supportGroupId, topicId);
     if (sentMessage) break;
   }
 

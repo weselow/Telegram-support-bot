@@ -3,6 +3,7 @@ import type { User, TicketStatus } from '../generated/prisma/client.js';
 import { userRepository } from '../db/repositories/user.repository.js';
 import { eventRepository } from '../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from './topic.service.js';
+import { connectionManager } from '../http/ws/connection-manager.js';
 import { logger } from '../utils/logger.js';
 
 export type StatusTrigger = 'SUPPORT_REPLY' | 'CLIENT_REPLY' | 'CLIENT_RESOLVED' | 'CLIENT_REOPEN';
@@ -56,6 +57,13 @@ export async function autoChangeStatus(
       oldValue: oldStatus,
       newValue: newStatus,
     });
+
+    // Notify web client about status change
+    if (user.webSessionId) {
+      connectionManager.sendToUser(user.id, 'status', {
+        status: newStatus,
+      });
+    }
 
     // Update ticket card (only for Telegram users with required fields)
     if (user.cardMessageId && user.tgUserId && user.tgFirstName) {

@@ -79,7 +79,9 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
       }
     }
 
-    const mirrorResult = await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId);
+    // Add [TG] prefix if user has both web and Telegram channels linked
+    const mirrorOptions = user.webSessionId ? { channelPrefix: 'TG' as const } : undefined;
+    const mirrorResult = await mirrorUserMessage(ctx.api, ctx.message, user.id, user.topicId, supportGroupId, mirrorOptions);
 
     if (mirrorResult === null) {
       await ctx.reply(messages.unsupportedMessageType);

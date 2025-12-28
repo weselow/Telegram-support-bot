@@ -3,6 +3,9 @@ import type { ClientMessage } from './types.js';
 import { connectionManager } from './connection-manager.js';
 import { webChatService } from '../../services/web-chat.service.js';
 import { checkKeyRateLimit } from '../../services/rate-limit.service.js';
+import { userRepository } from '../../db/repositories/user.repository.js';
+import { bot } from '../../bot/bot.js';
+import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
 const MESSAGE_MAX_LENGTH = 4000;
@@ -48,7 +51,7 @@ export async function handleWebSocketMessage(
       break;
 
     case 'typing':
-      handleTyping(data as { isTyping: boolean }, session);
+      await handleTyping(data as { isTyping: boolean }, session);
       break;
 
     case 'close':
@@ -90,7 +93,7 @@ async function handleMessage(
   }
 
   try {
-    const message = await webChatService.sendMessage(session.sessionId, text);
+    const message = await webChatService.sendMessage(session.sessionId, text, data.replyTo);
 
     // Confirm message to sender
     connectionManager.send(session.sessionId, 'message', {
@@ -106,13 +109,32 @@ async function handleMessage(
   }
 }
 
-function handleTyping(
+async function handleTyping(
   data: { isTyping: boolean },
   session: SessionInfo
-): void {
-  // Forward typing indicator to support (could be sent to topic)
-  // For now, just log it
-  logger.debug({ sessionId: session.sessionId, isTyping: data.isTyping }, 'User typing indicator');
+): Promise<void> {
+  // Only forward when user starts typing
+  if (!data.isTyping) {
+    return;
+  }
+
+  try {
+    const user = await userRepository.findByWebSessionId(session.sessionId);
+    if (!user?.topicId) {
+      logger.debug({ sessionId: session.sessionId }, 'No topic for typing indicator');
+      return;
+    }
+
+    // Send typing action to support topic
+    await bot.api.sendChatAction(env.SUPPORT_GROUP_ID, 'typing', {
+      message_thread_id: user.topicId,
+    });
+
+    logger.debug({ sessionId: session.sessionId, topicId: user.topicId }, 'Typing indicator sent to topic');
+  } catch (error) {
+    // Non-critical, just log
+    logger.debug({ error, sessionId: session.sessionId }, 'Failed to send typing indicator');
+  }
 }
 
 async function handleClose(

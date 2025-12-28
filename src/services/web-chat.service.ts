@@ -147,7 +147,7 @@ export const webChatService = {
   /**
    * Send a message from web chat
    */
-  async sendMessage(sessionId: string, text: string): Promise<ChatMessage> {
+  async sendMessage(sessionId: string, text: string, replyTo?: string): Promise<ChatMessage> {
     const user = await userRepository.findByWebSessionId(sessionId);
     if (!user) {
       throw new Error('Session not found');
@@ -178,10 +178,23 @@ export const webChatService = {
       await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
     }
 
+    // Look up replyTo message to get topic message ID
+    let replyToMessageId: number | undefined;
+    if (replyTo) {
+      const replyToMessage = await messageRepository.findById(replyTo);
+      if (replyToMessage?.topicMessageId) {
+        replyToMessageId = replyToMessage.topicMessageId;
+      }
+    }
+
     // Send message to topic
-    const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, {
+    const sendOptions: { message_thread_id: number; reply_to_message_id?: number } = {
       message_thread_id: topicId,
-    });
+    };
+    if (replyToMessageId) {
+      sendOptions.reply_to_message_id = replyToMessageId;
+    }
+    const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, sendOptions);
 
     // Save to message map
     const message = await messageRepository.createWebMessage({

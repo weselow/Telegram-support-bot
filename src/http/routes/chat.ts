@@ -229,8 +229,10 @@ export function chatRoutes(fastify: FastifyInstance): void {
       });
     }
 
+    const { replyTo } = request.body;
+
     try {
-      const message = await webChatService.sendMessage(sessionId, text);
+      const message = await webChatService.sendMessage(sessionId, text, replyTo);
       return await reply.status(201).send({
         success: true,
         data: {
