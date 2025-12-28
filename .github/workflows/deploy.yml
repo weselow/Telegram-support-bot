@@ -28,7 +28,14 @@ name: Deploy
 on:
   push:
     branches: [main]
-  workflow_dispatch: # Ручной запуск
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/test.yml'  # Изменения в тестовом workflow
+      - '.vscode/**'
+      - '.idea/**'
+      - 'LICENSE'
+  workflow_dispatch: # Ручной запуск (для принудительного деплоя)
 
 # Отменить предыдущие запуски при новом push
 concurrency:
