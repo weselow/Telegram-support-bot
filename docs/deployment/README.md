@@ -35,7 +35,7 @@ PostgreSQL и Redis **не перезапускаются** при деплое 
 |-----|----------|--------|
 | `DEPLOY_PATH` | Путь к проекту на сервере | `/opt/support-bot` |
 | `BOT_USERNAME` | Username бота (без @) | `my_support_bot` |
-| `SUPPORT_DOMAIN` | Домен для ссылок (опционально) | `support.example.com` |
+| `SUPPORT_DOMAIN` | Домен для Caddy (HTTPS) | `support.example.com` |
 
 ---
 
@@ -209,11 +209,34 @@ chmod 600 ~/.ssh/github_deploy
 ```
 /opt/support-bot/
 ├── docker-compose.yml      # Только этот файл (без override!)
+├── Caddyfile               # Конфиг reverse proxy (создаётся при деплое)
 ├── .env                    # Создаётся автоматически при деплое
 └── .volumes/
     ├── postgres/           # Данные PostgreSQL
-    └── redis/              # Данные Redis
+    ├── redis/              # Данные Redis
+    └── caddy/              # SSL сертификаты и конфиг Caddy
+        ├── data/
+        └── config/
 ```
 
 **Важно:** `docker-compose.override.yml` — только для development!
-На production его НЕ должно быть — иначе откроются порты postgres/redis.
+На production его НЕ должно быть.
+
+---
+
+## 8. Caddy (HTTPS)
+
+Caddy автоматически получает SSL сертификаты от Let's Encrypt.
+
+**Требования:**
+- Домен должен указывать на IP сервера (A-запись)
+- Порты 80 и 443 должны быть открыты
+
+**Проверка:**
+```bash
+# Логи Caddy
+docker compose logs caddy
+
+# Статус сертификата
+curl -I https://your-domain.com
+```

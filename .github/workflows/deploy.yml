@@ -19,7 +19,7 @@
 # Требуемые variables:
 #   - DEPLOY_PATH (путь на сервере, например /opt/support-bot)
 #   - BOT_USERNAME (username бота)
-#   - SUPPORT_DOMAIN (домен для ссылок, опционально)
+#   - SUPPORT_DOMAIN (домен для Caddy, например support.example.com)
 #
 # =============================================================================
 
@@ -113,6 +113,26 @@ jobs:
             set -e
 
             cd ${{ vars.DEPLOY_PATH }}
+
+            # Создать директории для Caddy
+            mkdir -p .volumes/caddy/data .volumes/caddy/config
+
+            # Создать/обновить Caddyfile
+            cat > Caddyfile << 'CADDYFILE'
+            ${{ vars.SUPPORT_DOMAIN }} {
+                reverse_proxy app:3000
+                encode gzip
+                log {
+                    output stdout
+                    format console
+                }
+                header {
+                    X-Content-Type-Options nosniff
+                    X-Frame-Options DENY
+                    Referrer-Policy strict-origin-when-cross-origin
+                }
+            }
+            CADDYFILE
 
             # Создать/обновить .env файл
             cat > .env << 'EOF'

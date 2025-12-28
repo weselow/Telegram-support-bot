@@ -1,0 +1,33 @@
+# =============================================================================
+# Caddyfile — конфигурация reverse proxy
+# =============================================================================
+#
+# Замените {$SUPPORT_DOMAIN} на ваш домен или используйте переменную окружения
+#
+# Для локального тестирования без домена:
+#   :80 {
+#       reverse_proxy app:3000
+#   }
+#
+# =============================================================================
+
+{$SUPPORT_DOMAIN:localhost} {
+    # Проксирование на app контейнер
+    reverse_proxy app:3000
+
+    # Логи
+    log {
+        output stdout
+        format console
+    }
+
+    # Сжатие
+    encode gzip
+
+    # Заголовки безопасности
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
