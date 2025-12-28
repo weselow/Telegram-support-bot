@@ -112,7 +112,13 @@ jobs:
           script: |
             set -e
 
+            # Создать директорию проекта если не существует
+            mkdir -p ${{ vars.DEPLOY_PATH }}
             cd ${{ vars.DEPLOY_PATH }}
+
+            # Скачать/обновить docker-compose.yml
+            curl -fsSL -o docker-compose.yml \
+              https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
 
             # Создать директории для volumes
             mkdir -p .volumes/postgres .volumes/redis .volumes/caddy/data .volumes/caddy/config

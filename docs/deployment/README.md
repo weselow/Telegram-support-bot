@@ -72,20 +72,17 @@ ssh-copy-id -i ~/.ssh/github_deploy.pub deploy@YOUR_SERVER_IP
 cat ~/.ssh/github_deploy
 ```
 
-### 2.4 Первоначальный запуск (один раз)
+### 2.4 Права на DEPLOY_PATH
 
 ```bash
-# Создать директорию проекта
+# Убедиться что deploy может писать в /opt/
 sudo mkdir -p /opt/support-bot
 sudo chown deploy:deploy /opt/support-bot
-cd /opt/support-bot
-
-# Скачать docker-compose.yml
-curl -O https://raw.githubusercontent.com/weselow/Telegram-support-bot/main/docker-compose.yml
 ```
 
-**Готово!** Остальное создаст GitHub Actions при первом деплое:
-- `.env`, `Caddyfile`, директории `.volumes/`
+**Готово!** GitHub Actions при первом деплое сам создаст:
+- `docker-compose.yml`, `.env`, `Caddyfile`
+- Директории `.volumes/`
 - Скачает образы и запустит контейнеры
 
 ---
