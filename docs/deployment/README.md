@@ -35,6 +35,7 @@ PostgreSQL и Redis **не перезапускаются** при деплое 
 |-----|----------|--------|
 | `DEPLOY_PATH` | Путь к проекту на сервере | `/opt/support-bot` |
 | `BOT_USERNAME` | Username бота (без @) | `my_support_bot` |
+| `SUPPORT_DOMAIN` | Домен для ссылок (опционально) | `support.example.com` |
 
 ---
 

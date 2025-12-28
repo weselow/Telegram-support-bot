@@ -19,6 +19,7 @@
 # Требуемые variables:
 #   - DEPLOY_PATH (путь на сервере, например /opt/support-bot)
 #   - BOT_USERNAME (username бота)
+#   - SUPPORT_DOMAIN (домен для ссылок, опционально)
 #
 # =============================================================================
 
@@ -128,6 +129,7 @@ jobs:
 
             # HTTP
             HTTP_PORT=3000
+            SUPPORT_DOMAIN=${{ vars.SUPPORT_DOMAIN }}
 
             # Optional
             DADATA_API_KEY=${{ secrets.DADATA_API_KEY }}
