@@ -153,6 +153,7 @@ jobs:
             SUPPORT_GROUP_ID=${{ secrets.SUPPORT_GROUP_ID }}
 
             # Database
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
             DATABASE_URL=postgresql://postgres:${{ secrets.DATABASE_PASSWORD }}@postgres:5432/support_bot
 
             # Redis

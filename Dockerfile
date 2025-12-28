@@ -39,8 +39,9 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy Prisma schema (for migrations) and generated client from builder
+# Copy Prisma schema, config, and generated client from builder
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 COPY --from=builder /app/src/generated ./src/generated
 
 # Copy Prisma CLI for migrations (prisma is devDependency, need to copy from builder)
