@@ -1,0 +1,154 @@
+# =============================================================================
+# Deploy Workflow
+# =============================================================================
+#
+# Триггер: push в main (после успешных тестов)
+#
+# Шаги:
+#   1. Build Docker образ
+#   2. Push в GitHub Container Registry (latest + previous)
+#   3. SSH на prod сервер
+#   4. Обновить только app контейнер (postgres/redis не трогаем)
+#
+# Требуемые secrets:
+#   - PROD_HOST, PROD_USER, SSH_PRIVATE_KEY (подключение к серверу)
+#   - BOT_TOKEN, SUPPORT_GROUP_ID (Telegram)
+#   - DATABASE_PASSWORD (пароль PostgreSQL)
+#   - DADATA_API_KEY, SENTRY_DSN (опционально)
+#
+# Требуемые variables:
+#   - DEPLOY_PATH (путь на сервере, например /opt/support-bot)
+#   - BOT_USERNAME (username бота)
+#
+# =============================================================================
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Ручной запуск
+
+# Отменить предыдущие запуски при новом push
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Сначала прогоняем тесты
+  # ---------------------------------------------------------------------------
+  test:
+    uses: ./.github/workflows/test.yml
+
+  # ---------------------------------------------------------------------------
+  # Build и Push образа
+  # ---------------------------------------------------------------------------
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Переименовать текущий latest в previous (для отката)
+      - name: Tag previous image
+        continue-on-error: true # Игнорировать если previous не существует
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+                     ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:previous || true
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:previous || true
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Deploy на production сервер
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            cd ${{ vars.DEPLOY_PATH }}
+
+            # Создать/обновить .env файл
+            cat > .env << 'EOF'
+            # Telegram
+            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            BOT_USERNAME=${{ vars.BOT_USERNAME }}
+            SUPPORT_GROUP_ID=${{ secrets.SUPPORT_GROUP_ID }}
+
+            # Database
+            DATABASE_URL=postgresql://postgres:${{ secrets.DATABASE_PASSWORD }}@postgres:5432/support_bot
+
+            # Redis
+            REDIS_URL=redis://redis:6379
+
+            # HTTP
+            HTTP_PORT=3000
+
+            # Optional
+            DADATA_API_KEY=${{ secrets.DADATA_API_KEY }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+
+            # Environment
+            NODE_ENV=production
+            LOG_LEVEL=info
+            EOF
+
+            # Скачать новый образ app (postgres/redis не трогаем)
+            docker compose pull app
+
+            # Перезапустить только app
+            docker compose up -d --no-deps app
+
+            # Проверить что контейнер запустился
+            sleep 5
+            docker compose ps app | grep -q "Up" || exit 1
+
+            # Очистка старых образов
+            docker image prune -f
+
+            echo "Deploy completed successfully!"

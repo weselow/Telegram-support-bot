@@ -1,7 +1,40 @@
+# =============================================================================
+# Docker Compose для Telegram Support Bot
+# =============================================================================
+#
+# ЗАПУСК:
+#
+#   Development (локальная сборка):
+#     docker compose build        # собрать образ локально
+#     docker compose up -d        # запустить все сервисы
+#
+#   Production (готовый образ из GitHub Container Registry):
+#     docker compose pull app     # скачать образ из ghcr.io
+#     docker compose up -d        # запустить все сервисы
+#
+#   Обновление только app (без перезапуска postgres/redis):
+#     docker compose pull app
+#     docker compose up -d --no-deps app
+#
+#   Откат на предыдущую версию:
+#     docker compose pull app --quiet  # (изменить тег на :previous в image)
+#     docker compose up -d --no-deps app
+#
+# ЛОГИКА:
+#   - image: используется при `docker compose pull` (production)
+#   - build: используется при `docker compose build` (development)
+#   - Если есть оба — pull скачивает image, build собирает локально
+#
+# =============================================================================
+
 name: support-bot
 
 services:
+  # ---------------------------------------------------------------------------
+  # App - основное приложение (бот + HTTP сервер)
+  # ---------------------------------------------------------------------------
   app:
+    image: ghcr.io/weselow/telegram-support-bot:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,6 +56,9 @@ services:
     networks:
       - support-bot-network
 
+  # ---------------------------------------------------------------------------
+  # PostgreSQL - основная база данных
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     container_name: support-bot-postgres
@@ -44,6 +80,9 @@ services:
     networks:
       - support-bot-network
 
+  # ---------------------------------------------------------------------------
+  # Redis - кэш, очереди BullMQ, rate limiting
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: support-bot-redis
