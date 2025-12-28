@@ -47,6 +47,12 @@
 | [019](../solutions/019-website-integration/019-website-integration.md) | Интеграция с сайтом (/ask-support) | DONE | Высокий |
 | [020](../solutions/020-onboarding-flow/020-onboarding-flow.md) | Onboarding Flow для пользователей | DONE | Средний |
 
+### Этап 6: Web-интеграция
+
+| # | Задача | Статус | Приоритет |
+|---|--------|--------|-----------|
+| [021](tasks/021-web-chat-api.md) | Web Chat API | TODO | Высокий |
+
 ---
 
 ## Технический долг (Выполнено)
@@ -60,7 +66,7 @@
 
 ## Идеи на будущее
 
-- [Web-чат интеграция](ideas/web-chat-integration.md)
+- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → создана задача [021](tasks/021-web-chat-api.md)
 
 ---
 
