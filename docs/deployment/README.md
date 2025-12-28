@@ -72,22 +72,7 @@ ssh-copy-id -i ~/.ssh/github_deploy.pub deploy@YOUR_SERVER_IP
 cat ~/.ssh/github_deploy
 ```
 
-### 2.4 Авторизация в GitHub Container Registry
-
-**Шаг 1: Создать Personal Access Token (в браузере)**
-```
-GitHub → Аватар → Settings → Developer settings
-→ Personal access tokens → Tokens (classic) → Generate new token
-
-Права: ☑ read:packages
-```
-
-**Шаг 2: На сервере от пользователя deploy**
-```bash
-echo "YOUR_GITHUB_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
-```
-
-### 2.5 Первоначальный запуск
+### 2.4 Первоначальный запуск
 
 ```bash
 cd /opt/support-bot
@@ -187,14 +172,6 @@ cat .env
 
 # Проверить подключение к БД
 docker compose exec postgres psql -U postgres -c "SELECT 1"
-```
-
-### Нет доступа к ghcr.io
-
-```bash
-# Перелогиниться
-docker logout ghcr.io
-echo "TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
 ```
 
 ### SSH не работает
