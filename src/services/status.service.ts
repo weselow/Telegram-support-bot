@@ -57,7 +57,8 @@ export async function autoChangeStatus(
       newValue: newStatus,
     });
 
-    if (user.cardMessageId) {
+    // Update ticket card (only for Telegram users with required fields)
+    if (user.cardMessageId && user.tgUserId && user.tgFirstName) {
       const cardData: TicketCardData = {
         tgUserId: Number(user.tgUserId),
         firstName: user.tgFirstName,

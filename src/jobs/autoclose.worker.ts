@@ -59,7 +59,8 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
     logger.error({ error, userId, topicId }, 'Failed to create autoclose event');
   }
 
-  if (user.cardMessageId) {
+  // Update ticket card (only for Telegram users with card)
+  if (user.cardMessageId && user.tgUserId && user.tgFirstName) {
     try {
       const cardData: TicketCardData = {
         tgUserId: Number(user.tgUserId),
@@ -77,11 +78,14 @@ async function processAutocloseJob(job: Job<AutocloseJobData>): Promise<void> {
     }
   }
 
-  try {
-    await bot.api.sendMessage(Number(user.tgUserId), CLIENT_MESSAGE);
-  } catch (error) {
-    captureError(error, { userId, topicId, action: 'autocloseNotifyClient' });
-    logger.warn({ error, userId, topicId }, 'Failed to notify client about autoclose');
+  // Notify client in Telegram (only if user has Telegram ID)
+  if (user.tgUserId) {
+    try {
+      await bot.api.sendMessage(Number(user.tgUserId), CLIENT_MESSAGE);
+    } catch (error) {
+      captureError(error, { userId, topicId, action: 'autocloseNotifyClient' });
+      logger.warn({ error, userId, topicId }, 'Failed to notify client about autoclose');
+    }
   }
 
   try {

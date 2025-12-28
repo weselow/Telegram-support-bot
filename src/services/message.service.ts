@@ -279,7 +279,7 @@ export async function editMirroredUserMessage(
   supportGroupId: number
 ): Promise<boolean> {
   const mapping = await messageRepository.findByDmMessageId(userId, editedMessage.message_id);
-  if (!mapping) {
+  if (!mapping?.topicMessageId) {
     logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited message');
     return false;
   }
@@ -314,7 +314,7 @@ export async function editMirroredSupportMessage(
   userTgId: bigint
 ): Promise<boolean> {
   const mapping = await messageRepository.findByTopicMessageId(userId, editedMessage.message_id);
-  if (!mapping) {
+  if (!mapping?.dmMessageId) {
     logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited support message');
     return false;
   }

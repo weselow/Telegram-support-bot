@@ -42,6 +42,8 @@ export type MessageMapMinAggregateOutputType = {
   dmMessageId: number | null
   topicMessageId: number | null
   direction: $Enums.MessageDirection | null
+  channel: $Enums.MessageChannel | null
+  text: string | null
   createdAt: Date | null
 }
 
@@ -51,6 +53,8 @@ export type MessageMapMaxAggregateOutputType = {
   dmMessageId: number | null
   topicMessageId: number | null
   direction: $Enums.MessageDirection | null
+  channel: $Enums.MessageChannel | null
+  text: string | null
   createdAt: Date | null
 }
 
@@ -60,6 +64,8 @@ export type MessageMapCountAggregateOutputType = {
   dmMessageId: number
   topicMessageId: number
   direction: number
+  channel: number
+  text: number
   createdAt: number
   _all: number
 }
@@ -81,6 +87,8 @@ export type MessageMapMinAggregateInputType = {
   dmMessageId?: true
   topicMessageId?: true
   direction?: true
+  channel?: true
+  text?: true
   createdAt?: true
 }
 
@@ -90,6 +98,8 @@ export type MessageMapMaxAggregateInputType = {
   dmMessageId?: true
   topicMessageId?: true
   direction?: true
+  channel?: true
+  text?: true
   createdAt?: true
 }
 
@@ -99,6 +109,8 @@ export type MessageMapCountAggregateInputType = {
   dmMessageId?: true
   topicMessageId?: true
   direction?: true
+  channel?: true
+  text?: true
   createdAt?: true
   _all?: true
 }
@@ -192,9 +204,11 @@ export type MessageMapGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 export type MessageMapGroupByOutputType = {
   id: string
   userId: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId: number | null
+  topicMessageId: number | null
   direction: $Enums.MessageDirection
+  channel: $Enums.MessageChannel
+  text: string | null
   createdAt: Date
   _count: MessageMapCountAggregateOutputType | null
   _avg: MessageMapAvgAggregateOutputType | null
@@ -224,9 +238,11 @@ export type MessageMapWhereInput = {
   NOT?: Prisma.MessageMapWhereInput | Prisma.MessageMapWhereInput[]
   id?: Prisma.StringFilter<"MessageMap"> | string
   userId?: Prisma.StringFilter<"MessageMap"> | string
-  dmMessageId?: Prisma.IntFilter<"MessageMap"> | number
-  topicMessageId?: Prisma.IntFilter<"MessageMap"> | number
+  dmMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
+  topicMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
+  text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
@@ -234,9 +250,11 @@ export type MessageMapWhereInput = {
 export type MessageMapOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  dmMessageId?: Prisma.SortOrder
-  topicMessageId?: Prisma.SortOrder
+  dmMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  topicMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   direction?: Prisma.SortOrder
+  channel?: Prisma.SortOrder
+  text?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
@@ -249,9 +267,11 @@ export type MessageMapWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.MessageMapWhereInput[]
   NOT?: Prisma.MessageMapWhereInput | Prisma.MessageMapWhereInput[]
   userId?: Prisma.StringFilter<"MessageMap"> | string
-  dmMessageId?: Prisma.IntFilter<"MessageMap"> | number
-  topicMessageId?: Prisma.IntFilter<"MessageMap"> | number
+  dmMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
+  topicMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
+  text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId_dmMessageId" | "userId_topicMessageId">
@@ -259,9 +279,11 @@ export type MessageMapWhereUniqueInput = Prisma.AtLeast<{
 export type MessageMapOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  dmMessageId?: Prisma.SortOrder
-  topicMessageId?: Prisma.SortOrder
+  dmMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  topicMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   direction?: Prisma.SortOrder
+  channel?: Prisma.SortOrder
+  text?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.MessageMapCountOrderByAggregateInput
   _avg?: Prisma.MessageMapAvgOrderByAggregateInput
@@ -276,17 +298,21 @@ export type MessageMapScalarWhereWithAggregatesInput = {
   NOT?: Prisma.MessageMapScalarWhereWithAggregatesInput | Prisma.MessageMapScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"MessageMap"> | string
   userId?: Prisma.StringWithAggregatesFilter<"MessageMap"> | string
-  dmMessageId?: Prisma.IntWithAggregatesFilter<"MessageMap"> | number
-  topicMessageId?: Prisma.IntWithAggregatesFilter<"MessageMap"> | number
+  dmMessageId?: Prisma.IntNullableWithAggregatesFilter<"MessageMap"> | number | null
+  topicMessageId?: Prisma.IntNullableWithAggregatesFilter<"MessageMap"> | number | null
   direction?: Prisma.EnumMessageDirectionWithAggregatesFilter<"MessageMap"> | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelWithAggregatesFilter<"MessageMap"> | $Enums.MessageChannel
+  text?: Prisma.StringNullableWithAggregatesFilter<"MessageMap"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MessageMap"> | Date | string
 }
 
 export type MessageMapCreateInput = {
   id?: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutMessagesInput
 }
@@ -294,17 +320,21 @@ export type MessageMapCreateInput = {
 export type MessageMapUncheckedCreateInput = {
   id?: string
   userId: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
 }
 
 export type MessageMapUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutMessagesNestedInput
 }
@@ -312,35 +342,43 @@ export type MessageMapUpdateInput = {
 export type MessageMapUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageMapCreateManyInput = {
   id?: string
   userId: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
 }
 
 export type MessageMapUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageMapUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -370,6 +408,8 @@ export type MessageMapCountOrderByAggregateInput = {
   dmMessageId?: Prisma.SortOrder
   topicMessageId?: Prisma.SortOrder
   direction?: Prisma.SortOrder
+  channel?: Prisma.SortOrder
+  text?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -384,6 +424,8 @@ export type MessageMapMaxOrderByAggregateInput = {
   dmMessageId?: Prisma.SortOrder
   topicMessageId?: Prisma.SortOrder
   direction?: Prisma.SortOrder
+  channel?: Prisma.SortOrder
+  text?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -393,6 +435,8 @@ export type MessageMapMinOrderByAggregateInput = {
   dmMessageId?: Prisma.SortOrder
   topicMessageId?: Prisma.SortOrder
   direction?: Prisma.SortOrder
+  channel?: Prisma.SortOrder
+  text?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -447,19 +491,27 @@ export type EnumMessageDirectionFieldUpdateOperationsInput = {
   set?: $Enums.MessageDirection
 }
 
+export type EnumMessageChannelFieldUpdateOperationsInput = {
+  set?: $Enums.MessageChannel
+}
+
 export type MessageMapCreateWithoutUserInput = {
   id?: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
 }
 
 export type MessageMapUncheckedCreateWithoutUserInput = {
   id?: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
 }
 
@@ -495,41 +547,51 @@ export type MessageMapScalarWhereInput = {
   NOT?: Prisma.MessageMapScalarWhereInput | Prisma.MessageMapScalarWhereInput[]
   id?: Prisma.StringFilter<"MessageMap"> | string
   userId?: Prisma.StringFilter<"MessageMap"> | string
-  dmMessageId?: Prisma.IntFilter<"MessageMap"> | number
-  topicMessageId?: Prisma.IntFilter<"MessageMap"> | number
+  dmMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
+  topicMessageId?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
+  text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
 }
 
 export type MessageMapCreateManyUserInput = {
   id?: string
-  dmMessageId: number
-  topicMessageId: number
+  dmMessageId?: number | null
+  topicMessageId?: number | null
   direction: $Enums.MessageDirection
+  channel?: $Enums.MessageChannel
+  text?: string | null
   createdAt?: Date | string
 }
 
 export type MessageMapUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageMapUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageMapUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  dmMessageId?: Prisma.IntFieldUpdateOperationsInput | number
-  topicMessageId?: Prisma.IntFieldUpdateOperationsInput | number
+  dmMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  topicMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
+  channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
+  text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -541,6 +603,8 @@ export type MessageMapSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   dmMessageId?: boolean
   topicMessageId?: boolean
   direction?: boolean
+  channel?: boolean
+  text?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -551,6 +615,8 @@ export type MessageMapSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   dmMessageId?: boolean
   topicMessageId?: boolean
   direction?: boolean
+  channel?: boolean
+  text?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -561,6 +627,8 @@ export type MessageMapSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   dmMessageId?: boolean
   topicMessageId?: boolean
   direction?: boolean
+  channel?: boolean
+  text?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -571,10 +639,12 @@ export type MessageMapSelectScalar = {
   dmMessageId?: boolean
   topicMessageId?: boolean
   direction?: boolean
+  channel?: boolean
+  text?: boolean
   createdAt?: boolean
 }
 
-export type MessageMapOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "dmMessageId" | "topicMessageId" | "direction" | "createdAt", ExtArgs["result"]["messageMap"]>
+export type MessageMapOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "dmMessageId" | "topicMessageId" | "direction" | "channel" | "text" | "createdAt", ExtArgs["result"]["messageMap"]>
 export type MessageMapInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -593,9 +663,11 @@ export type $MessageMapPayload<ExtArgs extends runtime.Types.Extensions.Internal
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
-    dmMessageId: number
-    topicMessageId: number
+    dmMessageId: number | null
+    topicMessageId: number | null
     direction: $Enums.MessageDirection
+    channel: $Enums.MessageChannel
+    text: string | null
     createdAt: Date
   }, ExtArgs["result"]["messageMap"]>
   composites: {}
@@ -1026,6 +1098,8 @@ export interface MessageMapFieldRefs {
   readonly dmMessageId: Prisma.FieldRef<"MessageMap", 'Int'>
   readonly topicMessageId: Prisma.FieldRef<"MessageMap", 'Int'>
   readonly direction: Prisma.FieldRef<"MessageMap", 'MessageDirection'>
+  readonly channel: Prisma.FieldRef<"MessageMap", 'MessageChannel'>
+  readonly text: Prisma.FieldRef<"MessageMap", 'String'>
   readonly createdAt: Prisma.FieldRef<"MessageMap", 'DateTime'>
 }
     

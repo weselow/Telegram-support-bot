@@ -50,10 +50,16 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
   addBreadcrumb('message', 'Support reply', 'info', { topicId, userId: user.id });
 
   try {
-    await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+    // Mirror to Telegram only if user has Telegram ID
+    if (user.tgUserId) {
+      await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+    }
+    // TODO: Phase 4 - also send to WebSocket if user has webSessionId
 
     // Cancel SLA timers on support reply
-    await cancelAllSlaTimers(user.id, user.topicId);
+    if (user.topicId) {
+      await cancelAllSlaTimers(user.id, user.topicId);
+    }
 
     // Auto change status: NEW → IN_PROGRESS
     await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');

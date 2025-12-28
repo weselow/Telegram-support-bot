@@ -75,7 +75,7 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
     const topicLink = `https://t.me/c/${groupIdForLink}/${String(topicId)}`;
     const dmMessage = formatMessage(messages.sla.dmEscalation, {
       hours: settings.sla.escalationMinutes / 60,
-      firstName: user.tgFirstName,
+      firstName: user.tgFirstName ?? 'Пользователь',
       topicLink,
     });
 

@@ -30,23 +30,39 @@ enum MessageDirection {
   SUPPORT_TO_USER
 }
 
+// Канал сообщения (Web или Telegram)
+enum MessageChannel {
+  TELEGRAM
+  WEB
+}
+
 // Пользователь/Тикет (один пользователь = один тикет навсегда)
 model User {
   id            String       @id @default(uuid())
-  tgUserId      BigInt       @unique @map("tg_user_id")
+
+  // Telegram идентификация (nullable для web-only пользователей)
+  tgUserId      BigInt?      @unique @map("tg_user_id")
   tgUsername    String?      @map("tg_username")
-  tgFirstName   String       @map("tg_first_name")
-  topicId       Int          @unique @map("topic_id")
+  tgFirstName   String?      @map("tg_first_name")
+
+  // Web идентификация (nullable для telegram-only пользователей)
+  webSessionId  String?      @unique @map("web_session_id")
+
+  // Топик и статус
+  topicId       Int?         @unique @map("topic_id")
   cardMessageId Int?         @map("card_message_id")
   status        TicketStatus @default(NEW)
+
+  // Дополнительные данные
   phone         String?
   sourceUrl     String?      @map("source_url")
   sourceCity    String?      @map("source_city")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
-  events   TicketEvent[]
-  messages MessageMap[]
+  events     TicketEvent[]
+  messages   MessageMap[]
+  linkTokens WebLinkToken[]
 
   @@map("users")
 }
@@ -68,18 +84,42 @@ model TicketEvent {
   @@map("ticket_events")
 }
 
-// Связь сообщений DM <-> топик
+// Связь сообщений DM/Web <-> топик
 model MessageMap {
   id             String           @id @default(uuid())
   userId         String           @map("user_id")
-  dmMessageId    Int              @map("dm_message_id")
-  topicMessageId Int              @map("topic_message_id")
+
+  // ID сообщений (dmMessageId nullable для web-сообщений)
+  dmMessageId    Int?             @map("dm_message_id")
+  topicMessageId Int?             @map("topic_message_id")
+
+  // Метаданные
   direction      MessageDirection
+  channel        MessageChannel   @default(TELEGRAM)
+  text           String?          // Контент для web-сообщений
+
   createdAt      DateTime         @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, dmMessageId])
   @@unique([userId, topicMessageId])
+  @@index([userId])
   @@map("messages_map")
+}
+
+// Токены для связывания Web → Telegram
+model WebLinkToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("web_link_tokens")
 }

@@ -47,7 +47,7 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   // Get existing user
   const user = await findUserByTgId(tgUserId);
 
-  if (!user) {
+  if (!user?.topicId) {
     // User has no ticket yet and is not in onboarding
     // This can happen if they skip /start and write directly
     // Start onboarding and send welcome

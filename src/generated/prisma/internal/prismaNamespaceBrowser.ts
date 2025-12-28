@@ -53,7 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   TicketEvent: 'TicketEvent',
-  MessageMap: 'MessageMap'
+  MessageMap: 'MessageMap',
+  WebLinkToken: 'WebLinkToken'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -77,6 +78,7 @@ export const UserScalarFieldEnum = {
   tgUserId: 'tgUserId',
   tgUsername: 'tgUsername',
   tgFirstName: 'tgFirstName',
+  webSessionId: 'webSessionId',
   topicId: 'topicId',
   cardMessageId: 'cardMessageId',
   status: 'status',
@@ -110,10 +112,24 @@ export const MessageMapScalarFieldEnum = {
   dmMessageId: 'dmMessageId',
   topicMessageId: 'topicMessageId',
   direction: 'direction',
+  channel: 'channel',
+  text: 'text',
   createdAt: 'createdAt'
 } as const
 
 export type MessageMapScalarFieldEnum = (typeof MessageMapScalarFieldEnum)[keyof typeof MessageMapScalarFieldEnum]
+
+
+export const WebLinkTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type WebLinkTokenScalarFieldEnum = (typeof WebLinkTokenScalarFieldEnum)[keyof typeof WebLinkTokenScalarFieldEnum]
 
 
 export const SortOrder = {
