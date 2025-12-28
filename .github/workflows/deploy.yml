@@ -140,11 +140,13 @@ jobs:
             LOG_LEVEL=info
             EOF
 
-            # Скачать новый образ app (postgres/redis не трогаем)
+            # Скачать новый образ app
             docker compose pull app
 
-            # Перезапустить только app
-            docker compose up -d --no-deps app
+            # Запустить/обновить app
+            # up -d app: запустит postgres/redis если не запущены, но НЕ перезапустит их
+            # Перезапустится только app (т.к. образ изменился)
+            docker compose up -d app
 
             # Проверить что контейнер запустился
             sleep 5

@@ -93,16 +93,9 @@ curl -O https://raw.githubusercontent.com/weselow/Telegram-support-bot/main/dock
 # Создать директории для данных
 mkdir -p .volumes/postgres .volumes/redis
 
-# Создать .env файл (при первом деплое создастся автоматически)
-# Или скопировать вручную и заполнить
-
-# Запустить postgres и redis (они будут работать постоянно)
-docker compose up -d postgres redis
-
-# Дождаться готовности
-docker compose ps
-
-# App запустится автоматически при первом деплое через GitHub Actions
+# Всё! При первом деплое через GitHub Actions:
+# - Создастся .env из secrets
+# - Запустятся postgres, redis, app
 ```
 
 ---
@@ -118,7 +111,7 @@ docker compose ps
 5. SSH на сервер:
    - Обновляет `.env` из secrets
    - `docker compose pull app`
-   - `docker compose up -d --no-deps app`
+   - `docker compose up -d app` (запустит postgres/redis если не запущены)
 
 ### Ручной запуск
 
