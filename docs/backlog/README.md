@@ -64,6 +64,8 @@
 | [TD-022](technical-debt/td-022-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | Средний |
 | [TD-023](technical-debt/td-023-websocket-integration-tests.md) | Integration-тесты для WebSocket API | Средний |
 | [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
+| [TD-025](technical-debt/td-025-dry-session-parsing.md) | DRY: вынести session parsing | Средний |
+| [TD-027](technical-debt/td-027-ticket-status-type.md) | Типизация: TicketStatus union type | Средний |
 
 ### Выполнено
 

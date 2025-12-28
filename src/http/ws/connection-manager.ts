@@ -10,8 +10,8 @@ export const connectionManager = {
     if (existing) {
       try {
         existing.ws.close(1000, 'New connection established');
-      } catch {
-        // Connection already closed
+      } catch (error) {
+        logger.debug({ error, sessionId }, 'Failed to close existing connection');
       }
     }
 
@@ -93,8 +93,8 @@ export const connectionManager = {
       if (conn.ws.readyState === 1) {
         try {
           conn.ws.send(payload);
-        } catch {
-          // Ignore send errors during broadcast
+        } catch (error) {
+          logger.debug({ error, sessionId: conn.sessionId }, 'Failed to send broadcast message');
         }
       }
     }
@@ -114,8 +114,8 @@ export const connectionManager = {
       if (now - conn.lastActivity > maxInactiveMs) {
         try {
           conn.ws.close(1000, 'Inactive');
-        } catch {
-          // Ignore close errors
+        } catch (error) {
+          logger.debug({ error, sessionId }, 'Failed to close inactive connection');
         }
         connections.delete(sessionId);
         logger.info({ sessionId }, 'Cleaned up inactive WebSocket connection');
