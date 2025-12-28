@@ -80,6 +80,15 @@ sudo mkdir -p /opt/support-bot
 sudo chown deploy:deploy /opt/support-bot
 ```
 
+### 2.5 Открыть порты в firewall
+
+```bash
+# Для UFW
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw reload
+```
+
 **Готово!** GitHub Actions при первом деплое сам создаст:
 - `docker-compose.yml`, `.env`, `Caddyfile`
 - Директории `.volumes/`
