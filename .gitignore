@@ -36,7 +36,8 @@ coverage/
 prisma/*.db
 prisma/*.db-journal
 
-/src/generated/prisma
+# Prisma client теперь коммитится для консистентного билда
+# /src/generated/prisma
 
 # Claude Code
 .claude/agents/
