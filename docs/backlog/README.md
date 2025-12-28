@@ -51,7 +51,7 @@
 
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
-| [021](tasks/021-web-chat-api.md) | Web Chat API | TODO | Высокий |
+| [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
 
 ---
 
@@ -66,7 +66,7 @@
 
 ## Идеи на будущее
 
-- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → создана задача [021](tasks/021-web-chat-api.md)
+- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → реализовано в [021](../solutions/021-web-chat-api/021-web-chat-api.md)
 
 ---
 
