@@ -114,8 +114,8 @@ jobs:
 
             cd ${{ vars.DEPLOY_PATH }}
 
-            # Создать директории для Caddy
-            mkdir -p .volumes/caddy/data .volumes/caddy/config
+            # Создать директории для volumes
+            mkdir -p .volumes/postgres .volumes/redis .volumes/caddy/data .volumes/caddy/config
 
             # Создать/обновить Caddyfile
             cat > Caddyfile << 'CADDYFILE'

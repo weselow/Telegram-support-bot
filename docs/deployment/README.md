@@ -72,21 +72,21 @@ ssh-copy-id -i ~/.ssh/github_deploy.pub deploy@YOUR_SERVER_IP
 cat ~/.ssh/github_deploy
 ```
 
-### 2.4 Первоначальный запуск
+### 2.4 Первоначальный запуск (один раз)
 
 ```bash
+# Создать директорию проекта
+sudo mkdir -p /opt/support-bot
+sudo chown deploy:deploy /opt/support-bot
 cd /opt/support-bot
 
 # Скачать docker-compose.yml
 curl -O https://raw.githubusercontent.com/weselow/Telegram-support-bot/main/docker-compose.yml
-
-# Создать директории для данных
-mkdir -p .volumes/postgres .volumes/redis
-
-# Всё! При первом деплое через GitHub Actions:
-# - Создастся .env из secrets
-# - Запустятся postgres, redis, app
 ```
+
+**Готово!** Остальное создаст GitHub Actions при первом деплое:
+- `.env`, `Caddyfile`, директории `.volumes/`
+- Скачает образы и запустит контейнеры
 
 ---
 
