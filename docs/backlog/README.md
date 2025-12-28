@@ -55,7 +55,17 @@
 
 ---
 
-## Технический долг (Выполнено)
+## Технический долг
+
+### В ожидании
+
+| # | Задача | Приоритет |
+|---|--------|-----------|
+| [TD-022](technical-debt/td-022-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | Средний |
+| [TD-023](technical-debt/td-023-websocket-integration-tests.md) | Integration-тесты для WebSocket API | Средний |
+| [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
+
+### Выполнено
 
 | # | Задача | Статус |
 |---|--------|--------|
