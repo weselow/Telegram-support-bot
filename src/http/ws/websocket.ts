@@ -8,13 +8,21 @@ import { logger } from '../../utils/logger.js';
 const SESSION_COOKIE_NAME = 'webchat_session';
 const PING_INTERVAL = 30000; // 30 seconds
 const CLEANUP_INTERVAL = 60000; // 1 minute
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function getSessionIdFromCookie(cookieHeader: string | undefined): string | null {
   if (!cookieHeader) return null;
 
   const regex = new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`);
   const match = regex.exec(cookieHeader);
-  return match?.[1] ?? null;
+  const sessionId = match?.[1] ?? null;
+
+  // Validate UUID format
+  if (sessionId && !UUID_REGEX.test(sessionId)) {
+    return null;
+  }
+
+  return sessionId;
 }
 
 export async function registerWebSocket(fastify: FastifyInstance): Promise<void> {

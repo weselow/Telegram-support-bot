@@ -66,9 +66,10 @@ export async function callbackHandler(ctx: Context): Promise<void> {
 
     // Notify web client about status change
     if (user.webSessionId) {
-      connectionManager.sendToUser(userId, 'status', {
-        status,
-      });
+      const sent = connectionManager.sendToUser(userId, 'status', { status });
+      if (!sent) {
+        logger.warn({ userId, webSessionId: user.webSessionId }, 'Failed to send status update to web client');
+      }
     }
 
     let cardUpdateFailed = false;

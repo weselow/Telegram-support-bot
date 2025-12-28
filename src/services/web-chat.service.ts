@@ -115,10 +115,15 @@ export const webChatService = {
       resultMessages.reverse();
     }
 
+    // After reverse, first element is oldest; without reverse, last element is oldest
+    const oldestId = resultMessages.length > 0
+      ? (options.after ? resultMessages[0]?.id : resultMessages[resultMessages.length - 1]?.id)
+      : undefined;
+
     return {
       messages: resultMessages.map(mapMessageToChat),
       hasMore,
-      oldestId: resultMessages.length > 0 ? resultMessages[resultMessages.length - 1]?.id : undefined,
+      oldestId,
     };
   },
 
@@ -178,11 +183,11 @@ export const webChatService = {
       await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
     }
 
-    // Look up replyTo message to get topic message ID
+    // Look up replyTo message to get topic message ID (only if belongs to same user)
     let replyToMessageId: number | undefined;
     if (replyTo) {
       const replyToMessage = await messageRepository.findById(replyTo);
-      if (replyToMessage?.topicMessageId) {
+      if (replyToMessage?.topicMessageId && replyToMessage.userId === user.id) {
         replyToMessageId = replyToMessage.topicMessageId;
       }
     }

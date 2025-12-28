@@ -60,9 +60,10 @@ export async function autoChangeStatus(
 
     // Notify web client about status change
     if (user.webSessionId) {
-      connectionManager.sendToUser(user.id, 'status', {
-        status: newStatus,
-      });
+      const sent = connectionManager.sendToUser(user.id, 'status', { status: newStatus });
+      if (!sent) {
+        logger.warn({ userId: user.id, webSessionId: user.webSessionId }, 'Failed to send status update to web client');
+      }
     }
 
     // Update ticket card (only for Telegram users with required fields)

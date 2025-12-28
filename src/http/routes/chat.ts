@@ -9,6 +9,7 @@ import { env } from '../../config/env.js';
 const SESSION_COOKIE_NAME = 'webchat_session';
 const SESSION_COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
 const MESSAGE_MAX_LENGTH = 4000;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface InitBody {
   fingerprint?: string;
@@ -36,7 +37,14 @@ function getSessionId(request: FastifyRequest): string | null {
 
   const regex = new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`);
   const match = regex.exec(cookies);
-  return match?.[1] ?? null;
+  const sessionId = match?.[1] ?? null;
+
+  // Validate UUID format
+  if (sessionId && !UUID_REGEX.test(sessionId)) {
+    return null;
+  }
+
+  return sessionId;
 }
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
