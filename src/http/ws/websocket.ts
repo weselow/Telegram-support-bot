@@ -1,0 +1,111 @@
+import type { FastifyInstance } from 'fastify';
+import websocket from '@fastify/websocket';
+import { userRepository } from '../../db/repositories/user.repository.js';
+import { connectionManager } from './connection-manager.js';
+import { handleWebSocketMessage } from './handler.js';
+import { logger } from '../../utils/logger.js';
+
+const SESSION_COOKIE_NAME = 'webchat_session';
+const PING_INTERVAL = 30000; // 30 seconds
+const CLEANUP_INTERVAL = 60000; // 1 minute
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getSessionIdFromCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null;
+
+  const regex = new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`);
+  const match = regex.exec(cookieHeader);
+  const sessionId = match?.[1] ?? null;
+
+  // Validate UUID format
+  if (sessionId && !UUID_REGEX.test(sessionId)) {
+    return null;
+  }
+
+  return sessionId;
+}
+
+export async function registerWebSocket(fastify: FastifyInstance): Promise<void> {
+  await fastify.register(websocket, {
+    options: {
+      maxPayload: 65536, // 64KB max message size
+    },
+  });
+
+  // Start ping/cleanup intervals
+  const pingInterval = setInterval(() => {
+    const timestamp = Date.now();
+    for (const conn of connectionManager.getAll()) {
+      connectionManager.send(conn.sessionId, 'ping', { timestamp });
+    }
+  }, PING_INTERVAL);
+
+  const cleanupInterval = setInterval(() => {
+    connectionManager.cleanup(5 * 60 * 1000); // 5 minutes inactive
+  }, CLEANUP_INTERVAL);
+
+  fastify.addHook('onClose', () => {
+    clearInterval(pingInterval);
+    clearInterval(cleanupInterval);
+  });
+
+  fastify.get('/ws/chat', { websocket: true }, async (socket, request) => {
+    // Get session ID from cookie or query parameter
+    const cookieSessionId = getSessionIdFromCookie(request.headers.cookie);
+    const querySessionId = (request.query as { session?: string }).session;
+    const sessionId = cookieSessionId ?? querySessionId;
+
+    if (!sessionId) {
+      socket.close(4001, 'Session not found');
+      return;
+    }
+
+    // Validate session
+    const user = await userRepository.findByWebSessionId(sessionId);
+    if (!user) {
+      socket.close(4001, 'Session not found');
+      return;
+    }
+
+    // Register connection
+    connectionManager.add(sessionId, user.id, socket);
+
+    // Send connected event
+    connectionManager.send(sessionId, 'connected', {
+      sessionId,
+      ticketStatus: user.status,
+      unreadCount: 0,
+    });
+
+    logger.info({ sessionId, userId: user.id }, 'WebSocket client connected');
+
+    // Handle messages
+    socket.on('message', (data: Buffer | ArrayBuffer | Buffer[]) => {
+      void (async () => {
+        try {
+          const message = Buffer.isBuffer(data)
+            ? data.toString('utf8')
+            : Array.isArray(data)
+              ? Buffer.concat(data).toString('utf8')
+              : Buffer.from(data).toString('utf8');
+          await handleWebSocketMessage(socket, message, { sessionId, userId: user.id });
+        } catch (error) {
+          logger.error({ error, sessionId }, 'Error handling WebSocket message');
+        }
+      })();
+    });
+
+    // Handle close
+    socket.on('close', (code: number, reason: Buffer) => {
+      connectionManager.remove(sessionId);
+      logger.info({ sessionId, code, reason: reason.toString() }, 'WebSocket client disconnected');
+    });
+
+    // Handle errors
+    socket.on('error', (error: Error) => {
+      logger.error({ error, sessionId }, 'WebSocket error');
+      connectionManager.remove(sessionId);
+    });
+  });
+}
+

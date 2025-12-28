@@ -4,6 +4,7 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../../services/topic.service.js';
 import { startAutocloseTimer, cancelAutocloseTimer } from '../../services/autoclose.service.js';
+import { connectionManager } from '../../http/ws/connection-manager.js';
 import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { captureError } from '../../config/sentry.js';
@@ -63,10 +64,18 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       newValue: status,
     });
 
+    // Notify web client about status change
+    if (user.webSessionId) {
+      const sent = connectionManager.sendToUser(userId, 'status', { status });
+      if (!sent) {
+        logger.warn({ userId, webSessionId: user.webSessionId }, 'Failed to send status update to web client');
+      }
+    }
+
     let cardUpdateFailed = false;
     let autocloseTimerFailed = false;
 
-    if (user.cardMessageId) {
+    if (user.cardMessageId && user.tgUserId && user.tgFirstName) {
       const cardData: TicketCardData = {
         tgUserId: Number(user.tgUserId),
         firstName: user.tgFirstName,
@@ -86,22 +95,24 @@ export async function callbackHandler(ctx: Context): Promise<void> {
       }
     }
 
-    // Manage autoclose timers based on status transitions
-    if (status === 'WAITING_CLIENT') {
-      const timerStarted = await startAutocloseTimer(userId, user.topicId);
-      if (!timerStarted) {
-        autocloseTimerFailed = true;
-        logger.warn({ userId, topicId: user.topicId }, 'Autoclose timer failed to start');
+    // Manage autoclose timers based on status transitions (only for users with topics)
+    if (user.topicId) {
+      if (status === 'WAITING_CLIENT') {
+        const timerStarted = await startAutocloseTimer(userId, user.topicId);
+        if (!timerStarted) {
+          autocloseTimerFailed = true;
+          logger.warn({ userId, topicId: user.topicId }, 'Autoclose timer failed to start');
+        }
+      } else if (oldStatus === 'WAITING_CLIENT') {
+        await cancelAutocloseTimer(userId, user.topicId);
       }
-    } else if (oldStatus === 'WAITING_CLIENT') {
-      await cancelAutocloseTimer(userId, user.topicId);
     }
 
     await ctx.answerCallbackQuery({
       text: formatMessage(messages.callbacks.statusChanged, { status: STATUS_LABELS[status] }),
     });
 
-    if (ctx.chat) {
+    if (ctx.chat && user.topicId) {
       let notification = formatMessage(messages.status.changed, {
         oldStatus: STATUS_LABELS[oldStatus],
         newStatus: STATUS_LABELS[status],

@@ -49,7 +49,8 @@ export async function supportEditHandler(ctx: Context): Promise<void> {
 
   // Find user by topic ID
   const user = await findUserByTopicId(topicId);
-  if (!user) {
+  if (!user?.tgUserId) {
+    // User not found or is web-only user (no Telegram ID)
     return;
   }
 

@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   TicketEvent: 'TicketEvent',
-  MessageMap: 'MessageMap'
+  MessageMap: 'MessageMap',
+  WebLinkToken: 'WebLinkToken'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "ticketEvent" | "messageMap"
+    modelProps: "user" | "ticketEvent" | "messageMap" | "webLinkToken"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    WebLinkToken: {
+      payload: Prisma.$WebLinkTokenPayload<ExtArgs>
+      fields: Prisma.WebLinkTokenFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WebLinkTokenFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WebLinkTokenFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        findFirst: {
+          args: Prisma.WebLinkTokenFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WebLinkTokenFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        findMany: {
+          args: Prisma.WebLinkTokenFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>[]
+        }
+        create: {
+          args: Prisma.WebLinkTokenCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        createMany: {
+          args: Prisma.WebLinkTokenCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WebLinkTokenCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>[]
+        }
+        delete: {
+          args: Prisma.WebLinkTokenDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        update: {
+          args: Prisma.WebLinkTokenUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        deleteMany: {
+          args: Prisma.WebLinkTokenDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WebLinkTokenUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WebLinkTokenUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>[]
+        }
+        upsert: {
+          args: Prisma.WebLinkTokenUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WebLinkTokenPayload>
+        }
+        aggregate: {
+          args: Prisma.WebLinkTokenAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWebLinkToken>
+        }
+        groupBy: {
+          args: Prisma.WebLinkTokenGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WebLinkTokenGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WebLinkTokenCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WebLinkTokenCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -672,6 +747,7 @@ export const UserScalarFieldEnum = {
   tgUserId: 'tgUserId',
   tgUsername: 'tgUsername',
   tgFirstName: 'tgFirstName',
+  webSessionId: 'webSessionId',
   topicId: 'topicId',
   cardMessageId: 'cardMessageId',
   status: 'status',
@@ -705,10 +781,24 @@ export const MessageMapScalarFieldEnum = {
   dmMessageId: 'dmMessageId',
   topicMessageId: 'topicMessageId',
   direction: 'direction',
+  channel: 'channel',
+  text: 'text',
   createdAt: 'createdAt'
 } as const
 
 export type MessageMapScalarFieldEnum = (typeof MessageMapScalarFieldEnum)[keyof typeof MessageMapScalarFieldEnum]
+
+
+export const WebLinkTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type WebLinkTokenScalarFieldEnum = (typeof WebLinkTokenScalarFieldEnum)[keyof typeof WebLinkTokenScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -840,6 +930,20 @@ export type ListEnumMessageDirectionFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
+ * Reference to a field of type 'MessageChannel'
+ */
+export type EnumMessageChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MessageChannel'>
+    
+
+
+/**
+ * Reference to a field of type 'MessageChannel[]'
+ */
+export type ListEnumMessageChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MessageChannel[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -950,6 +1054,7 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   ticketEvent?: Prisma.TicketEventOmit
   messageMap?: Prisma.MessageMapOmit
+  webLinkToken?: Prisma.WebLinkTokenOmit
 }
 
 /* Types for Logging */

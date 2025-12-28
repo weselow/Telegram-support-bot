@@ -48,6 +48,47 @@ export async function checkRateLimit(userId: bigint): Promise<RateLimitResult> {
   }
 }
 
+export interface RateLimitOptions {
+  maxRequests?: number | undefined;
+  windowSeconds?: number | undefined;
+}
+
+export async function checkKeyRateLimit(
+  key: string,
+  options: RateLimitOptions = {}
+): Promise<RateLimitResult> {
+  const maxRequests = options.maxRequests ?? RATE_LIMIT;
+  const windowSeconds = options.windowSeconds ?? RATE_WINDOW;
+
+  const redis = getRedisClient();
+  const redisKey = `rate:${key}`;
+
+  try {
+    const count = await redis.incr(redisKey);
+
+    if (count === 1) {
+      await redis.expire(redisKey, windowSeconds);
+    }
+
+    const ttl = await redis.ttl(redisKey);
+    const remaining = Math.max(0, maxRequests - count);
+    const allowed = count <= maxRequests;
+
+    return {
+      allowed,
+      remaining,
+      resetInSeconds: ttl > 0 ? ttl : windowSeconds,
+    };
+  } catch (error) {
+    logger.error({ error, key }, 'Rate limit check failed');
+    return {
+      allowed: true,
+      remaining: maxRequests,
+      resetInSeconds: windowSeconds,
+    };
+  }
+}
+
 export async function checkIpRateLimit(ip: string): Promise<RateLimitResult> {
   const redis = getRedisClient();
   const key = `rate:ip:${ip}`;

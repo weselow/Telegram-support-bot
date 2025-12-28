@@ -36,3 +36,11 @@ export const MessageDirection = {
 } as const
 
 export type MessageDirection = (typeof MessageDirection)[keyof typeof MessageDirection]
+
+
+export const MessageChannel = {
+  TELEGRAM: 'TELEGRAM',
+  WEB: 'WEB'
+} as const
+
+export type MessageChannel = (typeof MessageChannel)[keyof typeof MessageChannel]

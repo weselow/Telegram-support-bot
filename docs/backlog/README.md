@@ -51,11 +51,23 @@
 
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
-| [021](tasks/021-web-chat-api.md) | Web Chat API | TODO | Высокий |
+| [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
 
 ---
 
-## Технический долг (Выполнено)
+## Технический долг
+
+### В ожидании
+
+| # | Задача | Приоритет |
+|---|--------|-----------|
+| [TD-022](technical-debt/td-022-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | Средний |
+| [TD-023](technical-debt/td-023-websocket-integration-tests.md) | Integration-тесты для WebSocket API | Средний |
+| [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
+| [TD-025](technical-debt/td-025-dry-session-parsing.md) | DRY: вынести session parsing | Средний |
+| [TD-027](technical-debt/td-027-ticket-status-type.md) | Типизация: TicketStatus union type | Средний |
+
+### Выполнено
 
 | # | Задача | Статус |
 |---|--------|--------|
@@ -66,7 +78,7 @@
 
 ## Идеи на будущее
 
-- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → создана задача [021](tasks/021-web-chat-api.md)
+- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → реализовано в [021](../solutions/021-web-chat-api/021-web-chat-api.md)
 
 ---
 

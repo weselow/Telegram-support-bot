@@ -43,6 +43,7 @@ export type UserMinAggregateOutputType = {
   tgUserId: bigint | null
   tgUsername: string | null
   tgFirstName: string | null
+  webSessionId: string | null
   topicId: number | null
   cardMessageId: number | null
   status: $Enums.TicketStatus | null
@@ -58,6 +59,7 @@ export type UserMaxAggregateOutputType = {
   tgUserId: bigint | null
   tgUsername: string | null
   tgFirstName: string | null
+  webSessionId: string | null
   topicId: number | null
   cardMessageId: number | null
   status: $Enums.TicketStatus | null
@@ -73,6 +75,7 @@ export type UserCountAggregateOutputType = {
   tgUserId: number
   tgUsername: number
   tgFirstName: number
+  webSessionId: number
   topicId: number
   cardMessageId: number
   status: number
@@ -102,6 +105,7 @@ export type UserMinAggregateInputType = {
   tgUserId?: true
   tgUsername?: true
   tgFirstName?: true
+  webSessionId?: true
   topicId?: true
   cardMessageId?: true
   status?: true
@@ -117,6 +121,7 @@ export type UserMaxAggregateInputType = {
   tgUserId?: true
   tgUsername?: true
   tgFirstName?: true
+  webSessionId?: true
   topicId?: true
   cardMessageId?: true
   status?: true
@@ -132,6 +137,7 @@ export type UserCountAggregateInputType = {
   tgUserId?: true
   tgUsername?: true
   tgFirstName?: true
+  webSessionId?: true
   topicId?: true
   cardMessageId?: true
   status?: true
@@ -231,10 +237,11 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type UserGroupByOutputType = {
   id: string
-  tgUserId: bigint
+  tgUserId: bigint | null
   tgUsername: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName: string | null
+  webSessionId: string | null
+  topicId: number | null
   cardMessageId: number | null
   status: $Enums.TicketStatus
   phone: string | null
@@ -269,10 +276,11 @@ export type UserWhereInput = {
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   id?: Prisma.StringFilter<"User"> | string
-  tgUserId?: Prisma.BigIntFilter<"User"> | bigint | number
+  tgUserId?: Prisma.BigIntNullableFilter<"User"> | bigint | number | null
   tgUsername?: Prisma.StringNullableFilter<"User"> | string | null
-  tgFirstName?: Prisma.StringFilter<"User"> | string
-  topicId?: Prisma.IntFilter<"User"> | number
+  tgFirstName?: Prisma.StringNullableFilter<"User"> | string | null
+  webSessionId?: Prisma.StringNullableFilter<"User"> | string | null
+  topicId?: Prisma.IntNullableFilter<"User"> | number | null
   cardMessageId?: Prisma.IntNullableFilter<"User"> | number | null
   status?: Prisma.EnumTicketStatusFilter<"User"> | $Enums.TicketStatus
   phone?: Prisma.StringNullableFilter<"User"> | string | null
@@ -282,14 +290,16 @@ export type UserWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   events?: Prisma.TicketEventListRelationFilter
   messages?: Prisma.MessageMapListRelationFilter
+  linkTokens?: Prisma.WebLinkTokenListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  tgUserId?: Prisma.SortOrder
+  tgUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   tgUsername?: Prisma.SortOrderInput | Prisma.SortOrder
-  tgFirstName?: Prisma.SortOrder
-  topicId?: Prisma.SortOrder
+  tgFirstName?: Prisma.SortOrderInput | Prisma.SortOrder
+  webSessionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  topicId?: Prisma.SortOrderInput | Prisma.SortOrder
   cardMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -299,17 +309,19 @@ export type UserOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   events?: Prisma.TicketEventOrderByRelationAggregateInput
   messages?: Prisma.MessageMapOrderByRelationAggregateInput
+  linkTokens?: Prisma.WebLinkTokenOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   tgUserId?: bigint | number
+  webSessionId?: string
   topicId?: number
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   tgUsername?: Prisma.StringNullableFilter<"User"> | string | null
-  tgFirstName?: Prisma.StringFilter<"User"> | string
+  tgFirstName?: Prisma.StringNullableFilter<"User"> | string | null
   cardMessageId?: Prisma.IntNullableFilter<"User"> | number | null
   status?: Prisma.EnumTicketStatusFilter<"User"> | $Enums.TicketStatus
   phone?: Prisma.StringNullableFilter<"User"> | string | null
@@ -319,14 +331,16 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   events?: Prisma.TicketEventListRelationFilter
   messages?: Prisma.MessageMapListRelationFilter
-}, "id" | "tgUserId" | "topicId">
+  linkTokens?: Prisma.WebLinkTokenListRelationFilter
+}, "id" | "tgUserId" | "webSessionId" | "topicId">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  tgUserId?: Prisma.SortOrder
+  tgUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   tgUsername?: Prisma.SortOrderInput | Prisma.SortOrder
-  tgFirstName?: Prisma.SortOrder
-  topicId?: Prisma.SortOrder
+  tgFirstName?: Prisma.SortOrderInput | Prisma.SortOrder
+  webSessionId?: Prisma.SortOrderInput | Prisma.SortOrder
+  topicId?: Prisma.SortOrderInput | Prisma.SortOrder
   cardMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -346,10 +360,11 @@ export type UserScalarWhereWithAggregatesInput = {
   OR?: Prisma.UserScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
-  tgUserId?: Prisma.BigIntWithAggregatesFilter<"User"> | bigint | number
+  tgUserId?: Prisma.BigIntNullableWithAggregatesFilter<"User"> | bigint | number | null
   tgUsername?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  tgFirstName?: Prisma.StringWithAggregatesFilter<"User"> | string
-  topicId?: Prisma.IntWithAggregatesFilter<"User"> | number
+  tgFirstName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  webSessionId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  topicId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
   cardMessageId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
   status?: Prisma.EnumTicketStatusWithAggregatesFilter<"User"> | $Enums.TicketStatus
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -361,10 +376,11 @@ export type UserScalarWhereWithAggregatesInput = {
 
 export type UserCreateInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -374,14 +390,16 @@ export type UserCreateInput = {
   updatedAt?: Date | string
   events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageMapCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -391,14 +409,16 @@ export type UserUncheckedCreateInput = {
   updatedAt?: Date | string
   events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
   messages?: Prisma.MessageMapUncheckedCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -408,14 +428,16 @@ export type UserUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageMapUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -425,14 +447,16 @@ export type UserUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
   messages?: Prisma.MessageMapUncheckedUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -444,10 +468,11 @@ export type UserCreateManyInput = {
 
 export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -459,10 +484,11 @@ export type UserUpdateManyMutationInput = {
 
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -477,6 +503,7 @@ export type UserCountOrderByAggregateInput = {
   tgUserId?: Prisma.SortOrder
   tgUsername?: Prisma.SortOrder
   tgFirstName?: Prisma.SortOrder
+  webSessionId?: Prisma.SortOrder
   topicId?: Prisma.SortOrder
   cardMessageId?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -498,6 +525,7 @@ export type UserMaxOrderByAggregateInput = {
   tgUserId?: Prisma.SortOrder
   tgUsername?: Prisma.SortOrder
   tgFirstName?: Prisma.SortOrder
+  webSessionId?: Prisma.SortOrder
   topicId?: Prisma.SortOrder
   cardMessageId?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -513,6 +541,7 @@ export type UserMinOrderByAggregateInput = {
   tgUserId?: Prisma.SortOrder
   tgUsername?: Prisma.SortOrder
   tgFirstName?: Prisma.SortOrder
+  webSessionId?: Prisma.SortOrder
   topicId?: Prisma.SortOrder
   cardMessageId?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -538,8 +567,8 @@ export type StringFieldUpdateOperationsInput = {
   set?: string
 }
 
-export type BigIntFieldUpdateOperationsInput = {
-  set?: bigint | number
+export type NullableBigIntFieldUpdateOperationsInput = {
+  set?: bigint | number | null
   increment?: bigint | number
   decrement?: bigint | number
   multiply?: bigint | number
@@ -548,14 +577,6 @@ export type BigIntFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
 }
 
 export type NullableIntFieldUpdateOperationsInput = {
@@ -602,12 +623,27 @@ export type UserUpdateOneRequiredWithoutMessagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMessagesInput, Prisma.UserUpdateWithoutMessagesInput>, Prisma.UserUncheckedUpdateWithoutMessagesInput>
 }
 
+export type UserCreateNestedOneWithoutLinkTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLinkTokensInput, Prisma.UserUncheckedCreateWithoutLinkTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLinkTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutLinkTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutLinkTokensInput, Prisma.UserUncheckedCreateWithoutLinkTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLinkTokensInput
+  upsert?: Prisma.UserUpsertWithoutLinkTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutLinkTokensInput, Prisma.UserUpdateWithoutLinkTokensInput>, Prisma.UserUncheckedUpdateWithoutLinkTokensInput>
+}
+
 export type UserCreateWithoutEventsInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -616,14 +652,16 @@ export type UserCreateWithoutEventsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageMapCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEventsInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -632,6 +670,7 @@ export type UserUncheckedCreateWithoutEventsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageMapUncheckedCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEventsInput = {
@@ -652,10 +691,11 @@ export type UserUpdateToOneWithWhereWithoutEventsInput = {
 
 export type UserUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -664,14 +704,16 @@ export type UserUpdateWithoutEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageMapUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -680,14 +722,16 @@ export type UserUncheckedUpdateWithoutEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageMapUncheckedUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMessagesInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -696,14 +740,16 @@ export type UserCreateWithoutMessagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMessagesInput = {
   id?: string
-  tgUserId: bigint | number
+  tgUserId?: bigint | number | null
   tgUsername?: string | null
-  tgFirstName: string
-  topicId: number
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
   cardMessageId?: number | null
   status?: $Enums.TicketStatus
   phone?: string | null
@@ -712,6 +758,7 @@ export type UserUncheckedCreateWithoutMessagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMessagesInput = {
@@ -732,10 +779,11 @@ export type UserUpdateToOneWithWhereWithoutMessagesInput = {
 
 export type UserUpdateWithoutMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -744,14 +792,16 @@ export type UserUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tgUserId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
   tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  tgFirstName?: Prisma.StringFieldUpdateOperationsInput | string
-  topicId?: Prisma.IntFieldUpdateOperationsInput | number
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -760,6 +810,95 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
+  linkTokens?: Prisma.WebLinkTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutLinkTokensInput = {
+  id?: string
+  tgUserId?: bigint | number | null
+  tgUsername?: string | null
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
+  cardMessageId?: number | null
+  status?: $Enums.TicketStatus
+  phone?: string | null
+  sourceUrl?: string | null
+  sourceCity?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
+  messages?: Prisma.MessageMapCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutLinkTokensInput = {
+  id?: string
+  tgUserId?: bigint | number | null
+  tgUsername?: string | null
+  tgFirstName?: string | null
+  webSessionId?: string | null
+  topicId?: number | null
+  cardMessageId?: number | null
+  status?: $Enums.TicketStatus
+  phone?: string | null
+  sourceUrl?: string | null
+  sourceCity?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
+  messages?: Prisma.MessageMapUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutLinkTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutLinkTokensInput, Prisma.UserUncheckedCreateWithoutLinkTokensInput>
+}
+
+export type UserUpsertWithoutLinkTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutLinkTokensInput, Prisma.UserUncheckedUpdateWithoutLinkTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutLinkTokensInput, Prisma.UserUncheckedCreateWithoutLinkTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutLinkTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutLinkTokensInput, Prisma.UserUncheckedUpdateWithoutLinkTokensInput>
+}
+
+export type UserUpdateWithoutLinkTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
+  messages?: Prisma.MessageMapUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutLinkTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tgUserId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  tgUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tgFirstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  webSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  topicId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  cardMessageId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumTicketStatusFieldUpdateOperationsInput | $Enums.TicketStatus
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
+  messages?: Prisma.MessageMapUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -770,11 +909,13 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
 export type UserCountOutputType = {
   events: number
   messages: number
+  linkTokens: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   events?: boolean | UserCountOutputTypeCountEventsArgs
   messages?: boolean | UserCountOutputTypeCountMessagesArgs
+  linkTokens?: boolean | UserCountOutputTypeCountLinkTokensArgs
 }
 
 /**
@@ -801,12 +942,20 @@ export type UserCountOutputTypeCountMessagesArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.MessageMapWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountLinkTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WebLinkTokenWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tgUserId?: boolean
   tgUsername?: boolean
   tgFirstName?: boolean
+  webSessionId?: boolean
   topicId?: boolean
   cardMessageId?: boolean
   status?: boolean
@@ -817,6 +966,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   events?: boolean | Prisma.User$eventsArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
+  linkTokens?: boolean | Prisma.User$linkTokensArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -825,6 +975,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   tgUserId?: boolean
   tgUsername?: boolean
   tgFirstName?: boolean
+  webSessionId?: boolean
   topicId?: boolean
   cardMessageId?: boolean
   status?: boolean
@@ -840,6 +991,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   tgUserId?: boolean
   tgUsername?: boolean
   tgFirstName?: boolean
+  webSessionId?: boolean
   topicId?: boolean
   cardMessageId?: boolean
   status?: boolean
@@ -855,6 +1007,7 @@ export type UserSelectScalar = {
   tgUserId?: boolean
   tgUsername?: boolean
   tgFirstName?: boolean
+  webSessionId?: boolean
   topicId?: boolean
   cardMessageId?: boolean
   status?: boolean
@@ -865,10 +1018,11 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tgUserId" | "tgUsername" | "tgFirstName" | "topicId" | "cardMessageId" | "status" | "phone" | "sourceUrl" | "sourceCity" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tgUserId" | "tgUsername" | "tgFirstName" | "webSessionId" | "topicId" | "cardMessageId" | "status" | "phone" | "sourceUrl" | "sourceCity" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   events?: boolean | Prisma.User$eventsArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
+  linkTokens?: boolean | Prisma.User$linkTokensArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -879,13 +1033,15 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     events: Prisma.$TicketEventPayload<ExtArgs>[]
     messages: Prisma.$MessageMapPayload<ExtArgs>[]
+    linkTokens: Prisma.$WebLinkTokenPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    tgUserId: bigint
+    tgUserId: bigint | null
     tgUsername: string | null
-    tgFirstName: string
-    topicId: number
+    tgFirstName: string | null
+    webSessionId: string | null
+    topicId: number | null
     cardMessageId: number | null
     status: $Enums.TicketStatus
     phone: string | null
@@ -1289,6 +1445,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   events<T extends Prisma.User$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TicketEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.User$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessageMapPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  linkTokens<T extends Prisma.User$linkTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$linkTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebLinkTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1322,6 +1479,7 @@ export interface UserFieldRefs {
   readonly tgUserId: Prisma.FieldRef<"User", 'BigInt'>
   readonly tgUsername: Prisma.FieldRef<"User", 'String'>
   readonly tgFirstName: Prisma.FieldRef<"User", 'String'>
+  readonly webSessionId: Prisma.FieldRef<"User", 'String'>
   readonly topicId: Prisma.FieldRef<"User", 'Int'>
   readonly cardMessageId: Prisma.FieldRef<"User", 'Int'>
   readonly status: Prisma.FieldRef<"User", 'TicketStatus'>
@@ -1763,6 +1921,30 @@ export type User$messagesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.MessageMapScalarFieldEnum | Prisma.MessageMapScalarFieldEnum[]
+}
+
+/**
+ * User.linkTokens
+ */
+export type User$linkTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WebLinkToken
+   */
+  select?: Prisma.WebLinkTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WebLinkToken
+   */
+  omit?: Prisma.WebLinkTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WebLinkTokenInclude<ExtArgs> | null
+  where?: Prisma.WebLinkTokenWhereInput
+  orderBy?: Prisma.WebLinkTokenOrderByWithRelationInput | Prisma.WebLinkTokenOrderByWithRelationInput[]
+  cursor?: Prisma.WebLinkTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WebLinkTokenScalarFieldEnum | Prisma.WebLinkTokenScalarFieldEnum[]
 }
 
 /**

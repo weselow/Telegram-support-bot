@@ -220,12 +220,18 @@ export async function mirrorUserMessage(
   message: Message,
   userId: string,
   topicId: number,
-  supportGroupId: number
+  supportGroupId: number,
+  options?: { channelPrefix?: 'TG' }
 ): Promise<number | null> {
   let sentMessage: Message | null = null;
 
+  // Add [TG] prefix for text messages when user has both channels linked
+  const messageWithPrefix = options?.channelPrefix === 'TG' && message.text
+    ? { ...message, text: `[TG] ${message.text}` }
+    : message;
+
   for (const sender of topicSenders) {
-    sentMessage = await sender(api, message, supportGroupId, topicId);
+    sentMessage = await sender(api, messageWithPrefix, supportGroupId, topicId);
     if (sentMessage) break;
   }
 
@@ -279,7 +285,7 @@ export async function editMirroredUserMessage(
   supportGroupId: number
 ): Promise<boolean> {
   const mapping = await messageRepository.findByDmMessageId(userId, editedMessage.message_id);
-  if (!mapping) {
+  if (!mapping?.topicMessageId) {
     logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited message');
     return false;
   }
@@ -314,7 +320,7 @@ export async function editMirroredSupportMessage(
   userTgId: bigint
 ): Promise<boolean> {
   const mapping = await messageRepository.findByTopicMessageId(userId, editedMessage.message_id);
-  if (!mapping) {
+  if (!mapping?.dmMessageId) {
     logger.debug({ messageId: editedMessage.message_id, userId }, 'No mapping found for edited support message');
     return false;
   }

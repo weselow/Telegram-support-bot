@@ -4,6 +4,8 @@ import { findUserByTopicId } from '../../services/ticket.service.js';
 import { mirrorSupportMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
 import { cancelAllSlaTimers } from '../../services/sla.service.js';
+import { connectionManager } from '../../http/ws/connection-manager.js';
+import { messageRepository } from '../../db/repositories/message.repository.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { captureError, addBreadcrumb } from '../../config/sentry.js';
@@ -50,10 +52,39 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
   addBreadcrumb('message', 'Support reply', 'info', { topicId, userId: user.id });
 
   try {
-    await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+    // Mirror to Telegram only if user has Telegram ID
+    if (user.tgUserId) {
+      await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+    }
+
+    // Send to WebSocket if user has web session
+    if (user.webSessionId) {
+      const msgText = ctx.message.text ?? ctx.message.caption ?? '';
+      if (msgText) {
+        // Save message to history
+        const savedMessage = await messageRepository.createWebMessage({
+          userId: user.id,
+          topicMessageId: ctx.message.message_id,
+          direction: 'SUPPORT_TO_USER',
+          channel: 'TELEGRAM',
+          text: msgText,
+        });
+
+        // Send via WebSocket
+        connectionManager.sendToUser(user.id, 'message', {
+          id: savedMessage.id,
+          text: msgText,
+          from: 'support',
+          channel: 'telegram',
+          timestamp: savedMessage.createdAt.toISOString(),
+        });
+      }
+    }
 
     // Cancel SLA timers on support reply
-    await cancelAllSlaTimers(user.id, user.topicId);
+    if (user.topicId) {
+      await cancelAllSlaTimers(user.id, user.topicId);
+    }
 
     // Auto change status: NEW → IN_PROGRESS
     await autoChangeStatus(ctx.api, user, 'SUPPORT_REPLY');

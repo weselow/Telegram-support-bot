@@ -45,14 +45,16 @@ export async function resolveCallbackHandler(ctx: Context): Promise<void> {
   if (result.changed) {
     await ctx.answerCallbackQuery({ text: messages.callbacks.thanksClosed });
 
-    // Notify in topic
-    try {
-      const supportGroupId = Number(env.SUPPORT_GROUP_ID);
-      await ctx.api.sendMessage(supportGroupId, messages.resolve.clientClosed, {
-        message_thread_id: user.topicId,
-      });
-    } catch (error) {
-      logger.error({ error, userId, topicId: user.topicId }, 'Failed to send resolve notification');
+    // Notify in topic (only if user has a topic)
+    if (user.topicId) {
+      try {
+        const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+        await ctx.api.sendMessage(supportGroupId, messages.resolve.clientClosed, {
+          message_thread_id: user.topicId,
+        });
+      } catch (error) {
+        logger.error({ error, userId, topicId: user.topicId }, 'Failed to send resolve notification');
+      }
     }
   } else {
     await ctx.answerCallbackQuery({ text: messages.callbacks.closeError });

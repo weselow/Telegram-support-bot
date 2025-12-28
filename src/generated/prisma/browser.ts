@@ -32,3 +32,8 @@ export type TicketEvent = Prisma.TicketEventModel
  * 
  */
 export type MessageMap = Prisma.MessageMapModel
+/**
+ * Model WebLinkToken
+ * 
+ */
+export type WebLinkToken = Prisma.WebLinkTokenModel
