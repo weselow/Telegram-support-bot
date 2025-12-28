@@ -1,0 +1,178 @@
+/**
+ * DellShop Chat Widget - Modal Variant Styles
+ * Floating modal window in bottom-right corner
+ */
+
+/* Modal Container */
+.chat-widget--modal .chat-container {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 380px;
+  height: 520px;
+  max-height: calc(100vh - 120px);
+  background: var(--chat-bg);
+  border-radius: var(--chat-border-radius-lg);
+  box-shadow: var(--chat-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: var(--chat-z-widget);
+  transform-origin: bottom right;
+}
+
+/* Open/Close Animations */
+.chat-widget--modal .chat-container {
+  animation: chat-modal-open var(--chat-transition) ease-out forwards;
+}
+
+.chat-widget--modal .chat-container--closing {
+  animation: chat-modal-close var(--chat-transition) ease-in forwards;
+}
+
+@keyframes chat-modal-open {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes chat-modal-close {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+}
+
+/* Modal Header */
+.chat-widget--modal .chat-header {
+  flex-shrink: 0;
+}
+
+/* Modal Messages */
+.chat-widget--modal .chat-messages {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Modal Input */
+.chat-widget--modal .chat-input {
+  flex-shrink: 0;
+  border-radius: 0 0 var(--chat-border-radius-lg) var(--chat-border-radius-lg);
+}
+
+/* Modal Close Button */
+.chat-widget--modal .chat-header__btn--close {
+  width: 28px;
+  height: 28px;
+}
+
+/* Responsive - Mobile */
+@media (max-width: 480px) {
+  .chat-widget--modal .chat-container {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .chat-widget--modal .chat-header {
+    border-radius: 0;
+  }
+
+  .chat-widget--modal .chat-input {
+    border-radius: 0;
+    padding-bottom: calc(var(--chat-spacing-md) + env(safe-area-inset-bottom, 0));
+  }
+
+  .chat-widget--modal .chat-button {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* Responsive - Small screens */
+@media (max-width: 420px) and (min-width: 481px) {
+  .chat-widget--modal .chat-container {
+    width: calc(100vw - 40px);
+    right: 20px;
+  }
+}
+
+/* Responsive - Tablet and above */
+@media (min-width: 768px) {
+  .chat-widget--modal .chat-container {
+    width: 400px;
+    height: 560px;
+  }
+}
+
+/* Responsive - Large screens */
+@media (min-width: 1200px) {
+  .chat-widget--modal .chat-container {
+    width: 420px;
+    height: 600px;
+  }
+
+  .chat-widget--modal .chat-button {
+    bottom: 24px;
+    right: 24px;
+  }
+
+  .chat-widget--modal .chat-container {
+    bottom: 100px;
+    right: 24px;
+  }
+}
+
+/* Compact Mode - for smaller viewports */
+.chat-widget--modal.chat-widget--compact .chat-container {
+  width: 340px;
+  height: 450px;
+}
+
+.chat-widget--modal.chat-widget--compact .chat-header {
+  padding: var(--chat-spacing-sm) var(--chat-spacing-md);
+}
+
+.chat-widget--modal.chat-widget--compact .chat-header__avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.chat-widget--modal.chat-widget--compact .chat-header__title {
+  font-size: var(--chat-font-size-md);
+}
+
+.chat-widget--modal.chat-widget--compact .chat-message__bubble {
+  padding: var(--chat-spacing-xs) var(--chat-spacing-sm);
+}
+
+/* Notification Pulse */
+.chat-widget--modal .chat-button--notify {
+  animation: chat-button-pulse 2s infinite;
+}
+
+@keyframes chat-button-pulse {
+  0% {
+    box-shadow: var(--chat-shadow-lg);
+  }
+  50% {
+    box-shadow: var(--chat-shadow-lg), 0 0 0 8px rgba(0, 102, 204, 0.2);
+  }
+  100% {
+    box-shadow: var(--chat-shadow-lg);
+  }
+}

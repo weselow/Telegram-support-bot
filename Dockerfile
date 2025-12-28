@@ -1,4 +1,23 @@
-# Build stage (keeps dev dependencies for development)
+# =============================================================================
+# Widget builder stage
+# =============================================================================
+FROM node:22-alpine AS widget-builder
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /widget
+
+# Copy package files and install
+COPY chat-widget/package.json chat-widget/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy source and build
+COPY chat-widget/ ./
+RUN pnpm build:prod
+
+# =============================================================================
+# App builder stage
+# =============================================================================
 FROM node:22-alpine AS builder
 
 # Install pnpm
@@ -52,6 +71,9 @@ COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 # Copy built files and config from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/config ./config
+
+# Copy widget static files
+COPY --from=widget-builder /widget/dist ./public/chat-widget
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./

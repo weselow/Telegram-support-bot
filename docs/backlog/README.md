@@ -66,6 +66,10 @@
 | [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
 | [TD-025](technical-debt/td-025-dry-session-parsing.md) | DRY: вынести session parsing | Средний |
 | [TD-027](technical-debt/td-027-ticket-status-type.md) | Типизация: TicketStatus union type | Средний |
+| [TD-028](technical-debt/td-028-widget-offline-mode.md) | Chat Widget: Offline режим | Высокий |
+| [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
+| [TD-030](technical-debt/td-030-widget-http-401-handling.md) | Chat Widget: HTTP 401 handling | Высокий |
+| [TD-031](technical-debt/td-031-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | Низкий |
 
 ### Выполнено
 

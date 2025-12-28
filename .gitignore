@@ -8,6 +8,8 @@ node_modules/
 
 # Build output
 dist/
+public/chat-widget/*.js
+public/chat-widget/*.css
 
 # Environment
 .env

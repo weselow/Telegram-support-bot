@@ -1,0 +1,37 @@
+{
+  "name": "@dellshop/chat-widget",
+  "version": "0.1.0",
+  "description": "Embeddable live chat widget for DellShop support",
+  "main": "dist/chat-widget.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "node esbuild.config.js --watch",
+    "build": "node esbuild.config.js",
+    "build:prod": "cross-env NODE_ENV=production node esbuild.config.js",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.24.0",
+    "rimraf": "^5.0.10",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "chat",
+    "widget",
+    "support",
+    "websocket",
+    "dellshop"
+  ],
+  "author": "DellShop",
+  "license": "UNLICENSED",
+  "private": true
+}
