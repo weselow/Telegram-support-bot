@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { healthRoute } from './routes/health.js';
 import { askSupportRoute } from './routes/ask-support.js';
+import { chatRoutes } from './routes/chat.js';
 
 let server: FastifyInstance | null = null;
 
@@ -15,6 +16,7 @@ export async function startHttpServer(): Promise<FastifyInstance> {
   // Register routes
   await server.register(healthRoute);
   await server.register(askSupportRoute);
+  await server.register(chatRoutes);
 
   const port = parseInt(env.HTTP_PORT, 10);
 
