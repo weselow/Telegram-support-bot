@@ -163,14 +163,14 @@ jobs:
             # Скачать новый образ app
             docker compose pull app
 
-            # Запустить/обновить app
-            # up -d app: запустит postgres/redis если не запущены, но НЕ перезапустит их
-            # Перезапустится только app (т.к. образ изменился)
-            docker compose up -d app
+            # Запустить все сервисы
+            # up -d: запустит всё, но перезапустит только изменившиеся (app)
+            # postgres, redis, caddy — не перезапустятся если уже работают
+            docker compose up -d
 
-            # Проверить что контейнер запустился
+            # Проверить что контейнеры запустились
             sleep 5
-            docker compose ps app | grep -q "Up" || exit 1
+            docker compose ps | grep -E "(app|caddy)" | grep -q "Up" || exit 1
 
             # Очистка старых образов
             docker image prune -f
