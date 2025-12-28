@@ -208,9 +208,12 @@ chmod 600 ~/.ssh/github_deploy
 
 ```
 /opt/support-bot/
-├── docker-compose.yml
+├── docker-compose.yml      # Только этот файл (без override!)
 ├── .env                    # Создаётся автоматически при деплое
 └── .volumes/
     ├── postgres/           # Данные PostgreSQL
     └── redis/              # Данные Redis
 ```
+
+**Важно:** `docker-compose.override.yml` — только для development!
+На production его НЕ должно быть — иначе откроются порты postgres/redis.
