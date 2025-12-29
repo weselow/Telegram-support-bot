@@ -63,7 +63,6 @@
 | # | Задача | Приоритет |
 |---|--------|-----------|
 | [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
-| [TD-025](technical-debt/td-025-dry-session-parsing.md) | DRY: вынести session parsing | Средний |
 | [TD-027](technical-debt/td-027-ticket-status-type.md) | Типизация: TicketStatus union type | Средний |
 | [TD-028](technical-debt/td-028-widget-offline-mode.md) | Chat Widget: Offline режим | Высокий |
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
@@ -81,6 +80,7 @@
 | [TD-022](../bugs/2025-12-29-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | DONE |
 | [TD-023](../bugs/2025-12-29-websocket-integration-tests.md) | Integration-тесты для WebSocket API | DONE |
 | [TD-026](../bugs/2025-12-27-migrate-npm-to-pnpm.md) | Миграция npm → pnpm | DONE |
+| [TD-025](../bugs/2025-12-29-dry-session-parsing.md) | DRY: вынести session parsing | DONE |
 | [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
 
 ---

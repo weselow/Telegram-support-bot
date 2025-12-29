@@ -5,26 +5,10 @@ import { connectionManager } from './connection-manager.js';
 import { handleWebSocketMessage } from './handler.js';
 import { logger } from '../../utils/logger.js';
 import { isOriginAllowedByConfig, getConfiguredBaseDomain } from '../../utils/cors.js';
+import { parseSessionIdFromCookie, isValidSessionId } from '../utils/session.js';
 
-const SESSION_COOKIE_NAME = 'webchat_session';
 const PING_INTERVAL = 30000; // 30 seconds
 const CLEANUP_INTERVAL = 60000; // 1 minute
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function getSessionIdFromCookie(cookieHeader: string | undefined): string | null {
-  if (!cookieHeader) return null;
-
-  const regex = new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`);
-  const match = regex.exec(cookieHeader);
-  const sessionId = match?.[1] ?? null;
-
-  // Validate UUID format
-  if (sessionId && !UUID_REGEX.test(sessionId)) {
-    return null;
-  }
-
-  return sessionId;
-}
 
 export async function registerWebSocket(fastify: FastifyInstance): Promise<void> {
   await fastify.register(websocket, {
@@ -63,9 +47,9 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
     }
 
     // Get session ID from cookie or query parameter
-    const cookieSessionId = getSessionIdFromCookie(request.headers.cookie);
+    const cookieSessionId = parseSessionIdFromCookie(request.headers.cookie);
     const querySessionId = (request.query as { session?: string }).session;
-    const sessionId = cookieSessionId ?? querySessionId;
+    const sessionId = cookieSessionId ?? (isValidSessionId(querySessionId) ? querySessionId : null);
 
     if (!sessionId) {
       socket.close(4001, 'Session not found');

@@ -6,11 +6,13 @@ import { checkIpRateLimit } from '../../services/rate-limit.service.js';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
 import { isOriginAllowedByConfig } from '../../utils/cors.js';
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_COOKIE_MAX_AGE,
+  parseSessionIdFromCookie,
+} from '../utils/session.js';
 
-const SESSION_COOKIE_NAME = 'webchat_session';
-const SESSION_COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
 const MESSAGE_MAX_LENGTH = 4000;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface InitBody {
   fingerprint?: string;
@@ -33,19 +35,7 @@ interface HistoryQuery {
 }
 
 function getSessionId(request: FastifyRequest): string | null {
-  const cookies = request.headers.cookie;
-  if (!cookies) return null;
-
-  const regex = new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`);
-  const match = regex.exec(cookies);
-  const sessionId = match?.[1] ?? null;
-
-  // Validate UUID format
-  if (sessionId && !UUID_REGEX.test(sessionId)) {
-    return null;
-  }
-
-  return sessionId;
+  return parseSessionIdFromCookie(request.headers.cookie);
 }
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
@@ -83,7 +73,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/init - Initialize session
   fastify.post('/api/chat/init', async (request: FastifyRequest<{ Body: InitBody }>, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const ip = request.ip;
 
@@ -136,7 +128,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // GET /api/chat/history - Get message history
   fastify.get('/api/chat/history', async (request: FastifyRequest<{ Querystring: HistoryQuery }>, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -176,7 +170,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // GET /api/chat/status - Get ticket status
   fastify.get('/api/chat/status', async (request: FastifyRequest, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -209,7 +205,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/message - Send a message (fallback for no WebSocket)
   fastify.post('/api/chat/message', async (request: FastifyRequest<{ Body: MessageBody }>, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -273,7 +271,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/link-telegram - Get Telegram deep link
   fastify.post('/api/chat/link-telegram', async (request: FastifyRequest, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -306,7 +306,9 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/close - Close ticket
   fastify.post('/api/chat/close', async (request: FastifyRequest<{ Body: CloseBody }>, reply) => {
-    setCorsHeaders(request, reply);
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
