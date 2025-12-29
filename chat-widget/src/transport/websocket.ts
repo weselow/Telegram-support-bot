@@ -45,6 +45,7 @@ export class WebSocketClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private _state: ConnectionState = 'disconnected'
   private manualClose = false
+  private messageQueue: ClientEvent[] = []
 
   constructor(config: WebSocketClientConfig) {
     this.config = {
@@ -197,6 +198,7 @@ export class WebSocketClient {
       case 'connected':
         this.setState('connected')
         this.handlers.onConnected?.(event.data.sessionId)
+        this.flushMessageQueue()
         break
 
       case 'message':
@@ -228,7 +230,11 @@ export class WebSocketClient {
 
   private send(event: ClientEvent): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('[ChatWidget] Cannot send message, not connected')
+      // Queue message to send after connection
+      if (event.type === 'message') {
+        this.messageQueue.push(event)
+        console.log('[ChatWidget] Message queued, waiting for connection')
+      }
       return
     }
 
@@ -236,6 +242,18 @@ export class WebSocketClient {
       this.ws.send(JSON.stringify(event))
     } catch (error) {
       console.error('[ChatWidget] Failed to send message:', error)
+    }
+  }
+
+  private flushMessageQueue(): void {
+    if (this.messageQueue.length === 0) return
+
+    console.log(`[ChatWidget] Sending ${this.messageQueue.length} queued message(s)`)
+    const queue = [...this.messageQueue]
+    this.messageQueue = []
+
+    for (const event of queue) {
+      this.send(event)
     }
   }
 
