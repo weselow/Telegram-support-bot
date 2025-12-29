@@ -61,6 +61,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     if (user.webSessionId) {
       const msgText = ctx.message.text ?? ctx.message.caption ?? '';
       const photo = ctx.message.photo;
+      const voice = ctx.message.voice;
 
       // Get photo URL if present (use largest size)
       let imageUrl: string | undefined;
@@ -78,15 +79,33 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
         }
       }
 
-      // Send if there's text or image
-      if (msgText || imageUrl) {
+      // Get voice URL if present
+      let voiceUrl: string | undefined;
+      let voiceDuration: number | undefined;
+      if (voice) {
+        try {
+          const file = await ctx.api.getFile(voice.file_id);
+          if (file.file_path) {
+            voiceUrl = `https://api.telegram.org/file/bot${ctx.api.token}/${file.file_path}`;
+            voiceDuration = voice.duration;
+          }
+        } catch (err) {
+          logger.warn({ err, topicId }, 'Failed to get voice URL for web chat');
+        }
+      }
+
+      // Send if there's text, image or voice
+      if (msgText || imageUrl || voiceUrl) {
+        // Determine placeholder text for non-text messages
+        const placeholderText = voiceUrl ? '[Голосовое сообщение]' : imageUrl ? '[Изображение]' : '';
+
         // Save message to history
         const savedMessage = await messageRepository.createWebMessage({
           userId: user.id,
           topicMessageId: ctx.message.message_id,
           direction: 'SUPPORT_TO_USER',
           channel: 'TELEGRAM',
-          text: msgText || '[Изображение]',
+          text: msgText || placeholderText,
         });
 
         // Send via WebSocket
@@ -97,6 +116,8 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
           channel: 'telegram',
           timestamp: savedMessage.createdAt.toISOString(),
           ...(imageUrl && { imageUrl }),
+          ...(voiceUrl && { voiceUrl }),
+          ...(voiceDuration !== undefined && { voiceDuration }),
         });
       }
     }

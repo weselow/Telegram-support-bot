@@ -324,6 +324,12 @@ export class MessagesList {
       bubble.appendChild(img)
     }
 
+    // Add voice player if present
+    if (message.voiceUrl) {
+      const voiceContainer = this.createVoicePlayer(message.voiceUrl, message.voiceDuration)
+      bubble.appendChild(voiceContainer)
+    }
+
     // Add text if present
     if (message.text) {
       const textEl = createElement('div', { className: 'chat-message__text' })
@@ -383,5 +389,69 @@ export class MessagesList {
       default:
         return ''
     }
+  }
+
+  private createVoicePlayer(url: string, duration?: number): HTMLElement {
+    const container = createElement('div', { className: 'chat-message__voice' })
+
+    // Play button
+    const playBtn = createElement('button', {
+      className: 'chat-message__voice-btn',
+      'aria-label': 'Воспроизвести'
+    })
+    playBtn.innerHTML = icons.play
+
+    // Progress bar
+    const progress = createElement('div', { className: 'chat-message__voice-progress' })
+    const progressBar = createElement('div', { className: 'chat-message__voice-progress-bar' })
+    progress.appendChild(progressBar)
+
+    // Duration text
+    const durationText = createElement('span', { className: 'chat-message__voice-duration' }, [
+      this.formatDuration(duration || 0)
+    ])
+
+    container.appendChild(playBtn)
+    container.appendChild(progress)
+    container.appendChild(durationText)
+
+    // Audio element (hidden)
+    const audio = new Audio(url)
+    audio.preload = 'metadata'
+
+    let isPlaying = false
+
+    playBtn.onclick = () => {
+      if (isPlaying) {
+        audio.pause()
+        playBtn.innerHTML = icons.play
+        isPlaying = false
+      } else {
+        audio.play()
+        playBtn.innerHTML = icons.pause
+        isPlaying = true
+      }
+    }
+
+    audio.ontimeupdate = () => {
+      const percent = (audio.currentTime / audio.duration) * 100
+      ;(progressBar as HTMLElement).style.width = `${percent}%`
+      durationText.textContent = this.formatDuration(audio.currentTime)
+    }
+
+    audio.onended = () => {
+      playBtn.innerHTML = icons.play
+      isPlaying = false
+      ;(progressBar as HTMLElement).style.width = '0%'
+      durationText.textContent = this.formatDuration(duration || 0)
+    }
+
+    return container
+  }
+
+  private formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 }

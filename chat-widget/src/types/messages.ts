@@ -17,6 +17,9 @@ export interface Message {
   timestamp: string
   // Optional image URL (from support via Telegram)
   imageUrl?: string
+  // Optional voice message (from support via Telegram)
+  voiceUrl?: string
+  voiceDuration?: number
   // Client-side only fields
   status?: MessageStatus
   temp_id?: string

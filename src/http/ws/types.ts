@@ -35,6 +35,8 @@ export interface ServerMessageData {
     timestamp: string;
     replyTo?: string;
     imageUrl?: string;
+    voiceUrl?: string;
+    voiceDuration?: number;
   };
   typing: { isTyping: boolean };
   status: { status: string; assignedTo?: string };
