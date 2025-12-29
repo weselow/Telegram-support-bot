@@ -345,6 +345,12 @@ export class ChatWidget {
       },
 
       onMessage: (message) => {
+        // Server echoes user messages back as confirmation - skip to avoid duplicates
+        // (user messages are already shown via optimistic update in sendMessage)
+        if (message.from === 'user') {
+          return
+        }
+
         this.state.addMessage(message)
         this.messages?.addMessage(message)
 
