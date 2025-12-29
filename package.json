@@ -53,7 +53,8 @@
     "onlyBuiltDependencies": [
       "prisma",
       "@prisma/engines",
-      "esbuild"
+      "esbuild",
+      "msgpackr-extract"
     ]
   },
   "devDependencies": {
