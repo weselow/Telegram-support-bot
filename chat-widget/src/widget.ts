@@ -123,6 +123,8 @@ export class ChatWidget {
    * Open chat window
    */
   async open(): Promise<void> {
+    console.log('[ChatWidget] open() called, initialized:', this.initialized)
+
     if (!this.initialized) {
       await this.init()
     }
@@ -136,7 +138,9 @@ export class ChatWidget {
     this.button?.setUnreadCount(0)
 
     // Connect if not connected
-    if (!this.wsClient.isConnected()) {
+    const isConnected = this.wsClient.isConnected()
+    console.log('[ChatWidget] isConnected:', isConnected)
+    if (!isConnected) {
       await this.connect()
     }
 
@@ -474,7 +478,9 @@ export class ChatWidget {
   private createButton(): void {
     this.button = new ChatButton({
       position: this.config.position === 'left' ? 'bottom-left' : 'bottom-right',
-      onClick: () => this.open()
+      onClick: () => {
+        this.open().catch(err => console.error('[ChatWidget] open() error:', err))
+      }
     })
   }
 
