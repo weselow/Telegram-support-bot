@@ -55,12 +55,18 @@ export interface WidgetConfig {
 export type PartialWidgetConfig = Partial<WidgetConfig>
 
 /**
+ * Build-time domain configuration
+ * Set via SUPPORT_DOMAIN env variable during build
+ */
+const SUPPORT_DOMAIN = process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru'
+
+/**
  * Default configuration
  */
 export const DEFAULT_CONFIG: WidgetConfig = {
-  apiUrl: 'https://chat.dellshop.ru',
-  wsUrl: 'wss://chat.dellshop.ru/ws/chat',
-  baseUrl: 'https://chat.dellshop.ru',
+  apiUrl: SUPPORT_DOMAIN,
+  wsUrl: SUPPORT_DOMAIN.replace(/^https?:/, 'wss:') + '/ws/chat',
+  baseUrl: SUPPORT_DOMAIN + '/chat-widget',
   variant: 'auto',
   position: 'right',
   responsive: {

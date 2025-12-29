@@ -4,6 +4,7 @@ const path = require('path')
 
 const isWatch = process.argv.includes('--watch')
 const isProd = process.env.NODE_ENV === 'production'
+const supportDomain = process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru'
 
 // Ensure dist directory exists
 if (!fs.existsSync('dist')) {
@@ -22,7 +23,8 @@ const jsConfig = {
   minify: isProd,
   sourcemap: !isProd,
   define: {
-    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development')
+    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
+    'process.env.SUPPORT_DOMAIN': JSON.stringify(supportDomain)
   },
   banner: {
     js: `/* DellShop Chat Widget v0.1.0 | (c) ${new Date().getFullYear()} DellShop */`
