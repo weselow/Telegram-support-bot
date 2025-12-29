@@ -130,9 +130,14 @@ export class ChatContainer {
   private createWrapper(): HTMLElement {
     const variantClass = `chat-widget--${this.options.variant}`
 
-    return createElement('div', {
+    const wrapper = createElement('div', {
       className: `chat-widget ${variantClass}`
     })
+
+    // Start hidden - will be shown when open() is called
+    wrapper.style.display = 'none'
+
+    return wrapper
   }
 
   private createContainer(): HTMLElement {
