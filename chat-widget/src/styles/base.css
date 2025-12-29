@@ -257,6 +257,19 @@
   word-wrap: break-word;
 }
 
+.chat-message__image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: var(--chat-border-radius);
+  cursor: pointer;
+  display: block;
+  margin-bottom: var(--chat-spacing-xs);
+}
+
+.chat-message__image:hover {
+  opacity: 0.9;
+}
+
 .chat-message--user .chat-message__bubble {
   background: var(--chat-bg-message-user);
   color: var(--chat-text-light);

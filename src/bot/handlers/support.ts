@@ -60,14 +60,33 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     // Send to WebSocket if user has web session
     if (user.webSessionId) {
       const msgText = ctx.message.text ?? ctx.message.caption ?? '';
-      if (msgText) {
+      const photo = ctx.message.photo;
+
+      // Get photo URL if present (use largest size)
+      let imageUrl: string | undefined;
+      if (photo && photo.length > 0) {
+        const largestPhoto = photo[photo.length - 1];
+        if (largestPhoto) {
+          try {
+            const file = await ctx.api.getFile(largestPhoto.file_id);
+            if (file.file_path) {
+              imageUrl = `https://api.telegram.org/file/bot${ctx.api.token}/${file.file_path}`;
+            }
+          } catch (err) {
+            logger.warn({ err, topicId }, 'Failed to get photo URL for web chat');
+          }
+        }
+      }
+
+      // Send if there's text or image
+      if (msgText || imageUrl) {
         // Save message to history
         const savedMessage = await messageRepository.createWebMessage({
           userId: user.id,
           topicMessageId: ctx.message.message_id,
           direction: 'SUPPORT_TO_USER',
           channel: 'TELEGRAM',
-          text: msgText,
+          text: msgText || '[Изображение]',
         });
 
         // Send via WebSocket
@@ -77,6 +96,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
           from: 'support',
           channel: 'telegram',
           timestamp: savedMessage.createdAt.toISOString(),
+          ...(imageUrl && { imageUrl }),
         });
       }
     }

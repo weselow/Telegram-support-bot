@@ -311,7 +311,26 @@ export class MessagesList {
 
     // Message bubble
     const bubble = createElement('div', { className: 'chat-message__bubble' })
-    bubble.innerHTML = formatMessageText(message.text)
+
+    // Add image if present
+    if (message.imageUrl) {
+      const img = createElement('img', {
+        className: 'chat-message__image',
+        src: message.imageUrl,
+        alt: 'Изображение'
+      }) as HTMLImageElement
+      img.loading = 'lazy'
+      img.onclick = () => window.open(message.imageUrl, '_blank')
+      bubble.appendChild(img)
+    }
+
+    // Add text if present
+    if (message.text) {
+      const textEl = createElement('div', { className: 'chat-message__text' })
+      textEl.innerHTML = formatMessageText(message.text)
+      bubble.appendChild(textEl)
+    }
+
     wrapper.appendChild(bubble)
 
     // Time and status

@@ -34,6 +34,7 @@ export interface ServerMessageData {
     channel: 'web' | 'telegram';
     timestamp: string;
     replyTo?: string;
+    imageUrl?: string;
   };
   typing: { isTyping: boolean };
   status: { status: string; assignedTo?: string };
