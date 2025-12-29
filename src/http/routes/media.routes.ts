@@ -6,7 +6,7 @@ import { logger } from '../../utils/logger.js';
  * Media proxy routes - proxies Telegram files to avoid CORS issues
  * and hide bot token from client
  */
-export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
+export function mediaRoutes(fastify: FastifyInstance): void {
   /**
    * GET /api/media/:fileId
    * Proxies file from Telegram servers
@@ -17,7 +17,7 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
     const { fileId } = request.params;
 
     if (!fileId || fileId.length < 10) {
-      return reply.status(400).send({ error: 'Invalid file ID' });
+      return await reply.status(400).send({ error: 'Invalid file ID' });
     }
 
     try {
@@ -25,7 +25,7 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
       const file = await bot.api.getFile(fileId);
 
       if (!file.file_path) {
-        return reply.status(404).send({ error: 'File not found' });
+        return await reply.status(404).send({ error: 'File not found' });
       }
 
       // Construct Telegram file URL
@@ -36,7 +36,7 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
 
       if (!response.ok) {
         logger.warn({ fileId, status: response.status }, 'Failed to fetch file from Telegram');
-        return reply.status(502).send({ error: 'Failed to fetch file' });
+        return await reply.status(502).send({ error: 'Failed to fetch file' });
       }
 
       // Determine content type from file path
@@ -49,10 +49,10 @@ export async function mediaRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Stream the response
       const buffer = await response.arrayBuffer();
-      return reply.send(Buffer.from(buffer));
+      return await reply.send(Buffer.from(buffer));
     } catch (error) {
       logger.error({ error, fileId }, 'Error proxying media file');
-      return reply.status(500).send({ error: 'Internal server error' });
+      return await reply.status(500).send({ error: 'Internal server error' });
     }
   });
 }
@@ -78,5 +78,5 @@ function getContentType(filePath: string): string {
     pdf: 'application/pdf',
   };
 
-  return mimeTypes[ext || ''] || 'application/octet-stream';
+  return mimeTypes[ext ?? ''] ?? 'application/octet-stream';
 }

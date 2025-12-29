@@ -34,7 +34,7 @@ export async function startHttpServer(): Promise<FastifyInstance> {
   await server.register(healthRoute);
   await server.register(askSupportRoute);
   await server.register(chatRoutes);
-  await server.register(mediaRoutes);
+  server.register(mediaRoutes);
 
   // Register WebSocket
   await registerWebSocket(server);
