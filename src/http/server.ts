@@ -7,6 +7,7 @@ import { logger } from '../utils/logger.js';
 import { healthRoute } from './routes/health.js';
 import { askSupportRoute } from './routes/ask-support.js';
 import { chatRoutes } from './routes/chat.js';
+import { mediaRoutes } from './routes/media.routes.js';
 import { registerWebSocket } from './ws/websocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,7 @@ export async function startHttpServer(): Promise<FastifyInstance> {
   await server.register(healthRoute);
   await server.register(askSupportRoute);
   await server.register(chatRoutes);
+  await server.register(mediaRoutes);
 
   // Register WebSocket
   await registerWebSocket(server);

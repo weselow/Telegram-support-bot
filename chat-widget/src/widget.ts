@@ -351,12 +351,15 @@ export class ChatWidget {
           return
         }
 
-        this.state.addMessage(message)
-        this.messages?.addMessage(message)
+        // Resolve relative media URLs to absolute using apiUrl
+        const resolvedMessage = this.resolveMediaUrls(message)
+
+        this.state.addMessage(resolvedMessage)
+        this.messages?.addMessage(resolvedMessage)
 
         // Play sound and show browser notification for support messages
         // only when user is not actively looking at the chat
-        if (message.from === 'support') {
+        if (resolvedMessage.from === 'support') {
           const isTabHidden = document.hidden
           const isChatClosed = !this.container?.isOpened()
 
@@ -368,7 +371,7 @@ export class ChatWidget {
 
             // Show browser notification if tab is hidden and notifications enabled
             if (isTabHidden && this.config.notifications) {
-              showNotification('DellShop Поддержка', message.text, {
+              showNotification('DellShop Поддержка', resolvedMessage.text, {
                 onClick: () => this.open()
               })
             }
@@ -613,6 +616,22 @@ export class ChatWidget {
         return 'Печатает...'
       default:
         return status
+    }
+  }
+
+  private resolveMediaUrls(message: Message): Message {
+    // If URLs are already absolute, return as-is
+    if (!message.imageUrl?.startsWith('/') && !message.voiceUrl?.startsWith('/')) {
+      return message
+    }
+
+    // Resolve relative URLs using apiUrl
+    const baseUrl = this.config.apiUrl.replace(/\/$/, '') // Remove trailing slash
+
+    return {
+      ...message,
+      ...(message.imageUrl?.startsWith('/') && { imageUrl: baseUrl + message.imageUrl }),
+      ...(message.voiceUrl?.startsWith('/') && { voiceUrl: baseUrl + message.voiceUrl }),
     }
   }
 

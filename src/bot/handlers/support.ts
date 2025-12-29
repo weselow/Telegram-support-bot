@@ -64,18 +64,12 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
       const voice = ctx.message.voice;
 
       // Get photo URL if present (use largest size)
+      // Use our proxy endpoint to avoid CORS and hide bot token
       let imageUrl: string | undefined;
       if (photo && photo.length > 0) {
         const largestPhoto = photo[photo.length - 1];
         if (largestPhoto) {
-          try {
-            const file = await ctx.api.getFile(largestPhoto.file_id);
-            if (file.file_path) {
-              imageUrl = `https://api.telegram.org/file/bot${ctx.api.token}/${file.file_path}`;
-            }
-          } catch (err) {
-            logger.warn({ err, topicId }, 'Failed to get photo URL for web chat');
-          }
+          imageUrl = `/api/media/${largestPhoto.file_id}`;
         }
       }
 
@@ -83,15 +77,8 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
       let voiceUrl: string | undefined;
       let voiceDuration: number | undefined;
       if (voice) {
-        try {
-          const file = await ctx.api.getFile(voice.file_id);
-          if (file.file_path) {
-            voiceUrl = `https://api.telegram.org/file/bot${ctx.api.token}/${file.file_path}`;
-            voiceDuration = voice.duration;
-          }
-        } catch (err) {
-          logger.warn({ err, topicId }, 'Failed to get voice URL for web chat');
-        }
+        voiceUrl = `/api/media/${voice.file_id}`;
+        voiceDuration = voice.duration;
       }
 
       // Send if there's text, image or voice
