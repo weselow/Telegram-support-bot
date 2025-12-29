@@ -123,6 +123,22 @@ describe('WebSocket Integration', () => {
     });
   }
 
+  // Creates client and waits for connected message atomically to avoid race condition
+  function createClientWithConnected(
+    sessionId: string
+  ): Promise<{ ws: WebSocket; connected: ServerMessage }> {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(`${serverAddress}/ws/chat?session=${sessionId}`);
+      ws.once('message', (data) => {
+        const message = JSON.parse(data.toString()) as ServerMessage;
+        resolve({ ws, connected: message });
+      });
+      ws.on('error', reject);
+      // Timeout for connection
+      setTimeout(() => reject(new Error('Connection timeout')), 5000);
+    });
+  }
+
   function waitForMessage(ws: WebSocket, timeout = 2000): Promise<ServerMessage> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Timeout waiting for message')), timeout);
@@ -166,11 +182,12 @@ describe('WebSocket Integration', () => {
       });
 
       try {
-        const ws = await createClient(testUser.webSessionId!);
-        const message = await waitForMessage(ws);
+        // Use atomic create+wait to avoid race condition where server sends
+        // 'connected' before client starts listening for messages
+        const { ws, connected } = await createClientWithConnected(testUser.webSessionId!);
 
-        expect(message.type).toBe('connected');
-        expect(message.data).toMatchObject({
+        expect(connected.type).toBe('connected');
+        expect(connected.data).toMatchObject({
           sessionId: testUser.webSessionId,
           ticketStatus: 'NEW',
         });
