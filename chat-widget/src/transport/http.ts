@@ -36,8 +36,15 @@ export class HttpClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
+    // For POST requests without body, send empty JSON to satisfy Fastify's
+    // Content-Type: application/json requirement
+    const method = options.method?.toUpperCase()
+    const needsBody = method === 'POST' || method === 'PUT' || method === 'PATCH'
+    const body = options.body ?? (needsBody ? '{}' : undefined)
+
     const response = await fetch(url, {
       ...options,
+      body,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
