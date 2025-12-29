@@ -87,7 +87,7 @@
 
 ## Идеи на будущее
 
-- ~~[Web-чат интеграция](ideas/web-chat-integration.md)~~ → реализовано в [021](../solutions/021-web-chat-api/021-web-chat-api.md)
+- ~~Web-чат интеграция~~ → реализовано в [021](../solutions/021-web-chat-api/021-web-chat-api.md)
 
 ---
 
