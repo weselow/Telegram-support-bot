@@ -98,6 +98,10 @@ model MessageMap {
   channel        MessageChannel   @default(TELEGRAM)
   text           String?          // Контент для web-сообщений
 
+  // Медиа (Telegram file_id для проксирования через /api/media/:fileId)
+  mediaFileId    String?          @map("media_file_id")
+  mediaDuration  Int?             @map("media_duration") // Для голосовых сообщений (секунды)
+
   createdAt      DateTime         @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

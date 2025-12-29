@@ -86,6 +86,9 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
         // Determine placeholder text for non-text messages
         const placeholderText = voiceUrl ? '[Голосовое сообщение]' : imageUrl ? '[Изображение]' : '';
 
+        // Determine media file ID for storage
+        const mediaFileId = voice?.file_id ?? (photo && photo.length > 0 ? photo[photo.length - 1]?.file_id : undefined);
+
         // Save message to history
         const savedMessage = await messageRepository.createWebMessage({
           userId: user.id,
@@ -93,6 +96,8 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
           direction: 'SUPPORT_TO_USER',
           channel: 'TELEGRAM',
           text: msgText || placeholderText,
+          mediaFileId,
+          mediaDuration: voiceDuration,
         });
 
         // Send via WebSocket

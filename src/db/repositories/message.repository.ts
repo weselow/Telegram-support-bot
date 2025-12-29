@@ -10,10 +10,12 @@ export interface CreateMessageMapData {
 
 export interface CreateWebMessageData {
   userId: string;
-  topicMessageId?: number;
+  topicMessageId?: number | undefined;
   direction: MessageDirection;
   channel: MessageChannel;
   text: string;
+  mediaFileId?: string | undefined;
+  mediaDuration?: number | undefined;
 }
 
 export interface GetHistoryOptions {
@@ -65,6 +67,8 @@ export const messageRepository = {
         direction: data.direction,
         channel: data.channel,
         text: data.text,
+        mediaFileId: data.mediaFileId ?? null,
+        mediaDuration: data.mediaDuration ?? null,
       },
     });
   },

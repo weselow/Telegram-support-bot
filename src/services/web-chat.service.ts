@@ -21,6 +21,9 @@ export interface ChatMessage {
   from: 'user' | 'support';
   channel: 'web' | 'telegram';
   timestamp: string;
+  imageUrl?: string;
+  voiceUrl?: string;
+  voiceDuration?: number;
 }
 
 export interface HistoryResult {
@@ -45,12 +48,20 @@ export interface LinkTelegramResult {
 }
 
 function mapMessageToChat(msg: MessageMap): ChatMessage {
+  // Build media URLs from stored file_id
+  const isVoice = msg.mediaDuration !== null;
+  const imageUrl = msg.mediaFileId && !isVoice ? `/api/media/${msg.mediaFileId}` : undefined;
+  const voiceUrl = msg.mediaFileId && isVoice ? `/api/media/${msg.mediaFileId}` : undefined;
+
   return {
     id: msg.id,
     text: msg.text ?? '',
     from: msg.direction === 'USER_TO_SUPPORT' ? 'user' : 'support',
     channel: msg.channel === 'WEB' ? 'web' : 'telegram',
     timestamp: msg.createdAt.toISOString(),
+    ...(imageUrl && { imageUrl }),
+    ...(voiceUrl && { voiceUrl }),
+    ...(msg.mediaDuration !== null && { voiceDuration: msg.mediaDuration }),
   };
 }
 

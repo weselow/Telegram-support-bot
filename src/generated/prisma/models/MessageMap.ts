@@ -29,11 +29,13 @@ export type AggregateMessageMap = {
 export type MessageMapAvgAggregateOutputType = {
   dmMessageId: number | null
   topicMessageId: number | null
+  mediaDuration: number | null
 }
 
 export type MessageMapSumAggregateOutputType = {
   dmMessageId: number | null
   topicMessageId: number | null
+  mediaDuration: number | null
 }
 
 export type MessageMapMinAggregateOutputType = {
@@ -44,6 +46,8 @@ export type MessageMapMinAggregateOutputType = {
   direction: $Enums.MessageDirection | null
   channel: $Enums.MessageChannel | null
   text: string | null
+  mediaFileId: string | null
+  mediaDuration: number | null
   createdAt: Date | null
 }
 
@@ -55,6 +59,8 @@ export type MessageMapMaxAggregateOutputType = {
   direction: $Enums.MessageDirection | null
   channel: $Enums.MessageChannel | null
   text: string | null
+  mediaFileId: string | null
+  mediaDuration: number | null
   createdAt: Date | null
 }
 
@@ -66,6 +72,8 @@ export type MessageMapCountAggregateOutputType = {
   direction: number
   channel: number
   text: number
+  mediaFileId: number
+  mediaDuration: number
   createdAt: number
   _all: number
 }
@@ -74,11 +82,13 @@ export type MessageMapCountAggregateOutputType = {
 export type MessageMapAvgAggregateInputType = {
   dmMessageId?: true
   topicMessageId?: true
+  mediaDuration?: true
 }
 
 export type MessageMapSumAggregateInputType = {
   dmMessageId?: true
   topicMessageId?: true
+  mediaDuration?: true
 }
 
 export type MessageMapMinAggregateInputType = {
@@ -89,6 +99,8 @@ export type MessageMapMinAggregateInputType = {
   direction?: true
   channel?: true
   text?: true
+  mediaFileId?: true
+  mediaDuration?: true
   createdAt?: true
 }
 
@@ -100,6 +112,8 @@ export type MessageMapMaxAggregateInputType = {
   direction?: true
   channel?: true
   text?: true
+  mediaFileId?: true
+  mediaDuration?: true
   createdAt?: true
 }
 
@@ -111,6 +125,8 @@ export type MessageMapCountAggregateInputType = {
   direction?: true
   channel?: true
   text?: true
+  mediaFileId?: true
+  mediaDuration?: true
   createdAt?: true
   _all?: true
 }
@@ -209,6 +225,8 @@ export type MessageMapGroupByOutputType = {
   direction: $Enums.MessageDirection
   channel: $Enums.MessageChannel
   text: string | null
+  mediaFileId: string | null
+  mediaDuration: number | null
   createdAt: Date
   _count: MessageMapCountAggregateOutputType | null
   _avg: MessageMapAvgAggregateOutputType | null
@@ -243,6 +261,8 @@ export type MessageMapWhereInput = {
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
   text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaFileId?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaDuration?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
@@ -255,6 +275,8 @@ export type MessageMapOrderByWithRelationInput = {
   direction?: Prisma.SortOrder
   channel?: Prisma.SortOrder
   text?: Prisma.SortOrderInput | Prisma.SortOrder
+  mediaFileId?: Prisma.SortOrderInput | Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
@@ -272,6 +294,8 @@ export type MessageMapWhereUniqueInput = Prisma.AtLeast<{
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
   text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaFileId?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaDuration?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId_dmMessageId" | "userId_topicMessageId">
@@ -284,6 +308,8 @@ export type MessageMapOrderByWithAggregationInput = {
   direction?: Prisma.SortOrder
   channel?: Prisma.SortOrder
   text?: Prisma.SortOrderInput | Prisma.SortOrder
+  mediaFileId?: Prisma.SortOrderInput | Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.MessageMapCountOrderByAggregateInput
   _avg?: Prisma.MessageMapAvgOrderByAggregateInput
@@ -303,6 +329,8 @@ export type MessageMapScalarWhereWithAggregatesInput = {
   direction?: Prisma.EnumMessageDirectionWithAggregatesFilter<"MessageMap"> | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelWithAggregatesFilter<"MessageMap"> | $Enums.MessageChannel
   text?: Prisma.StringNullableWithAggregatesFilter<"MessageMap"> | string | null
+  mediaFileId?: Prisma.StringNullableWithAggregatesFilter<"MessageMap"> | string | null
+  mediaDuration?: Prisma.IntNullableWithAggregatesFilter<"MessageMap"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MessageMap"> | Date | string
 }
 
@@ -313,6 +341,8 @@ export type MessageMapCreateInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutMessagesInput
 }
@@ -325,6 +355,8 @@ export type MessageMapUncheckedCreateInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
 }
 
@@ -335,6 +367,8 @@ export type MessageMapUpdateInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutMessagesNestedInput
 }
@@ -347,6 +381,8 @@ export type MessageMapUncheckedUpdateInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -358,6 +394,8 @@ export type MessageMapCreateManyInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
 }
 
@@ -368,6 +406,8 @@ export type MessageMapUpdateManyMutationInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -379,6 +419,8 @@ export type MessageMapUncheckedUpdateManyInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -410,12 +452,15 @@ export type MessageMapCountOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   channel?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  mediaFileId?: Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type MessageMapAvgOrderByAggregateInput = {
   dmMessageId?: Prisma.SortOrder
   topicMessageId?: Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrder
 }
 
 export type MessageMapMaxOrderByAggregateInput = {
@@ -426,6 +471,8 @@ export type MessageMapMaxOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   channel?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  mediaFileId?: Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -437,12 +484,15 @@ export type MessageMapMinOrderByAggregateInput = {
   direction?: Prisma.SortOrder
   channel?: Prisma.SortOrder
   text?: Prisma.SortOrder
+  mediaFileId?: Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type MessageMapSumOrderByAggregateInput = {
   dmMessageId?: Prisma.SortOrder
   topicMessageId?: Prisma.SortOrder
+  mediaDuration?: Prisma.SortOrder
 }
 
 export type MessageMapCreateNestedManyWithoutUserInput = {
@@ -502,6 +552,8 @@ export type MessageMapCreateWithoutUserInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
 }
 
@@ -512,6 +564,8 @@ export type MessageMapUncheckedCreateWithoutUserInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
 }
 
@@ -552,6 +606,8 @@ export type MessageMapScalarWhereInput = {
   direction?: Prisma.EnumMessageDirectionFilter<"MessageMap"> | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFilter<"MessageMap"> | $Enums.MessageChannel
   text?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaFileId?: Prisma.StringNullableFilter<"MessageMap"> | string | null
+  mediaDuration?: Prisma.IntNullableFilter<"MessageMap"> | number | null
   createdAt?: Prisma.DateTimeFilter<"MessageMap"> | Date | string
 }
 
@@ -562,6 +618,8 @@ export type MessageMapCreateManyUserInput = {
   direction: $Enums.MessageDirection
   channel?: $Enums.MessageChannel
   text?: string | null
+  mediaFileId?: string | null
+  mediaDuration?: number | null
   createdAt?: Date | string
 }
 
@@ -572,6 +630,8 @@ export type MessageMapUpdateWithoutUserInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -582,6 +642,8 @@ export type MessageMapUncheckedUpdateWithoutUserInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -592,6 +654,8 @@ export type MessageMapUncheckedUpdateManyWithoutUserInput = {
   direction?: Prisma.EnumMessageDirectionFieldUpdateOperationsInput | $Enums.MessageDirection
   channel?: Prisma.EnumMessageChannelFieldUpdateOperationsInput | $Enums.MessageChannel
   text?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaDuration?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -605,6 +669,8 @@ export type MessageMapSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   direction?: boolean
   channel?: boolean
   text?: boolean
+  mediaFileId?: boolean
+  mediaDuration?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -617,6 +683,8 @@ export type MessageMapSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   direction?: boolean
   channel?: boolean
   text?: boolean
+  mediaFileId?: boolean
+  mediaDuration?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -629,6 +697,8 @@ export type MessageMapSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   direction?: boolean
   channel?: boolean
   text?: boolean
+  mediaFileId?: boolean
+  mediaDuration?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["messageMap"]>
@@ -641,10 +711,12 @@ export type MessageMapSelectScalar = {
   direction?: boolean
   channel?: boolean
   text?: boolean
+  mediaFileId?: boolean
+  mediaDuration?: boolean
   createdAt?: boolean
 }
 
-export type MessageMapOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "dmMessageId" | "topicMessageId" | "direction" | "channel" | "text" | "createdAt", ExtArgs["result"]["messageMap"]>
+export type MessageMapOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "dmMessageId" | "topicMessageId" | "direction" | "channel" | "text" | "mediaFileId" | "mediaDuration" | "createdAt", ExtArgs["result"]["messageMap"]>
 export type MessageMapInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -668,6 +740,8 @@ export type $MessageMapPayload<ExtArgs extends runtime.Types.Extensions.Internal
     direction: $Enums.MessageDirection
     channel: $Enums.MessageChannel
     text: string | null
+    mediaFileId: string | null
+    mediaDuration: number | null
     createdAt: Date
   }, ExtArgs["result"]["messageMap"]>
   composites: {}
@@ -1100,6 +1174,8 @@ export interface MessageMapFieldRefs {
   readonly direction: Prisma.FieldRef<"MessageMap", 'MessageDirection'>
   readonly channel: Prisma.FieldRef<"MessageMap", 'MessageChannel'>
   readonly text: Prisma.FieldRef<"MessageMap", 'String'>
+  readonly mediaFileId: Prisma.FieldRef<"MessageMap", 'String'>
+  readonly mediaDuration: Prisma.FieldRef<"MessageMap", 'Int'>
   readonly createdAt: Prisma.FieldRef<"MessageMap", 'DateTime'>
 }
     
