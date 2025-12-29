@@ -122,11 +122,62 @@ function initWithRetry() {
 - `chat-widget/esbuild.config.js` — удалён `globalName: 'DellShopChat'`
 - `chat-widget/src/index.ts` — robust auto-init с retry mechanism
 
+### Fix 4: Message queue для сообщений до подключения (chat-widget/src/transport/websocket.ts)
+
+Сообщения, отправленные до установки WebSocket соединения, терялись. Добавлена очередь:
+
+```typescript
+private messageQueue: ClientEvent[] = []
+
+private send(event: ClientEvent): void {
+  if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (event.type === 'message') {
+      this.messageQueue.push(event)
+      console.log('[ChatWidget] Message queued, waiting for connection')
+    }
+    return
+  }
+  // ... send
+}
+
+private flushMessageQueue(): void {
+  // Вызывается при получении 'connected' события
+  for (const event of this.messageQueue) {
+    this.send(event)
+  }
+  this.messageQueue = []
+}
+```
+
+### Fix 5: Error handling для async onClick (chat-widget/src/widget.ts)
+
+Async методы в onClick без `.catch()` теряли ошибки:
+
+```typescript
+private createButton(): void {
+  this.button = new ChatButton({
+    onClick: () => {
+      this.open().catch(err => console.error('[ChatWidget] open() error:', err))
+    }
+  })
+}
+```
+
+## Изменённые файлы
+
+- `chat-widget/src/transport/http.ts` — автоматический `body: '{}'` для POST/PUT/PATCH
+- `chat-widget/esbuild.config.js` — удалён `globalName: 'DellShopChat'`
+- `chat-widget/src/index.ts` — robust auto-init с retry mechanism
+- `chat-widget/src/transport/websocket.ts` — message queue
+- `chat-widget/src/widget.ts` — error handling и debug logging
+
 ## Коммиты
 
 - `e55687c` — fix: send empty JSON body for POST requests in chat widget
 - `6370d22` — fix: improve chat widget auto-init for Next.js lazyOnload
 - `ce73d61` — fix(widget): remove globalName to prevent DellShopChat overwrite
+- `229cb2b` — fix(widget): queue messages when WebSocket not yet connected
+- `cc3bfd5` — fix(widget): add logging and error handling for open()
 
 ## Важно для разработчика
 
