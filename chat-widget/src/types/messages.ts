@@ -26,6 +26,7 @@ export interface Message {
 
 export interface InitResponse {
   data: {
+    sessionId: string
     isNewSession: boolean
     hasHistory: boolean
   }

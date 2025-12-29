@@ -11,6 +11,7 @@ import type {
 
 export interface WebSocketClientConfig {
   url: string
+  sessionId?: string
   reconnectAttempts?: number
   reconnectDelay?: number
 }
@@ -28,14 +29,17 @@ export interface WebSocketEventHandlers {
   onStateChange?: (state: ConnectionState) => void
 }
 
-const DEFAULT_CONFIG: Required<Omit<WebSocketClientConfig, 'url'>> = {
+const DEFAULT_CONFIG: Omit<Required<WebSocketClientConfig>, 'url' | 'sessionId'> & { sessionId?: string } = {
+  sessionId: undefined,
   reconnectAttempts: 5,
   reconnectDelay: 1000
 }
 
+type ResolvedConfig = Required<Omit<WebSocketClientConfig, 'sessionId'>> & { sessionId?: string }
+
 export class WebSocketClient {
   private ws: WebSocket | null = null
-  private config: Required<WebSocketClientConfig>
+  private config: ResolvedConfig
   private handlers: WebSocketEventHandlers = {}
   private reconnectCount = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -46,7 +50,7 @@ export class WebSocketClient {
     this.config = {
       ...DEFAULT_CONFIG,
       ...config
-    }
+    } as ResolvedConfig
   }
 
   /**
@@ -64,6 +68,13 @@ export class WebSocketClient {
   }
 
   /**
+   * Set session ID for authentication (used when cookies are blocked)
+   */
+  setSessionId(sessionId: string): void {
+    this.config.sessionId = sessionId
+  }
+
+  /**
    * Connect to WebSocket server
    */
   connect(): void {
@@ -75,7 +86,13 @@ export class WebSocketClient {
     this.setState(this.reconnectCount > 0 ? 'reconnecting' : 'connecting')
 
     try {
-      this.ws = new WebSocket(this.config.url)
+      // Add session ID as query parameter (fallback for blocked cookies)
+      let url = this.config.url
+      if (this.config.sessionId) {
+        const separator = url.includes('?') ? '&' : '?'
+        url = `${url}${separator}session=${encodeURIComponent(this.config.sessionId)}`
+      }
+      this.ws = new WebSocket(url)
       this.setupEventListeners()
     } catch (error) {
       this.handleError(error as Error)

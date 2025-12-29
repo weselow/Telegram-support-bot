@@ -40,9 +40,15 @@ function getSessionId(request: FastifyRequest): string | null {
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   const isProduction = env.NODE_ENV === 'production';
+  // Production: SameSite=None allows cross-site cookies, Secure is required for it,
+  // Partitioned enables CHIPS (isolated third-party cookies per top-level site)
+  // Development: SameSite=Lax (SameSite=None requires HTTPS)
+  const sameSiteAttrs = isProduction
+    ? '; SameSite=None; Secure; Partitioned'
+    : '; SameSite=Lax';
   reply.header(
     'Set-Cookie',
-    `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; Max-Age=${String(SESSION_COOKIE_MAX_AGE)}; HttpOnly; SameSite=Lax${isProduction ? '; Secure' : ''}`
+    `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; Max-Age=${String(SESSION_COOKIE_MAX_AGE)}; HttpOnly${sameSiteAttrs}`
   );
 }
 

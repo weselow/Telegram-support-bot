@@ -282,4 +282,56 @@ describe('Chat Routes CORS in Development', () => {
     expect(response.statusCode).toBe(204);
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
   });
+
+  it('should set cookie with SameSite=Lax in development (no Secure)', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/chat/init',
+      headers: {
+        origin: 'http://localhost:5173',
+        'content-type': 'application/json',
+      },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(200);
+    const setCookie = response.headers['set-cookie'] as string;
+    expect(setCookie).toContain('SameSite=Lax');
+    expect(setCookie).not.toContain('SameSite=None');
+    expect(setCookie).not.toContain('Secure');
+    expect(setCookie).not.toContain('Partitioned');
+  });
+});
+
+describe('Chat Routes Cookie Attributes in Production', () => {
+  let fastify: FastifyInstance;
+
+  beforeEach(async () => {
+    fastify = Fastify();
+    chatRoutes(fastify);
+    await fastify.ready();
+  });
+
+  afterEach(async () => {
+    await fastify.close();
+  });
+
+  it('should set cookie with SameSite=None; Secure; Partitioned in production', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/chat/init',
+      headers: {
+        origin: 'https://dellshop.ru',
+        'content-type': 'application/json',
+      },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(200);
+    const setCookie = response.headers['set-cookie'] as string;
+    expect(setCookie).toContain('SameSite=None');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('Partitioned');
+    expect(setCookie).toContain('HttpOnly');
+  });
 });

@@ -10,7 +10,7 @@ import { StateManager } from './core/state'
 import { HttpClient } from './transport/http'
 import { WebSocketClient, ConnectionState } from './transport/websocket'
 import { loadCSS, domReady, uniqueId } from './utils/dom'
-import { loadSettings, saveSettings } from './utils/storage'
+import { loadSettings, saveSettings, saveSessionId } from './utils/storage'
 import { showNotification, requestNotificationPermission } from './utils/notifications'
 import {
   ChatButton,
@@ -297,6 +297,11 @@ export class ChatWidget {
       // Initialize session via HTTP
       const initResponse = await this.httpClient.init()
 
+      // Save session ID to localStorage (fallback for blocked cookies)
+      const sessionId = initResponse.data.sessionId
+      saveSessionId(sessionId)
+      this._sessionId = sessionId
+
       // Load history if available
       if (initResponse.data.hasHistory) {
         const historyResponse = await this.httpClient.getHistory({ limit: 50 })
@@ -306,7 +311,10 @@ export class ChatWidget {
         }
       }
 
-      // Connect WebSocket (session ID will be received via 'connected' event)
+      // Pass session ID to WebSocket (for browsers with blocked cookies)
+      this.wsClient.setSessionId(sessionId)
+
+      // Connect WebSocket
       this.wsClient.connect()
 
       // Show telegram link (unlinked by default, will update on channel_linked event)

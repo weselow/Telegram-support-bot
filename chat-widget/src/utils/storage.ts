@@ -5,6 +5,7 @@
 const STORAGE_PREFIX = 'dellshop_chat_'
 const DRAFT_KEY = `${STORAGE_PREFIX}draft`
 const SETTINGS_KEY = `${STORAGE_PREFIX}settings`
+const SESSION_KEY = `${STORAGE_PREFIX}session`
 
 interface StoredSettings {
   soundEnabled: boolean
@@ -94,4 +95,23 @@ export function loadSettings(): StoredSettings {
   }
 
   return defaults
+}
+
+/**
+ * Save session ID (fallback when cookies are blocked)
+ */
+export function saveSessionId(sessionId: string): void {
+  const storage = getStorage()
+  if (storage) {
+    storage.setItem(SESSION_KEY, sessionId)
+  }
+}
+
+/**
+ * Load session ID from storage
+ */
+export function loadSessionId(): string | null {
+  const storage = getStorage()
+  if (!storage) return null
+  return storage.getItem(SESSION_KEY)
 }
