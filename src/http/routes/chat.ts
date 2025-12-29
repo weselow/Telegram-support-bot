@@ -5,6 +5,7 @@ import { getLocationByIp } from '../../services/geoip.service.js';
 import { checkIpRateLimit } from '../../services/rate-limit.service.js';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
+import { isOriginAllowedByConfig } from '../../utils/cors.js';
 
 const SESSION_COOKIE_NAME = 'webchat_session';
 const SESSION_COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
@@ -55,27 +56,34 @@ function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   );
 }
 
-function setCorsHeaders(reply: FastifyReply): void {
-  const allowedOrigin = env.SUPPORT_DOMAIN
-    ? `https://${env.SUPPORT_DOMAIN.replace('chat.', '')}`
-    : '*';
+function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
+  const origin = request.headers.origin;
 
-  reply.header('Access-Control-Allow-Origin', allowedOrigin);
+  if (!isOriginAllowedByConfig(origin)) {
+    return false;
+  }
+
+  reply.header('Access-Control-Allow-Origin', origin);
   reply.header('Access-Control-Allow-Credentials', 'true');
   reply.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   reply.header('Access-Control-Allow-Headers', 'Content-Type');
+  reply.header('Access-Control-Max-Age', '86400');
+
+  return true;
 }
 
 export function chatRoutes(fastify: FastifyInstance): void {
   // CORS preflight handler
-  fastify.options('/api/chat/*', async (_request, reply) => {
-    setCorsHeaders(reply);
+  fastify.options('/api/chat/*', async (request, reply) => {
+    if (!setCorsHeaders(request, reply)) {
+      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+    }
     return reply.status(204).send();
   });
 
   // POST /api/chat/init - Initialize session
   fastify.post('/api/chat/init', async (request: FastifyRequest<{ Body: InitBody }>, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const ip = request.ip;
 
@@ -128,7 +136,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // GET /api/chat/history - Get message history
   fastify.get('/api/chat/history', async (request: FastifyRequest<{ Querystring: HistoryQuery }>, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -168,7 +176,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // GET /api/chat/status - Get ticket status
   fastify.get('/api/chat/status', async (request: FastifyRequest, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -201,7 +209,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/message - Send a message (fallback for no WebSocket)
   fastify.post('/api/chat/message', async (request: FastifyRequest<{ Body: MessageBody }>, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -265,7 +273,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/link-telegram - Get Telegram deep link
   fastify.post('/api/chat/link-telegram', async (request: FastifyRequest, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const sessionId = getSessionId(request);
     if (!sessionId) {
@@ -298,7 +306,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
 
   // POST /api/chat/close - Close ticket
   fastify.post('/api/chat/close', async (request: FastifyRequest<{ Body: CloseBody }>, reply) => {
-    setCorsHeaders(reply);
+    setCorsHeaders(request, reply);
 
     const sessionId = getSessionId(request);
     if (!sessionId) {

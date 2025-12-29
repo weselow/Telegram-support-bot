@@ -4,6 +4,7 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { connectionManager } from './connection-manager.js';
 import { handleWebSocketMessage } from './handler.js';
 import { logger } from '../../utils/logger.js';
+import { isOriginAllowedByConfig, getConfiguredBaseDomain } from '../../utils/cors.js';
 
 const SESSION_COOKIE_NAME = 'webchat_session';
 const PING_INTERVAL = 30000; // 30 seconds
@@ -50,6 +51,17 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
   });
 
   fastify.get('/ws/chat', { websocket: true }, async (socket, request) => {
+    // Origin validation (TD-034)
+    const baseDomain = getConfiguredBaseDomain();
+    if (baseDomain) {
+      const origin = request.headers.origin;
+      if (!isOriginAllowedByConfig(origin)) {
+        logger.warn({ origin }, 'WebSocket connection rejected: origin not allowed');
+        socket.close(4003, 'Origin not allowed');
+        return;
+      }
+    }
+
     // Get session ID from cookie or query parameter
     const cookieSessionId = getSessionIdFromCookie(request.headers.cookie);
     const querySessionId = (request.query as { session?: string }).session;
