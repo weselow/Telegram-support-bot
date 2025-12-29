@@ -32,76 +32,86 @@ export type { WidgetConfig, WidgetVariant, Message, WidgetEventMap, WidgetState 
 // Export Widget class
 export { ChatWidget as Widget }
 
+// Expose Widget class immediately for programmatic use
+;(window as any).DellShopChat = {
+  Widget: ChatWidget,
+  instance: null as ChatWidget | null,
+
+  // Convenience methods (will use instance when available)
+  open: () => (window as any).DellShopChat.instance?.open(),
+  close: () => (window as any).DellShopChat.instance?.close(),
+  toggle: () => (window as any).DellShopChat.instance?.toggle(),
+  sendMessage: (text: string) => (window as any).DellShopChat.instance?.sendMessage(text),
+  setVariant: (variant: 'modal' | 'drawer') => (window as any).DellShopChat.instance?.setVariant(variant),
+  destroy: () => (window as any).DellShopChat.instance?.destroy(),
+  on: <K extends keyof WidgetEventMap>(
+    event: K,
+    handler: (data: WidgetEventMap[K]) => void
+  ) => (window as any).DellShopChat.instance?.on(event, handler)
+}
+
 // Auto-initialization from script tag and/or window config
 function autoInit(): void {
-  // Start with window.DellShopChatConfig if available
-  const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
-  const config: Partial<WidgetConfig> = { ...windowConfig }
-
-  // Find the script tag for data attributes (override window config)
-  const scripts = document.querySelectorAll('script[src*="widget"]')
-  const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
-
-  if (currentScript) {
-    // Variant
-    const variant = currentScript.dataset.variant as WidgetVariant
-    if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
-      config.variant = variant
+  try {
+    // Skip if already initialized
+    if ((window as any).DellShopChat.instance) {
+      return
     }
 
-    // Auto open
-    if (currentScript.dataset.autoOpen === 'true') {
-      config.autoOpen = true
-    } else if (currentScript.dataset.autoOpen === 'false') {
-      config.autoOpen = false
+    // Start with window.DellShopChatConfig if available
+    const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
+    const config: Partial<WidgetConfig> = { ...windowConfig }
+
+    // Find the script tag for data attributes (override window config)
+    const scripts = document.querySelectorAll('script[src*="widget"], script[src*="chat"]')
+    const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
+
+    if (currentScript) {
+      // Variant
+      const variant = currentScript.dataset.variant as WidgetVariant
+      if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
+        config.variant = variant
+      }
+
+      // Auto open
+      if (currentScript.dataset.autoOpen === 'true') {
+        config.autoOpen = true
+      } else if (currentScript.dataset.autoOpen === 'false') {
+        config.autoOpen = false
+      }
+
+      // Sound
+      if (currentScript.dataset.sound === 'false') {
+        config.sound = false
+      } else if (currentScript.dataset.sound === 'true') {
+        config.sound = true
+      }
+
+      // Position
+      if (currentScript.dataset.position === 'left' || currentScript.dataset.position === 'right') {
+        config.position = currentScript.dataset.position
+      }
+
+      // Custom URLs (data-attributes override window config)
+      if (currentScript.dataset.apiUrl) {
+        config.apiUrl = currentScript.dataset.apiUrl
+      }
+
+      if (currentScript.dataset.wsUrl) {
+        config.wsUrl = currentScript.dataset.wsUrl
+      }
+
+      if (currentScript.dataset.baseUrl) {
+        config.baseUrl = currentScript.dataset.baseUrl
+      }
     }
 
-    // Sound
-    if (currentScript.dataset.sound === 'false') {
-      config.sound = false
-    } else if (currentScript.dataset.sound === 'true') {
-      config.sound = true
-    }
-
-    // Position
-    if (currentScript.dataset.position === 'left' || currentScript.dataset.position === 'right') {
-      config.position = currentScript.dataset.position
-    }
-
-    // Custom URLs (data-attributes override window config)
-    if (currentScript.dataset.apiUrl) {
-      config.apiUrl = currentScript.dataset.apiUrl
-    }
-
-    if (currentScript.dataset.wsUrl) {
-      config.wsUrl = currentScript.dataset.wsUrl
-    }
-
-    if (currentScript.dataset.baseUrl) {
-      config.baseUrl = currentScript.dataset.baseUrl
-    }
-  }
-
-  // Create and initialize widget
-  const widget = new ChatWidget(config)
-  widget.init()
-
-  // Expose to window for external access
-  ;(window as any).DellShopChat = {
-    Widget: ChatWidget,
-    instance: widget,
-
-    // Convenience methods
-    open: () => widget.open(),
-    close: () => widget.close(),
-    toggle: () => widget.toggle(),
-    sendMessage: (text: string) => widget.sendMessage(text),
-    setVariant: (variant: 'modal' | 'drawer') => widget.setVariant(variant),
-    destroy: () => widget.destroy(),
-    on: <K extends keyof WidgetEventMap>(
-      event: K,
-      handler: (data: WidgetEventMap[K]) => void
-    ) => widget.on(event, handler)
+    // Create and initialize widget
+    const widget = new ChatWidget(config)
+    ;(window as any).DellShopChat.instance = widget
+    widget.init()
+  } catch (error) {
+    console.error('[ChatWidget] Auto-init failed:', error)
   }
 }
 
@@ -109,11 +119,6 @@ function autoInit(): void {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', autoInit)
 } else {
-  // DOM already loaded (script loaded async)
+  // DOM already loaded (script loaded async/deferred)
   autoInit()
-}
-
-// Also expose Widget class for programmatic use
-;(window as any).DellShopChat = (window as any).DellShopChat || {
-  Widget: ChatWidget
 }
