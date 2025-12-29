@@ -50,75 +50,81 @@ export { ChatWidget as Widget }
   ) => (window as any).DellShopChat.instance?.on(event, handler)
 }
 
-// Auto-initialization from script tag and/or window config
-function autoInit(): void {
+// Parse config from script tag data attributes
+function parseScriptConfig(): Partial<WidgetConfig> {
+  const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
+  const config: Partial<WidgetConfig> = { ...windowConfig }
+
+  const scripts = document.querySelectorAll('script[src*="widget"], script[src*="chat"]')
+  const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
+
+  if (currentScript) {
+    const variant = currentScript.dataset.variant as WidgetVariant
+    if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
+      config.variant = variant
+    }
+    if (currentScript.dataset.autoOpen === 'true') config.autoOpen = true
+    else if (currentScript.dataset.autoOpen === 'false') config.autoOpen = false
+    if (currentScript.dataset.sound === 'false') config.sound = false
+    else if (currentScript.dataset.sound === 'true') config.sound = true
+    if (currentScript.dataset.position === 'left' || currentScript.dataset.position === 'right') {
+      config.position = currentScript.dataset.position
+    }
+    if (currentScript.dataset.apiUrl) config.apiUrl = currentScript.dataset.apiUrl
+    if (currentScript.dataset.wsUrl) config.wsUrl = currentScript.dataset.wsUrl
+    if (currentScript.dataset.baseUrl) config.baseUrl = currentScript.dataset.baseUrl
+  }
+
+  return config
+}
+
+// Auto-initialization with retry mechanism
+function autoInit(): boolean {
   try {
-    // Skip if already initialized
     if ((window as any).DellShopChat.instance) {
-      return
+      return true
     }
 
-    // Start with window.DellShopChatConfig if available
-    const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
-    const config: Partial<WidgetConfig> = { ...windowConfig }
-
-    // Find the script tag for data attributes (override window config)
-    const scripts = document.querySelectorAll('script[src*="widget"], script[src*="chat"]')
-    const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
-
-    if (currentScript) {
-      // Variant
-      const variant = currentScript.dataset.variant as WidgetVariant
-      if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
-        config.variant = variant
-      }
-
-      // Auto open
-      if (currentScript.dataset.autoOpen === 'true') {
-        config.autoOpen = true
-      } else if (currentScript.dataset.autoOpen === 'false') {
-        config.autoOpen = false
-      }
-
-      // Sound
-      if (currentScript.dataset.sound === 'false') {
-        config.sound = false
-      } else if (currentScript.dataset.sound === 'true') {
-        config.sound = true
-      }
-
-      // Position
-      if (currentScript.dataset.position === 'left' || currentScript.dataset.position === 'right') {
-        config.position = currentScript.dataset.position
-      }
-
-      // Custom URLs (data-attributes override window config)
-      if (currentScript.dataset.apiUrl) {
-        config.apiUrl = currentScript.dataset.apiUrl
-      }
-
-      if (currentScript.dataset.wsUrl) {
-        config.wsUrl = currentScript.dataset.wsUrl
-      }
-
-      if (currentScript.dataset.baseUrl) {
-        config.baseUrl = currentScript.dataset.baseUrl
-      }
-    }
-
-    // Create and initialize widget
+    const config = parseScriptConfig()
     const widget = new ChatWidget(config)
     ;(window as any).DellShopChat.instance = widget
     widget.init()
+    return true
   } catch (error) {
     console.error('[ChatWidget] Auto-init failed:', error)
+    return false
   }
 }
 
-// Run auto-init when DOM is ready
+// Robust initialization: try multiple times with different strategies
+function initWithRetry(): void {
+  // Strategy 1: Immediate
+  if (autoInit()) return
+
+  // Strategy 2: Next tick (microtask)
+  Promise.resolve().then(() => {
+    if (autoInit()) return
+
+    // Strategy 3: Next frame
+    requestAnimationFrame(() => {
+      if (autoInit()) return
+
+      // Strategy 4: Delayed retry (100ms)
+      setTimeout(() => {
+        if (autoInit()) return
+
+        // Strategy 5: Final attempt (500ms)
+        setTimeout(() => {
+          autoInit()
+        }, 400)
+      }, 100)
+    })
+  })
+}
+
+// Run initialization when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', autoInit)
+  document.addEventListener('DOMContentLoaded', initWithRetry)
 } else {
-  // DOM already loaded (script loaded async/deferred)
-  autoInit()
+  initWithRetry()
 }

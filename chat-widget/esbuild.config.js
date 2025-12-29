@@ -17,7 +17,8 @@ const jsConfig = {
   bundle: true,
   outfile: 'dist/chat-widget.js',
   format: 'iife',
-  globalName: 'DellShopChat',
+  // Note: No globalName - we manually set window.DellShopChat in index.ts
+  // to avoid esbuild overwriting our object with just the exports
   platform: 'browser',
   target: ['chrome80', 'firefox75', 'safari13', 'edge80'],
   minify: isProd,

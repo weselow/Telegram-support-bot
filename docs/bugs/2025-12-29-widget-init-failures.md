@@ -13,7 +13,7 @@ Cross-Origin Request Blocked: ... Status code: 400
 
 При этом CORS настроен правильно, cookie blocking исправлен (см. 2025-12-29-widget-third-party-cookie-blocking.md).
 
-## Причины (две)
+## Причины (три)
 
 ### 1. Fastify требует body для POST с Content-Type: application/json
 
@@ -30,13 +30,23 @@ Fastify возвращал ошибку:
 
 **Важно:** Браузеры маскируют 400 ошибку как CORS, потому что сервер не отправляет CORS headers в error response.
 
-### 2. Auto-init не срабатывал из-за Next.js lazyOnload
+### 2. esbuild globalName перезаписывал window.DellShopChat
 
-Next.js Script component с `strategy="lazyOnload"` добавляет атрибут `data-nscript="lazyOnload"`. При этом:
+**Главная причина!** esbuild с опцией `globalName: 'DellShopChat'` генерировал:
 
-1. Скрипт загружается после `DOMContentLoaded`
-2. `autoInit()` вызывался, но при ошибке `window.DellShopChat` перезаписывался без `instance`
-3. Виджет оставался без инициализации, ошибка проглатывалась
+```javascript
+var DellShopChat = (() => {
+  // Внутри IIFE: window.DellShopChat = { Widget, instance, open, ... }
+  return { Widget }  // module exports
+})()
+// Результат: DellShopChat = { Widget } — ПЕРЕЗАПИСЫВАЕТ window.DellShopChat!
+```
+
+В итоге `window.DellShopChat` содержал только `{ Widget }` без `instance` и convenience methods.
+
+### 3. Auto-init мог не срабатывать из-за timing issues
+
+Next.js Script component с `strategy="lazyOnload"` загружает скрипт во время browser idle. При различных timing условиях auto-init мог не успевать выполниться.
 
 ## Решение
 
@@ -61,10 +71,25 @@ private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T
 }
 ```
 
-### Fix 2: Robust auto-init (chat-widget/src/index.ts)
+### Fix 2: Удаление globalName из esbuild (chat-widget/esbuild.config.js)
+
+```javascript
+const jsConfig = {
+  entryPoints: ['src/index.ts'],
+  bundle: true,
+  outfile: 'dist/chat-widget.js',
+  format: 'iife',
+  // Note: No globalName - we manually set window.DellShopChat in index.ts
+  // to avoid esbuild overwriting our object with just the exports
+  platform: 'browser',
+  // ...
+}
+```
+
+### Fix 3: Robust auto-init с retry (chat-widget/src/index.ts)
 
 ```typescript
-// 1. Создаём объект СРАЗУ (до autoInit)
+// 1. Создаём объект СРАЗУ в начале скрипта
 window.DellShopChat = {
   Widget: ChatWidget,
   instance: null,
@@ -72,32 +97,36 @@ window.DellShopChat = {
   // ... остальные методы
 }
 
-// 2. autoInit обёрнут в try-catch
-function autoInit() {
-  try {
-    if (window.DellShopChat.instance) return // защита от повторной инициализации
+// 2. initWithRetry — множественные попытки инициализации
+function initWithRetry() {
+  if (autoInit()) return  // Strategy 1: Immediate
 
-    // Расширенный селектор
-    const scripts = document.querySelectorAll('script[src*="widget"], script[src*="chat"]')
+  Promise.resolve().then(() => {  // Strategy 2: Microtask
+    if (autoInit()) return
 
-    const widget = new ChatWidget(config)
-    window.DellShopChat.instance = widget // сохраняем ДО init()
-    widget.init()
-  } catch (error) {
-    console.error('[ChatWidget] Auto-init failed:', error)
-  }
+    requestAnimationFrame(() => {  // Strategy 3: Next frame
+      if (autoInit()) return
+
+      setTimeout(() => {  // Strategy 4: 100ms delay
+        if (autoInit()) return
+        setTimeout(() => autoInit(), 400)  // Strategy 5: 500ms delay
+      }, 100)
+    })
+  })
 }
 ```
 
 ## Изменённые файлы
 
 - `chat-widget/src/transport/http.ts` — автоматический `body: '{}'` для POST/PUT/PATCH
-- `chat-widget/src/index.ts` — robust auto-init без race condition
+- `chat-widget/esbuild.config.js` — удалён `globalName: 'DellShopChat'`
+- `chat-widget/src/index.ts` — robust auto-init с retry mechanism
 
 ## Коммиты
 
 - `e55687c` — fix: send empty JSON body for POST requests in chat widget
 - `6370d22` — fix: improve chat widget auto-init for Next.js lazyOnload
+- `ce73d61` — fix(widget): remove globalName to prevent DellShopChat overwrite
 
 ## Важно для разработчика
 
