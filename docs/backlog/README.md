@@ -52,6 +52,7 @@
 | # | Задача | Статус | Приоритет |
 |---|--------|--------|-----------|
 | [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
+| [022](../solutions/022-cors-configuration/022-cors-configuration.md) | CORS Configuration | DONE | Высокий |
 
 ---
 
@@ -70,7 +71,6 @@
 | [TD-031](technical-debt/td-031-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | Низкий |
 | [TD-032](technical-debt/td-032-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | Низкий |
 | [TD-033](technical-debt/td-033-widget-unit-tests.md) | Chat Widget: Unit-тесты | Средний |
-| [TD-034](technical-debt/td-034-websocket-origin-validation.md) | WebSocket: Origin validation | Низкий |
 | [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
 
 ### Выполнено
@@ -81,6 +81,7 @@
 | [TD-022](../bugs/2025-12-29-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | DONE |
 | [TD-023](../bugs/2025-12-29-websocket-integration-tests.md) | Integration-тесты для WebSocket API | DONE |
 | [TD-026](../bugs/2025-12-27-migrate-npm-to-pnpm.md) | Миграция npm → pnpm | DONE |
+| [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
 
 ---
 
