@@ -58,6 +58,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
     }
 
     // Send to WebSocket if user has web session
+    logger.info({ userId: user.id, webSessionId: user.webSessionId, hasPhoto: !!ctx.message.photo, hasVoice: !!ctx.message.voice }, 'WebSocket check');
     if (user.webSessionId) {
       const msgText = ctx.message.text ?? ctx.message.caption ?? '';
       const photo = ctx.message.photo;
@@ -82,6 +83,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
       }
 
       // Send if there's text, image or voice
+      logger.info({ msgText, imageUrl, voiceUrl, photoLength: photo?.length }, 'Media check');
       if (msgText || imageUrl || voiceUrl) {
         // Determine placeholder text for non-text messages
         const placeholderText = voiceUrl ? '[Голосовое сообщение]' : imageUrl ? '[Изображение]' : '';
