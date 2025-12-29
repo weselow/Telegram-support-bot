@@ -1,8 +1,8 @@
 # 022 - CORS Configuration
 
-**Статус:** TODO
+**Статус:** DONE
 **Приоритет:** Высокий
-**Включает:** TD-034 (WebSocket Origin validation) — будет закрыт после выполнения этой задачи
+**Включает:** TD-034 (WebSocket Origin validation) — закрыт
 
 ## Проблема
 
@@ -105,12 +105,12 @@ function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
 
 ## Подзадачи
 
-- [ ] Создать `src/utils/cors.ts` с функциями `getBaseDomain`, `isOriginAllowed`
-- [ ] Обновить `src/http/routes/chat.ts` для использования новой логики
-- [ ] Добавить проверку Origin в WebSocket handler (`src/http/ws/websocket.ts`) — **TD-034**
-- [ ] Написать unit-тесты для CORS функций
-- [ ] Протестировать с разных доменов (dellshop.ru, www.dellshop.ru, localhost)
-- [ ] Закрыть TD-034 в backlog README
+- [x] Создать `src/utils/cors.ts` с функциями `getBaseDomain`, `isOriginAllowed`
+- [x] Обновить `src/http/routes/chat.ts` для использования новой логики
+- [x] Добавить проверку Origin в WebSocket handler (`src/http/ws/websocket.ts`) — **TD-034**
+- [x] Написать unit-тесты для CORS функций (21 тест, 100% покрытие)
+- [x] Протестировать с разных доменов (dellshop.ru, www.dellshop.ru, localhost)
+- [x] Закрыть TD-034 в backlog README
 
 ## Примеры
 
