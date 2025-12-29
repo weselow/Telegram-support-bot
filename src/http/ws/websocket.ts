@@ -35,7 +35,7 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
   });
 
   fastify.get('/ws/chat', { websocket: true }, async (socket, request) => {
-    // Origin validation (TD-034)
+    // Reject WebSocket connections from unauthorized origins
     const baseDomain = getConfiguredBaseDomain();
     if (baseDomain) {
       const origin = request.headers.origin;

@@ -71,6 +71,7 @@
 | [TD-032](technical-debt/td-032-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | Низкий |
 | [TD-033](technical-debt/td-033-widget-unit-tests.md) | Chat Widget: Unit-тесты | Средний |
 | [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
+| [TD-036](technical-debt/td-036-dry-cors-error-response.md) | DRY: CORS error response в helper | Средний |
 
 ### Выполнено
 

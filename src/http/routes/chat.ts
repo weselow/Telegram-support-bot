@@ -46,6 +46,10 @@ function setSessionCookie(reply: FastifyReply, sessionId: string): void {
   );
 }
 
+/**
+ * Set CORS headers if origin is allowed
+ * @returns false if origin not allowed (caller should return 403)
+ */
 function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
   const origin = request.headers.origin;
 

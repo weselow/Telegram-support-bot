@@ -37,6 +37,10 @@ describe('Session utilities', () => {
       expect(isValidSessionId(undefined)).toBe(false);
     });
 
+    it('should return false for null', () => {
+      expect(isValidSessionId(null)).toBe(false);
+    });
+
     it('should return false for empty string', () => {
       expect(isValidSessionId('')).toBe(false);
     });
