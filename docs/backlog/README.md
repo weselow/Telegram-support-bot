@@ -70,6 +70,10 @@
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
 | [TD-030](technical-debt/td-030-widget-http-401-handling.md) | Chat Widget: HTTP 401 handling | Высокий |
 | [TD-031](technical-debt/td-031-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | Низкий |
+| [TD-032](technical-debt/td-032-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | Низкий |
+| [TD-033](technical-debt/td-033-widget-unit-tests.md) | Chat Widget: Unit-тесты | Средний |
+| [TD-034](technical-debt/td-034-websocket-origin-validation.md) | WebSocket: Origin validation | Низкий |
+| [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
 
 ### Выполнено
 

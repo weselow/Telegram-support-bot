@@ -560,6 +560,7 @@ export class ChatWidget {
       }
     } catch (error) {
       console.error('[ChatWidget] Failed to load history:', error)
+      this.statusBar?.show('error', 'Не удалось загрузить историю')
     } finally {
       this.isLoadingHistory = false
       this.messages?.hideLoading()
@@ -576,6 +577,7 @@ export class ChatWidget {
       window.open(response.data.telegramUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       console.error('[ChatWidget] Failed to get Telegram link:', error)
+      this.statusBar?.show('error', 'Не удалось получить ссылку Telegram')
     } finally {
       this.telegramLink?.setLoading(false)
     }
@@ -621,8 +623,8 @@ export class ChatWidget {
 
       oscillator.start()
       oscillator.stop(audioContext.currentTime + 0.1)
-    } catch {
-      // Audio not supported or blocked
+    } catch (error) {
+      console.warn('[ChatWidget] Notification sound failed:', error)
     }
   }
 }
