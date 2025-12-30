@@ -53,6 +53,7 @@
 |---|--------|--------|-----------|
 | [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
 | [022](../solutions/022-cors-configuration/022-cors-configuration.md) | CORS Configuration | DONE | Высокий |
+| [023](tasks/023-web-chat-file-upload.md) | Загрузка файлов из веб-чата | TODO | Средний |
 
 ---
 

@@ -310,8 +310,10 @@ export class ChatWidget {
       if (initResponse.data.hasHistory) {
         const historyResponse = await this.httpClient.getHistory({ limit: 50 })
         if (historyResponse.data.messages.length > 0) {
-          this.state.setMessages(historyResponse.data.messages)
-          this.messages?.addMessages(historyResponse.data.messages)
+          // Resolve relative media URLs to absolute
+          const resolvedMessages = historyResponse.data.messages.map(m => this.resolveMediaUrls(m))
+          this.state.setMessages(resolvedMessages)
+          this.messages?.addMessages(resolvedMessages)
         }
       }
 
@@ -578,8 +580,10 @@ export class ChatWidget {
       })
 
       if (response.data.messages.length > 0) {
-        this.state.prependMessages(response.data.messages)
-        this.messages?.addMessages(response.data.messages, true)
+        // Resolve relative media URLs to absolute
+        const resolvedMessages = response.data.messages.map(m => this.resolveMediaUrls(m))
+        this.state.prependMessages(resolvedMessages)
+        this.messages?.addMessages(resolvedMessages, true)
       }
     } catch (error) {
       console.error('[ChatWidget] Failed to load history:', error)
