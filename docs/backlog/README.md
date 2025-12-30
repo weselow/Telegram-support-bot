@@ -64,7 +64,6 @@
 | # | Задача | Приоритет |
 |---|--------|-----------|
 | [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
-| [TD-027](technical-debt/td-027-ticket-status-type.md) | Типизация: TicketStatus union type | Средний |
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
 | [TD-031](technical-debt/td-031-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | Низкий |
 | [TD-032](technical-debt/td-032-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | Низкий |
@@ -83,6 +82,7 @@
 | [TD-026](../bugs/2025-12-27-migrate-npm-to-pnpm.md) | Миграция npm → pnpm | DONE |
 | [TD-025](../bugs/2025-12-29-dry-session-parsing.md) | DRY: вынести session parsing | DONE |
 | [TD-030](../bugs/2025-12-30-widget-http-401-handling.md) | Chat Widget: HTTP 401 handling | DONE |
+| [TD-027](../bugs/2025-12-30-ticket-status-type.md) | Типизация: TicketStatus union type | DONE |
 | [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
 
 ---

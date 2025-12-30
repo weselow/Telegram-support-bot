@@ -1,4 +1,4 @@
-import type { User, MessageMap } from '../generated/prisma/client.js';
+import type { User, MessageMap, TicketStatus } from '../generated/prisma/client.js';
 import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
@@ -12,7 +12,7 @@ export interface InitSessionResult {
   isNewSession: boolean;
   hasHistory: boolean;
   telegramLinked: boolean;
-  status: string;
+  status: TicketStatus;
 }
 
 export interface ChatMessage {
@@ -34,7 +34,7 @@ export interface HistoryResult {
 
 export interface ChatStatus {
   ticketId: string;
-  status: string;
+  status: TicketStatus;
   telegramLinked: boolean;
   telegramUsername?: string | undefined;
   createdAt: string;
