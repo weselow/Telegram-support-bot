@@ -72,11 +72,18 @@ function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
   return true;
 }
 
+function sendCorsError(reply: FastifyReply) {
+  return reply.status(403).send({
+    success: false,
+    error: { code: 'CORS_ERROR', message: 'Origin not allowed' },
+  });
+}
+
 export function chatRoutes(fastify: FastifyInstance): void {
   // CORS preflight handler
   fastify.options('/api/chat/*', async (request, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
     return reply.status(204).send();
   });
@@ -84,7 +91,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // POST /api/chat/init - Initialize session
   fastify.post('/api/chat/init', async (request: FastifyRequest<{ Body: InitBody }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const ip = request.ip;
@@ -139,7 +146,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // GET /api/chat/history - Get message history
   fastify.get('/api/chat/history', async (request: FastifyRequest<{ Querystring: HistoryQuery }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const sessionId = getSessionId(request);
@@ -181,7 +188,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // GET /api/chat/status - Get ticket status
   fastify.get('/api/chat/status', async (request: FastifyRequest, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const sessionId = getSessionId(request);
@@ -216,7 +223,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // POST /api/chat/message - Send a message (fallback for no WebSocket)
   fastify.post('/api/chat/message', async (request: FastifyRequest<{ Body: MessageBody }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const sessionId = getSessionId(request);
@@ -282,7 +289,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // POST /api/chat/link-telegram - Get Telegram deep link
   fastify.post('/api/chat/link-telegram', async (request: FastifyRequest, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const sessionId = getSessionId(request);
@@ -317,7 +324,7 @@ export function chatRoutes(fastify: FastifyInstance): void {
   // POST /api/chat/close - Close ticket
   fastify.post('/api/chat/close', async (request: FastifyRequest<{ Body: CloseBody }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
-      return reply.status(403).send({ success: false, error: { code: 'CORS_ERROR', message: 'Origin not allowed' } });
+      return sendCorsError(reply);
     }
 
     const sessionId = getSessionId(request);
