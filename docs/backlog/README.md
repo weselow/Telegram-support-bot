@@ -66,7 +66,6 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-039](technical-debt/td-039-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur и сворачивание | Средний |
 | [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
 | [TD-041](technical-debt/td-041-widget-error-handler-tests.md) | Widget Error Logger: тесты globalErrorHandler | Средний |
 | [TD-042](technical-debt/td-042-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | Низкий |
@@ -94,6 +93,7 @@
 | [TD-032](../bugs/2025-12-30-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | DONE |
 | [TD-033](../bugs/2025-12-30-widget-unit-tests.md) | Chat Widget: Unit-тесты | DONE |
 | [TD-035](../bugs/2025-12-30-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | DONE |
+| [TD-039](../bugs/2025-12-31-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur fix | DONE |
 
 ---
 
