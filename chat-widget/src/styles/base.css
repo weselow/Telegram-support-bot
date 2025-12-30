@@ -208,6 +208,13 @@
   fill: currentColor;
 }
 
+/* Hide minimize and toggle buttons on mobile */
+@media (max-width: 480px) {
+  .chat-header__btn--desktop-only {
+    display: none;
+  }
+}
+
 /* Messages Area */
 .chat-messages {
   flex: 1;

@@ -11,8 +11,11 @@ export interface ChatHeaderOptions {
   onClose?: () => void
   onMinimize?: () => void
   onMenu?: () => void
+  onToggleVariant?: () => void
   showMinimize?: boolean
   showMenu?: boolean
+  showToggleVariant?: boolean
+  variant?: 'modal' | 'drawer'
 }
 
 export class ChatHeader {
@@ -93,10 +96,21 @@ export class ChatHeader {
       actions.appendChild(menuBtn)
     }
 
-    // Minimize button (optional)
+    // Minimize button (optional, desktop only)
     if (this.options.showMinimize && this.options.onMinimize) {
       const minimizeBtn = this.createActionButton('minimize', 'Свернуть', this.options.onMinimize)
+      minimizeBtn.classList.add('chat-header__btn--desktop-only')
       actions.appendChild(minimizeBtn)
+    }
+
+    // Toggle variant button (optional, desktop only)
+    if (this.options.showToggleVariant && this.options.onToggleVariant) {
+      const isModal = this.options.variant === 'modal'
+      const iconName = isModal ? 'windowMaximize' : 'windowRestore'
+      const label = isModal ? 'Развернуть' : 'Восстановить'
+      const toggleBtn = this.createActionButton(iconName, label, this.options.onToggleVariant)
+      toggleBtn.classList.add('chat-header__btn--desktop-only')
+      actions.appendChild(toggleBtn)
     }
 
     // Close button

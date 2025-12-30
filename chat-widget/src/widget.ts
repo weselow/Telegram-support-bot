@@ -250,6 +250,14 @@ export class ChatWidget {
   }
 
   /**
+   * Toggle between modal and drawer variants
+   */
+  toggleVariant(): void {
+    const newVariant = this.currentVariant === 'modal' ? 'drawer' : 'modal'
+    this.setVariant(newVariant)
+  }
+
+  /**
    * Get session ID
    */
   getSessionId(): string | null {
@@ -513,7 +521,12 @@ export class ChatWidget {
     this.header = new ChatHeader({
       title: 'Поддержка DellShop',
       subtitle: 'Мы онлайн',
-      onClose: () => this.close()
+      onClose: () => this.close(),
+      onMinimize: () => this.close(),
+      onToggleVariant: () => this.toggleVariant(),
+      showMinimize: true,
+      showToggleVariant: true,
+      variant: this.currentVariant
     })
     containerEl.appendChild(this.header.getElement())
 

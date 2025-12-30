@@ -54,6 +54,15 @@ export const icons = {
 
   pause: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+  </svg>`,
+
+  // Window control icons (Windows-style)
+  windowMaximize: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 4h16v16H4V4zm2 2v12h12V6H6z"/>
+  </svg>`,
+
+  windowRestore: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 8h12v12H4V8zm2 2v8h8v-8H6zM8 4h12v12h-2V6H8V4z"/>
   </svg>`
 }
 
