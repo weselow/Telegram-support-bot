@@ -54,6 +54,8 @@
 | [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
 | [022](../solutions/022-cors-configuration/022-cors-configuration.md) | CORS Configuration | DONE | Высокий |
 | [023](tasks/023-web-chat-file-upload.md) | Загрузка файлов из веб-чата | TODO | Средний |
+| [024](tasks/024-delayed-response-message.md) | Сообщение при задержке ответа | TODO | Низкий |
+| [025](tasks/025-off-hours-message.md) | Сообщение в нерабочее время | TODO | Низкий |
 
 ---
 
