@@ -18,6 +18,16 @@ export class ChatHttpError extends Error {
   }
 }
 
+export class RateLimitError extends Error {
+  constructor(
+    message: string,
+    public retryAfterSeconds: number
+  ) {
+    super(message)
+    this.name = 'RateLimitError'
+  }
+}
+
 export interface HistoryParams {
   limit?: number
   before?: string
@@ -55,6 +65,13 @@ export class HttpClient {
     })
 
     if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After')
+        throw new RateLimitError(
+          'Восстанавливаем соединение...',
+          retryAfter ? parseInt(retryAfter, 10) : 60
+        )
+      }
       const text = await response.text().catch(() => 'Unknown error')
       throw new ChatHttpError(response.status, text)
     }

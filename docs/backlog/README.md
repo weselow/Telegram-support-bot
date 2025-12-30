@@ -67,7 +67,6 @@
 |---|--------|-----------|
 | [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
-| [TD-031](technical-debt/td-031-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | Низкий |
 | [TD-032](technical-debt/td-032-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | Низкий |
 | [TD-033](technical-debt/td-033-widget-unit-tests.md) | Chat Widget: Unit-тесты | Средний |
 | [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
@@ -87,6 +86,7 @@
 | [TD-036](../bugs/2025-12-30-dry-cors-error-response.md) | DRY: CORS error response в helper | DONE |
 | [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
 | [TD-038](../bugs/2025-12-30-apply-copywriter-texts.md) | Применить тексты копирайтера к боту | DONE |
+| [TD-031](../bugs/2025-12-30-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | DONE |
 
 ---
 

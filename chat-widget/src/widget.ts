@@ -7,7 +7,7 @@ import type { Message } from './types/messages'
 import type { WidgetState } from './types/events'
 import { DEFAULT_CONFIG, resolveVariant } from './types/config'
 import { StateManager } from './core/state'
-import { HttpClient } from './transport/http'
+import { HttpClient, RateLimitError } from './transport/http'
 import { WebSocketClient, ConnectionState } from './transport/websocket'
 import { loadCSS, domReady, uniqueId } from './utils/dom'
 import { loadSettings, saveSettings, saveSessionId } from './utils/storage'
@@ -329,7 +329,11 @@ export class ChatWidget {
     } catch (error) {
       console.error('[ChatWidget] Connection failed:', error)
       this.state.setState('error')
-      this.statusBar?.showError('Не удалось подключиться')
+      if (error instanceof RateLimitError) {
+        this.statusBar?.show('error', error.message)
+      } else {
+        this.statusBar?.showError('Не удалось подключиться')
+      }
     }
   }
 
@@ -587,7 +591,11 @@ export class ChatWidget {
       }
     } catch (error) {
       console.error('[ChatWidget] Failed to load history:', error)
-      this.statusBar?.show('error', 'Не удалось загрузить историю')
+      if (error instanceof RateLimitError) {
+        this.statusBar?.show('error', error.message)
+      } else {
+        this.statusBar?.show('error', 'Не удалось загрузить историю')
+      }
     } finally {
       this.isLoadingHistory = false
       this.messages?.hideLoading()
@@ -604,7 +612,11 @@ export class ChatWidget {
       window.open(response.data.telegramUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       console.error('[ChatWidget] Failed to get Telegram link:', error)
-      this.statusBar?.show('error', 'Не удалось получить ссылку Telegram')
+      if (error instanceof RateLimitError) {
+        this.statusBar?.show('error', error.message)
+      } else {
+        this.statusBar?.show('error', 'Не удалось получить ссылку Telegram')
+      }
     } finally {
       this.telegramLink?.setLoading(false)
     }
