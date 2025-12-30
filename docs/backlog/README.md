@@ -69,6 +69,8 @@
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
 | [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
 | [TD-037](technical-debt/td-037-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | Средний |
+| [TD-039](technical-debt/td-039-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur и сворачивание | Средний |
+| [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
 
 ### Выполнено
 
