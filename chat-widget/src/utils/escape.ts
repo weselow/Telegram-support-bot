@@ -46,6 +46,9 @@ export function formatMessageText(text: string): string {
 export function formatTime(isoString: string): string {
   try {
     const date = new Date(isoString)
+    if (isNaN(date.getTime())) {
+      return ''
+    }
     return date.toLocaleTimeString('ru-RU', {
       hour: '2-digit',
       minute: '2-digit'
@@ -61,6 +64,9 @@ export function formatTime(isoString: string): string {
 export function formatDate(isoString: string): string {
   try {
     const date = new Date(isoString)
+    if (isNaN(date.getTime())) {
+      return ''
+    }
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)

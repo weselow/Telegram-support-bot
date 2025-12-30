@@ -79,7 +79,8 @@ export class WebSocketClient {
    * Connect to WebSocket server
    */
   connect(): void {
-    if (this.ws && this._state === 'connected') {
+    // Only skip if actually connected (ws exists, is open, and state is connected)
+    if (this.ws?.readyState === WebSocket.OPEN && this._state === 'connected') {
       return
     }
 

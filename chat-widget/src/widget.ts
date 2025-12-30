@@ -2,7 +2,7 @@
  * DellShop Chat Widget - Main orchestrator class
  */
 
-import type { WidgetConfig, WidgetVariant } from './types/config'
+import type { WidgetConfig } from './types/config'
 import type { Message } from './types/messages'
 import type { WidgetState } from './types/events'
 import { DEFAULT_CONFIG, resolveVariant } from './types/config'
@@ -27,7 +27,7 @@ export class ChatWidget {
   private state: StateManager
   private httpClient: HttpClient
   private wsClient: WebSocketClient
-  private currentVariant: WidgetVariant
+  private currentVariant: 'modal' | 'drawer'
 
   // UI Components
   private button: ChatButton | null = null
@@ -245,7 +245,7 @@ export class ChatWidget {
   /**
    * Get current variant
    */
-  getVariant(): WidgetVariant {
+  getVariant(): 'modal' | 'drawer' {
     return this.currentVariant
   }
 
