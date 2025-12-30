@@ -25,12 +25,14 @@ export interface HistoryParams {
 }
 
 export class HttpClient {
+  private isReinitializing = false
+
   constructor(private baseUrl: string) {}
 
   /**
-   * Make HTTP request with credentials
+   * Make raw HTTP request (no retry logic)
    */
-  private async request<T>(
+  private async rawRequest<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
@@ -61,10 +63,34 @@ export class HttpClient {
   }
 
   /**
-   * Initialize chat session
+   * Make HTTP request with automatic session recovery on 401
+   */
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    try {
+      return await this.rawRequest<T>(endpoint, options)
+    } catch (error) {
+      // On 401, try to reinitialize session and retry once
+      if (error instanceof ChatHttpError && error.status === 401 && !this.isReinitializing) {
+        this.isReinitializing = true
+        try {
+          await this.init()
+          return await this.rawRequest<T>(endpoint, options)
+        } finally {
+          this.isReinitializing = false
+        }
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Initialize chat session (uses rawRequest to avoid retry loop)
    */
   async init(): Promise<InitResponse> {
-    return this.request<InitResponse>('/api/chat/init', {
+    return this.rawRequest<InitResponse>('/api/chat/init', {
       method: 'POST'
     })
   }
