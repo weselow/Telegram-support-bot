@@ -164,6 +164,7 @@ export class WebSocketClient {
         const data = JSON.parse(event.data) as ServerEvent
         this.handleServerEvent(data)
       } catch (error) {
+        errorLogger.logError('Failed to parse WebSocket message', { source: 'websocket' })
         console.error('[ChatWidget] Failed to parse WebSocket message:', error)
       }
     }

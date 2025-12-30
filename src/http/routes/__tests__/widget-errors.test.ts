@@ -346,6 +346,35 @@ describe('Widget Errors Route', () => {
       );
     });
 
+    it('should sanitize control characters in messages', async () => {
+      const maliciousMessage = 'Error\r\n\x00Injected\x1FLine';
+
+      await fastify.inject({
+        method: 'POST',
+        url: '/api/widget/errors',
+        headers: {
+          origin: 'https://dellshop.ru',
+          'content-type': 'application/json',
+        },
+        payload: {
+          errors: [
+            {
+              level: 'error',
+              message: maliciousMessage,
+              context: { userAgent: 'Test', url: 'https://x.ru', timestamp: '2025-12-30T12:00:00Z' },
+            },
+          ],
+        },
+      });
+
+      expect(mockCaptureMessage).toHaveBeenCalledWith(
+        'Error   Injected Line',
+        expect.any(String),
+        expect.any(Object),
+        expect.any(Object)
+      );
+    });
+
     it('should reject request from invalid origin', async () => {
       const response = await fastify.inject({
         method: 'POST',

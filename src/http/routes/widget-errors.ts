@@ -64,9 +64,14 @@ function validateErrorBody(error: unknown): error is WidgetErrorBody {
   return true;
 }
 
+function sanitizeMessage(msg: string): string {
+  // Remove control characters (CRLF injection protection)
+  return msg.replace(/[\x00-\x1F\x7F]/g, ' ').slice(0, MAX_MESSAGE_LENGTH);
+}
+
 function processError(error: WidgetErrorBody): void {
   const level: SeverityLevel = error.level === 'warn' ? 'warning' : 'error';
-  const message = error.message.slice(0, MAX_MESSAGE_LENGTH);
+  const message = sanitizeMessage(error.message);
 
   const context: Record<string, unknown> = {
     userAgent: error.context.userAgent,

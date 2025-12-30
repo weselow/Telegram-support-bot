@@ -189,13 +189,23 @@ class ErrorLogger {
     this.scheduleBatch()
   }
 
+  // Keys that may contain sensitive data
+  private static readonly SENSITIVE_KEYS = [
+    'password', 'token', 'apikey', 'secret', 'auth', 'credential', 'bearer'
+  ]
+
   private filterContext(context?: ErrorContext): Record<string, unknown> {
     if (!context) return {}
 
-    // Extract only safe primitive values
+    // Extract only safe primitive values, excluding sensitive keys
     const result: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(context)) {
       if (key === 'sessionId') continue // Handled separately
+
+      // Skip sensitive keys
+      const lowerKey = key.toLowerCase()
+      if (ErrorLogger.SENSITIVE_KEYS.some(s => lowerKey.includes(s))) continue
+
       if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
         result[key] = value
       }

@@ -268,6 +268,38 @@ describe('ErrorLogger', () => {
       expect(context.reason).toBe('Server error')
       expect(context.complexObject).toBeUndefined()
     })
+
+    it('should filter out sensitive keys from context', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      errorLogger.logError('Test error', {
+        code: 500,
+        password: 'secret123',
+        apiKey: 'key-abc',
+        userToken: 'tok-xyz',
+        authHeader: 'Bearer xxx',
+        safeField: 'visible'
+      })
+
+      await new Promise(r => setTimeout(r, 100))
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      const context = body.errors[0].context
+
+      expect(context.code).toBe(500)
+      expect(context.safeField).toBe('visible')
+      expect(context.password).toBeUndefined()
+      expect(context.apiKey).toBeUndefined()
+      expect(context.userToken).toBeUndefined()
+      expect(context.authHeader).toBeUndefined()
+    })
   })
 
   describe('network failures', () => {
