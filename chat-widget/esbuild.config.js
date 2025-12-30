@@ -7,7 +7,7 @@ const isServe = process.argv.includes('--serve')
 const isProd = process.env.NODE_ENV === 'production'
 // In dev server mode, use localhost; otherwise use production domain
 const supportDomain = isServe
-  ? 'http://localhost:3000'
+  ? 'http://localhost:3500'
   : (process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru')
 
 // Ensure dist directory exists
