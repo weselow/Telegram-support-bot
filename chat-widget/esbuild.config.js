@@ -82,7 +82,7 @@ async function build() {
       // Start dev server
       const { host, port } = await ctx.serve({
         servedir: 'dist',
-        port: 8080,
+        port: 3400,
         fallback: 'dev/index.html'
       })
 
