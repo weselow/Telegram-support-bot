@@ -53,8 +53,8 @@
 
   /* Z-index */
   --chat-z-button: 9998;
-  --chat-z-widget: 9999;
-  --chat-z-overlay: 10000;
+  --chat-z-overlay: 9999;
+  --chat-z-widget: 10000;
 
   /* Animation */
   --chat-transition-fast: 150ms ease;
