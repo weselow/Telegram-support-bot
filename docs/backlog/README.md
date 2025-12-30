@@ -56,6 +56,7 @@
 | [023](tasks/023-web-chat-file-upload.md) | Загрузка файлов из веб-чата | TODO | Средний |
 | [024](tasks/024-delayed-response-message.md) | Сообщение при задержке ответа | TODO | Низкий |
 | [025](tasks/025-off-hours-message.md) | Сообщение в нерабочее время | TODO | Низкий |
+| [026](tasks/026-chat-history-page.md) | Страница истории чата для клиента | TODO | Средний |
 
 ---
 
@@ -65,9 +66,7 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-024](technical-debt/td-024-history-copy-on-migration.md) | Копирование истории при миграции в Telegram | Низкий |
 | [TD-029](technical-debt/td-029-widget-analytics.md) | Chat Widget: Analytics интеграция | Низкий |
-| [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
 | [TD-037](technical-debt/td-037-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | Средний |
 | [TD-039](technical-debt/td-039-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur и сворачивание | Средний |
 | [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
@@ -89,6 +88,7 @@
 | [TD-031](../bugs/2025-12-30-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | DONE |
 | [TD-032](../bugs/2025-12-30-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | DONE |
 | [TD-033](../bugs/2025-12-30-widget-unit-tests.md) | Chat Widget: Unit-тесты | DONE |
+| [TD-035](../bugs/2025-12-30-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | DONE |
 
 ---
 

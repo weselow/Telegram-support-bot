@@ -2,7 +2,7 @@
  * Connection status component
  */
 
-import { createElement } from '../utils/dom'
+import { createElement, on } from '../utils/dom'
 import type { ConnectionState } from '../transport/websocket'
 
 export type StatusType = 'connecting' | 'reconnecting' | 'disconnected' | 'error'
@@ -14,6 +14,7 @@ export interface StatusBarOptions {
 export class StatusBar {
   private element: HTMLElement | null = null
   private currentType: StatusType | null = null
+  private retryUnsubscribe?: () => void
 
   constructor(private container: HTMLElement, private options: StatusBarOptions = {}) {}
 
@@ -34,6 +35,9 @@ export class StatusBar {
    * Hide status bar
    */
   hide(): void {
+    this.retryUnsubscribe?.()
+    this.retryUnsubscribe = undefined
+
     if (this.element) {
       this.element.remove()
       this.element = null
@@ -92,7 +96,7 @@ export class StatusBar {
         type: 'button'
       }, ['Повторить'])
 
-      retryBtn.addEventListener('click', () => {
+      this.retryUnsubscribe = on(retryBtn, 'click', () => {
         this.options.onRetry?.()
       })
 
