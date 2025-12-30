@@ -509,6 +509,7 @@
 /* Telegram Link */
 .chat-telegram {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--chat-spacing-sm);
   padding: var(--chat-spacing-sm) var(--chat-spacing-md);
@@ -516,6 +517,13 @@
   border-top: 1px solid var(--chat-border);
   font-size: var(--chat-font-size-sm);
   color: var(--chat-text-secondary);
+}
+
+.chat-telegram__description {
+  flex-basis: 100%;
+  font-size: var(--chat-font-size-xs);
+  color: var(--chat-text-muted);
+  line-height: 1.4;
 }
 
 .chat-telegram__btn {

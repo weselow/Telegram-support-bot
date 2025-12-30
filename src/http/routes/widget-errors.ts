@@ -66,7 +66,8 @@ function validateErrorBody(error: unknown): error is WidgetErrorBody {
 
 function sanitizeMessage(msg: string): string {
   // Remove control characters (CRLF injection protection)
-  return msg.replace(/[\x00-\x1F\x7F]/g, ' ').slice(0, MAX_MESSAGE_LENGTH);
+  // eslint-disable-next-line no-control-regex
+  return msg.replace(/[\u0000-\u001F\u007F]/g, ' ').slice(0, MAX_MESSAGE_LENGTH);
 }
 
 function processError(error: WidgetErrorBody): void {

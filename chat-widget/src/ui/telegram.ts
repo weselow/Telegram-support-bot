@@ -106,8 +106,14 @@ export class TelegramLink {
       btn.appendChild(svg)
     }
 
-    btn.appendChild(document.createTextNode('Подключить'))
+    btn.appendChild(document.createTextNode('Перейти'))
     container.appendChild(btn)
+
+    // Description text
+    const description = createElement('span', { className: 'chat-telegram__description' }, [
+      'Сможете отправлять картинки, файлы и голосовые сообщения, а также всегда вернуться к разговору.'
+    ])
+    container.appendChild(description)
 
     // Initially hidden
     container.style.display = 'none'
@@ -139,7 +145,7 @@ export class TelegramLink {
       if (svg) {
         this.linkButton.appendChild(svg)
       }
-      this.linkButton.appendChild(document.createTextNode('Подключить'))
+      this.linkButton.appendChild(document.createTextNode('Перейти'))
     }
   }
 }

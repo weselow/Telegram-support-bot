@@ -86,6 +86,7 @@
 | [TD-036](../bugs/2025-12-30-dry-cors-error-response.md) | DRY: CORS error response в helper | DONE |
 | [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
 | [TD-038](../bugs/2025-12-30-apply-copywriter-texts.md) | Применить тексты копирайтера к боту | DONE |
+| [TD-038b](../bugs/2025-12-31-widget-connect-button-text.md) | Chat Widget: текст кнопки "Перейти" | DONE |
 | [TD-031](../bugs/2025-12-30-widget-http-429-handling.md) | Chat Widget: HTTP 429 handling | DONE |
 | [TD-032](../bugs/2025-12-30-widget-variant-switcher.md) | Chat Widget: Переключатель modal/drawer | DONE |
 | [TD-033](../bugs/2025-12-30-widget-unit-tests.md) | Chat Widget: Unit-тесты | DONE |
