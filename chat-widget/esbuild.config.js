@@ -3,8 +3,12 @@ const fs = require('fs')
 const path = require('path')
 
 const isWatch = process.argv.includes('--watch')
+const isServe = process.argv.includes('--serve')
 const isProd = process.env.NODE_ENV === 'production'
-const supportDomain = process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru'
+// In dev server mode, use localhost; otherwise use production domain
+const supportDomain = isServe
+  ? 'http://localhost:3000'
+  : (process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru')
 
 // Ensure dist directory exists
 if (!fs.existsSync('dist')) {
@@ -61,9 +65,59 @@ function buildCSS() {
 
 async function build() {
   try {
-    console.log(`Building chat-widget (${isProd ? 'production' : 'development'})...`)
+    const mode = isProd ? 'production' : 'development'
+    console.log(`Building chat-widget (${mode})...`)
 
-    if (isWatch) {
+    if (isServe) {
+      // Dev server mode with live reload
+      const ctx = await esbuild.context(jsConfig)
+
+      // Initial build
+      await ctx.rebuild()
+      buildCSS()
+
+      // Start watching
+      await ctx.watch()
+
+      // Start dev server
+      const { host, port } = await ctx.serve({
+        servedir: 'dist',
+        port: 8080,
+        fallback: 'dev/index.html'
+      })
+
+      // Copy dev HTML to dist for serving
+      fs.copyFileSync('dev/index.html', 'dist/index.html')
+
+      console.log('')
+      console.log('='.repeat(50))
+      console.log(`  Dev server running at: http://localhost:${port}`)
+      console.log(`  API URL: ${supportDomain}`)
+      console.log('='.repeat(50))
+      console.log('')
+      console.log('Watching for changes... (Ctrl+C to stop)')
+
+      // Watch CSS files
+      const cssDir = 'src/styles'
+      if (fs.existsSync(cssDir)) {
+        fs.watch(cssDir, (eventType, filename) => {
+          if (filename && filename.endsWith('.css')) {
+            console.log(`CSS changed: ${filename}`)
+            buildCSS()
+          }
+        })
+      }
+
+      // Watch dev HTML
+      fs.watch('dev', (eventType, filename) => {
+        if (filename === 'index.html') {
+          console.log('Dev HTML changed, copying...')
+          fs.copyFileSync('dev/index.html', 'dist/index.html')
+        }
+      })
+
+    } else if (isWatch) {
+      // Watch mode without server (existing behavior)
       const ctx = await esbuild.context(jsConfig)
       await ctx.watch()
       console.log('Watching for changes...')
@@ -79,6 +133,7 @@ async function build() {
         })
       }
     } else {
+      // One-time build (production)
       await esbuild.build(jsConfig)
       buildCSS()
 

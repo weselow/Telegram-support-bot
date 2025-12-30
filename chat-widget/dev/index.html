@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Widget Dev</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    .demo-header {
+      background: #1a1a2e;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .demo-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .demo-section {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .demo-section h2 {
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .demo-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .demo-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .demo-btn--primary {
+      background: #0066cc;
+      color: white;
+    }
+    .demo-btn--primary:hover {
+      background: #0052a3;
+    }
+    .demo-btn--secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    .demo-btn--secondary:hover {
+      background: #d0d0d0;
+    }
+    .demo-info {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+    .demo-info code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    .product-card {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    .product-card img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      background: #f0f0f0;
+      border-radius: 4px;
+    }
+    .product-info h3 {
+      margin-bottom: 8px;
+    }
+    .product-price {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0066cc;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-header">
+    <h1>DellShop Chat Widget - Dev Mode</h1>
+    <p>Тестовая страница для разработки виджета</p>
+  </div>
+
+  <div class="demo-content">
+    <div class="demo-section">
+      <h2>Управление виджетом</h2>
+      <div class="demo-controls">
+        <button class="demo-btn demo-btn--primary" onclick="DellShopChat.open()">
+          Открыть чат
+        </button>
+        <button class="demo-btn demo-btn--secondary" onclick="DellShopChat.close()">
+          Закрыть чат
+        </button>
+        <button class="demo-btn demo-btn--secondary" onclick="DellShopChat.toggle()">
+          Toggle
+        </button>
+      </div>
+      <div class="demo-info">
+        <strong>API:</strong>
+        <code>DellShopChat.open()</code>
+        <code>DellShopChat.close()</code>
+        <code>DellShopChat.toggle()</code>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Переключение режима</h2>
+      <div class="demo-controls">
+        <button class="demo-btn demo-btn--secondary" onclick="switchVariant('modal')">
+          Modal
+        </button>
+        <button class="demo-btn demo-btn--secondary" onclick="switchVariant('drawer')">
+          Drawer
+        </button>
+      </div>
+      <div class="demo-info">
+        Текущий режим: <strong id="current-variant">-</strong>
+        <br>
+        Перезагрузите страницу с параметром <code>?variant=modal</code> или <code>?variant=drawer</code>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Пример контента сайта</h2>
+      <p>Виджет должен корректно отображаться поверх контента страницы.</p>
+
+      <div class="product-card">
+        <div style="width:120px;height:120px;background:#e0e0e0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#999;">
+          Фото
+        </div>
+        <div class="product-info">
+          <h3>Dell PowerEdge R750</h3>
+          <p>2U Rack Server, Intel Xeon, 512GB RAM</p>
+          <div class="product-price">450 000 ₽</div>
+          <button class="demo-btn demo-btn--primary">В корзину</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widget Script -->
+  <script src="/chat-widget.js"></script>
+  <script>
+    // Get variant from URL params
+    const params = new URLSearchParams(window.location.search);
+    const variant = params.get('variant') || 'drawer';
+
+    // Initialize widget
+    DellShopChat.init({
+      variant: variant,
+      apiUrl: 'http://localhost:3000'  // Local backend
+    });
+
+    // Update UI
+    document.getElementById('current-variant').textContent = variant;
+
+    function switchVariant(newVariant) {
+      window.location.search = `?variant=${newVariant}`;
+    }
+
+    console.log('[Dev] Chat widget initialized with variant:', variant);
+    console.log('[Dev] DellShopChat API:', Object.keys(DellShopChat));
+  </script>
+</body>
+</html>

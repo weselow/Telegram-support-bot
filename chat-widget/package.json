@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "node esbuild.config.js --watch",
+    "dev:serve": "node esbuild.config.js --serve",
     "build": "node esbuild.config.js",
     "build:prod": "cross-env NODE_ENV=production node esbuild.config.js",
     "type-check": "tsc --noEmit",
