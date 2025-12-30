@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { HttpClient, ChatHttpError, RateLimitError } from '../../transport/http'
 
+// Mock error logger to prevent side effects
+vi.mock('../../utils/error-logger', () => ({
+  errorLogger: {
+    init: vi.fn(),
+    logError: vi.fn(),
+    logWarning: vi.fn(),
+    setSessionId: vi.fn(),
+    destroy: vi.fn()
+  }
+}))
+
 // Mock fetch globally
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)

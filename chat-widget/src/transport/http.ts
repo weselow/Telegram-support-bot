@@ -7,6 +7,7 @@ import type {
   HistoryResponse,
   TelegramLinkResponse
 } from '../types/messages'
+import { errorLogger } from '../utils/error-logger'
 
 export class ChatHttpError extends Error {
   constructor(
@@ -67,12 +68,17 @@ export class HttpClient {
     if (!response.ok) {
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After')
+        errorLogger.logWarning('HTTP 429 rate limit', { endpoint, status: 429 })
         throw new RateLimitError(
           'Восстанавливаем соединение...',
           retryAfter ? parseInt(retryAfter, 10) : 60
         )
       }
       const text = await response.text().catch(() => 'Unknown error')
+      // Log 4xx/5xx errors (except 401 which is handled separately)
+      if (response.status !== 401) {
+        errorLogger.logError(`HTTP ${response.status}`, { endpoint, status: response.status })
+      }
       throw new ChatHttpError(response.status, text)
     }
 
@@ -91,6 +97,7 @@ export class HttpClient {
     } catch (error) {
       // On 401, try to reinitialize session and retry once
       if (error instanceof ChatHttpError && error.status === 401 && !this.isReinitializing) {
+        errorLogger.logWarning('Session not found, reinitializing', { endpoint })
         this.isReinitializing = true
         try {
           await this.init()

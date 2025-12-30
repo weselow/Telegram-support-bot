@@ -8,6 +8,7 @@ import type {
   ClientEvent,
   Message
 } from '../types/messages'
+import { errorLogger } from '../utils/error-logger'
 
 export interface WebSocketClientConfig {
   url: string
@@ -169,6 +170,7 @@ export class WebSocketClient {
 
     this.ws.onerror = (event) => {
       console.error('[ChatWidget] WebSocket error:', event)
+      errorLogger.logError('WebSocket connection error', { source: 'websocket' })
       this.handleError(new Error('WebSocket connection error'))
     }
 
@@ -179,12 +181,24 @@ export class WebSocketClient {
         return
       }
 
+      // Log unexpected close
+      if (event.code !== 1000) {
+        errorLogger.logWarning('WebSocket unexpected close', {
+          code: event.code,
+          reason: event.reason || 'unknown'
+        })
+      }
+
       // Attempt reconnection
       if (this.reconnectCount < this.config.reconnectAttempts) {
         this.scheduleReconnect()
       } else {
         this.setState('disconnected')
         this.handlers.onDisconnected?.()
+        errorLogger.logError('WebSocket connection failed after retries', {
+          code: event.code,
+          reason: event.reason || 'unknown'
+        })
         this.handlers.onError?.(new Error(`Connection closed: ${event.code} ${event.reason}`))
       }
     }

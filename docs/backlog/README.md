@@ -66,7 +66,6 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-037](technical-debt/td-037-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | Средний |
 | [TD-039](technical-debt/td-039-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur и сворачивание | Средний |
 | [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
 
@@ -74,6 +73,7 @@
 
 | # | Задача | Статус |
 |---|--------|--------|
+| [TD-037](../bugs/2025-12-30-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | DONE |
 | [TD-001](../bugs/2025-12-27-notify-unsupported-message-types.md) | Уведомление о неподдерживаемых типах сообщений | DONE |
 | [TD-022](../bugs/2025-12-29-web-chat-service-unit-tests.md) | Unit-тесты для WebChatService | DONE |
 | [TD-023](../bugs/2025-12-29-websocket-integration-tests.md) | Integration-тесты для WebSocket API | DONE |

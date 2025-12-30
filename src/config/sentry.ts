@@ -98,4 +98,36 @@ export function addBreadcrumb(
   }
 }
 
+export function captureMessage(
+  message: string,
+  level: Sentry.SeverityLevel = 'error',
+  context?: Record<string, unknown>,
+  tags?: Record<string, string>
+): void {
+  if (!sentryInitialized) {
+    return;
+  }
+
+  try {
+    Sentry.withScope((scope) => {
+      if (tags) {
+        Object.entries(tags).forEach(([key, value]) => {
+          scope.setTag(key, value);
+        });
+      }
+      if (context) {
+        Object.entries(context).forEach(([key, value]) => {
+          if (key !== 'phone' && key !== 'tgPhone') {
+            scope.setExtra(key, value);
+          }
+        });
+      }
+      scope.setLevel(level);
+      Sentry.captureMessage(message);
+    });
+  } catch {
+    // Sentry error should never interrupt main flow
+  }
+}
+
 export type { SeverityLevel } from '@sentry/node';

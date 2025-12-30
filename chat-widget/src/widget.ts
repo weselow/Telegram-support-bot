@@ -21,6 +21,7 @@ import {
   StatusBar,
   TelegramLink
 } from './ui'
+import { errorLogger } from './utils/error-logger'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -66,6 +67,9 @@ export class ChatWidget {
       this.config.responsive,
       window.innerWidth
     )
+
+    // Initialize error logger
+    errorLogger.init({ apiUrl: this.config.apiUrl })
 
     // Initialize managers
     this.state = new StateManager()
@@ -283,6 +287,7 @@ export class ChatWidget {
     }
 
     this.wsClient.disconnect()
+    errorLogger.destroy()
 
     this.button?.destroy()
     this.destroyContainer()
@@ -313,6 +318,7 @@ export class ChatWidget {
       const sessionId = initResponse.data.sessionId
       saveSessionId(sessionId)
       this._sessionId = sessionId
+      errorLogger.setSessionId(sessionId)
 
       // Load history if available
       if (initResponse.data.hasHistory) {

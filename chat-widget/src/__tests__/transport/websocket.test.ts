@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { WebSocketClient, type ConnectionState, type WebSocketEventHandlers } from '../../transport/websocket'
 
+// Mock error logger to prevent side effects
+vi.mock('../../utils/error-logger', () => ({
+  errorLogger: {
+    init: vi.fn(),
+    logError: vi.fn(),
+    logWarning: vi.fn(),
+    setSessionId: vi.fn(),
+    destroy: vi.fn()
+  }
+}))
+
 // Mock WebSocket
 class MockWebSocket {
   static CONNECTING = 0
