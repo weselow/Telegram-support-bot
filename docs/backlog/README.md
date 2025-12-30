@@ -70,7 +70,6 @@
 | [TD-033](technical-debt/td-033-widget-unit-tests.md) | Chat Widget: Unit-тесты | Средний |
 | [TD-035](technical-debt/td-035-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | Низкий |
 | [TD-037](technical-debt/td-037-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | Средний |
-| [TD-038](technical-debt/td-038-apply-copywriter-texts.md) | Применить тексты копирайтера к боту | Средний |
 
 ### Выполнено
 
@@ -85,6 +84,7 @@
 | [TD-027](../bugs/2025-12-30-ticket-status-type.md) | Типизация: TicketStatus union type | DONE |
 | [TD-036](../bugs/2025-12-30-dry-cors-error-response.md) | DRY: CORS error response в helper | DONE |
 | [TD-034](../solutions/022-cors-configuration/022-cors-configuration.md) | WebSocket: Origin validation | DONE (в рамках 022) |
+| [TD-038](../bugs/2025-12-30-apply-copywriter-texts.md) | Применить тексты копирайтера к боту | DONE |
 
 ---
 

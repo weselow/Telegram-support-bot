@@ -48,15 +48,15 @@ describe('startHandler', () => {
 
     expect(mockCtx.reply).toHaveBeenCalledTimes(1);
     expect(mockCtx.reply).toHaveBeenCalledWith(
-      expect.stringContaining('Привет')
+      expect.stringContaining('Здравствуйте')
     );
   });
 
-  it('should ask how to help', async () => {
+  it('should mention support in welcome', async () => {
     await startHandler(mockCtx as unknown as Context);
 
     expect(mockCtx.reply).toHaveBeenCalledWith(
-      expect.stringContaining('помочь')
+      expect.stringContaining('поддержка')
     );
   });
 
