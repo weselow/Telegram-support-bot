@@ -118,6 +118,10 @@ class ErrorLogger {
       this.rejectionHandler = null
     }
 
+    // Reset state for potential re-initialization
+    this.queue = []
+    this.errorTimestamps = []
+    this.sessionId = null
     this.initialized = false
   }
 

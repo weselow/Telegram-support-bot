@@ -24,6 +24,8 @@ interface WidgetErrorBatchBody {
 const MAX_ERRORS_PER_REQUEST = 10;
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_STACK_LENGTH = 4000;
+const MAX_URL_LENGTH = 2000;
+const MAX_USER_AGENT_LENGTH = 500;
 
 function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
   const origin = request.headers.origin;
@@ -57,8 +59,8 @@ function validateErrorBody(error: unknown): error is WidgetErrorBody {
   if (typeof e.context !== 'object' || e.context === null) return false;
 
   const ctx = e.context as Record<string, unknown>;
-  if (typeof ctx.userAgent !== 'string') return false;
-  if (typeof ctx.url !== 'string') return false;
+  if (typeof ctx.userAgent !== 'string' || ctx.userAgent.length > MAX_USER_AGENT_LENGTH) return false;
+  if (typeof ctx.url !== 'string' || ctx.url.length > MAX_URL_LENGTH) return false;
   if (typeof ctx.timestamp !== 'string') return false;
 
   return true;

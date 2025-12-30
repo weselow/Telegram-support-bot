@@ -70,6 +70,9 @@
 | [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
 | [TD-041](technical-debt/td-041-widget-error-handler-tests.md) | Widget Error Logger: тесты globalErrorHandler | Средний |
 | [TD-042](technical-debt/td-042-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | Низкий |
+| [TD-043](technical-debt/td-043-sentry-unit-tests.md) | Unit-тесты для sentry.ts (фильтрация PII) | Высокий |
+| [TD-044](technical-debt/td-044-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | Средний |
+| [TD-045](technical-debt/td-045-error-logger-init-warning.md) | ErrorLogger: предупреждение без init() | Низкий |
 
 ### Выполнено
 
