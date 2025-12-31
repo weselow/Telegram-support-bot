@@ -407,9 +407,10 @@ export class ChatWidget {
       },
 
       onMessage: (message) => {
-        // Server echoes user messages back as confirmation - skip to avoid duplicates
-        // (user messages are already shown via optimistic update in sendMessage)
+        // Server echoes user messages back as confirmation
         if (message.from === 'user') {
+          // Update status of pending messages to 'sent'
+          this.confirmPendingMessages()
           return
         }
 
@@ -762,6 +763,17 @@ export class ChatWidget {
       }
     } catch (error) {
       console.warn('[ChatWidget] Failed to fetch bot info:', error)
+    }
+  }
+
+  private confirmPendingMessages(): void {
+    // Find all messages with 'sending' status and update to 'sent'
+    const messages = this.state.getState().messages
+    for (const msg of messages) {
+      if (msg.from === 'user' && msg.status === 'sending') {
+        msg.status = 'sent'
+        this.messages?.updateMessageStatus(msg.id, 'sent')
+      }
     }
   }
 }

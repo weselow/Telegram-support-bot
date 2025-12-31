@@ -353,6 +353,7 @@ export class ChatInput {
 
     this.selectedFile = file
     this.showFilePreview(file)
+    this.updateSendButton()
 
     if (this.options.onFileSelect) {
       this.options.onFileSelect(file)
