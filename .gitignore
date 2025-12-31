@@ -44,6 +44,3 @@ prisma/*.db-journal
 # Claude Code
 .claude/agents/
 .mcp.json
-
-# Screenshots
-screens/
