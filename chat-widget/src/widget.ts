@@ -755,9 +755,15 @@ export class ChatWidget {
   private async fetchBotInfo(): Promise<void> {
     try {
       const response = await this.httpClient.getBotInfo()
+      // Resolve relative avatar URL to absolute
+      let avatarUrl = response.data.avatarUrl
+      if (avatarUrl?.startsWith('/')) {
+        const baseUrl = this.config.apiUrl.replace(/\/$/, '')
+        avatarUrl = baseUrl + avatarUrl
+      }
       this.botInfo = {
         name: response.data.name,
-        avatarUrl: response.data.avatarUrl
+        avatarUrl
       }
       // Update header if already created
       if (this.header) {
