@@ -89,3 +89,12 @@ pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test:coverage
 - Качество важнее скорости реализации
 - При неуверенности — спрашивать с озвучиванием рекомендаций
 - Правило 3-х альтернатив: придумать 3 решения, выбрать простейшее
+
+## Chat Widget
+
+**Версия:** При каждом пуше в `origin/main`, если были изменения в `chat-widget/`, увеличить `WIDGET_VERSION` в `chat-widget/src/widget.ts`
+
+```typescript
+// chat-widget/src/widget.ts
+export const WIDGET_VERSION = '0.1.x'  // Инкрементировать patch-версию
+```

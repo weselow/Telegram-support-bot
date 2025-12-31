@@ -23,6 +23,9 @@ import {
 } from './ui'
 import { errorLogger } from './utils/error-logger'
 
+/** Widget version - increment on each push to origin/main */
+export const WIDGET_VERSION = '0.1.1'
+
 export class ChatWidget {
   private config: Required<WidgetConfig>
   private state: StateManager
@@ -611,6 +614,12 @@ export class ChatWidget {
       onFileSend: (file) => this.sendFile(file)
     })
     containerEl.appendChild(this.input.getElement())
+
+    // Create version footer
+    const versionFooter = document.createElement('div')
+    versionFooter.className = 'chat-version'
+    versionFooter.textContent = `v${WIDGET_VERSION}`
+    containerEl.appendChild(versionFooter)
 
     // Load saved settings
     const settings = loadSettings()
