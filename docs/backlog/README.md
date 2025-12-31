@@ -66,7 +66,6 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-046](technical-debt/td-046-bot-info-service-tests.md) | Unit-тесты для bot-info.service.ts | Средний |
 | [TD-047](technical-debt/td-047-bot-avatar-proxy.md) | Прокси для аватара бота (безопасность) | Низкий |
 | [TD-048](technical-debt/td-048-header-avatar-fallback-dry.md) | ChatHeader: DRY для avatar fallback | Низкий |
 
@@ -97,6 +96,7 @@
 | [TD-043](../bugs/2025-12-31-sentry-unit-tests.md) | Unit-тесты для sentry.ts (фильтрация PII) | DONE |
 | [TD-044](../bugs/2025-12-31-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | DONE |
 | [TD-045](../bugs/2025-12-31-error-logger-init-warning.md) | ErrorLogger: предупреждение без init() | DONE |
+| [TD-046](../bugs/2025-12-31-bot-info-service-tests.md) | Unit-тесты для bot-info.service.ts | DONE |
 
 ---
 
