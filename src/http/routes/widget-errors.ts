@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { captureMessage, type SeverityLevel } from '../../config/sentry.js';
 import { logger } from '../../utils/logger.js';
 import { isOriginAllowedByConfig } from '../../utils/cors.js';
+import { checkKeyRateLimit } from '../../services/rate-limit.service.js';
 
 interface WidgetErrorContext {
   sessionId?: string;
@@ -26,6 +27,10 @@ const MAX_MESSAGE_LENGTH = 1000;
 const MAX_STACK_LENGTH = 4000;
 const MAX_URL_LENGTH = 2000;
 const MAX_USER_AGENT_LENGTH = 500;
+
+// Rate limiting: 20 requests per minute per origin
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 function setCorsHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
   const origin = request.headers.origin;
@@ -114,6 +119,24 @@ export function widgetErrorsRoutes(fastify: FastifyInstance): void {
   fastify.post('/api/widget/errors', async (request: FastifyRequest<{ Body: WidgetErrorBatchBody }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
       return sendCorsError(reply);
+    }
+
+    // Rate limiting by origin
+    const origin = request.headers.origin ?? 'unknown';
+    const rateLimitResult = await checkKeyRateLimit(`widget-errors:${origin}`, {
+      maxRequests: RATE_LIMIT_MAX_REQUESTS,
+      windowSeconds: RATE_LIMIT_WINDOW_SECONDS,
+    });
+
+    reply.header('X-RateLimit-Limit', RATE_LIMIT_MAX_REQUESTS);
+    reply.header('X-RateLimit-Remaining', rateLimitResult.remaining);
+    reply.header('X-RateLimit-Reset', rateLimitResult.resetInSeconds);
+
+    if (!rateLimitResult.allowed) {
+      return reply.status(429).send({
+        success: false,
+        error: { code: 'RATE_LIMIT', message: 'Too many requests' },
+      });
     }
 
     const { errors } = request.body;

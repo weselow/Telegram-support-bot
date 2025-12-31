@@ -66,7 +66,6 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-042](technical-debt/td-042-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | Низкий |
 | [TD-043](technical-debt/td-043-sentry-unit-tests.md) | Unit-тесты для sentry.ts (фильтрация PII) | Высокий |
 | [TD-044](technical-debt/td-044-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | Средний |
 | [TD-045](technical-debt/td-045-error-logger-init-warning.md) | ErrorLogger: предупреждение без init() | Низкий |
@@ -97,6 +96,7 @@
 | [TD-039](../bugs/2025-12-31-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur fix | DONE |
 | [TD-040](../bugs/2025-12-31-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | DONE |
 | [TD-041](../bugs/2025-12-31-widget-error-handler-tests.md) | Widget Error Logger: тесты globalErrorHandler | DONE |
+| [TD-042](../bugs/2025-12-31-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | DONE |
 
 ---
 

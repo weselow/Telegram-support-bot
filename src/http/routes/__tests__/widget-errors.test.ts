@@ -21,16 +21,24 @@ vi.mock('../../../config/sentry.js', () => ({
   captureMessage: vi.fn(),
 }));
 
+vi.mock('../../../services/rate-limit.service.js', () => ({
+  checkKeyRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 19, resetInSeconds: 60 }),
+}));
+
 import { widgetErrorsRoutes } from '../widget-errors.js';
 import { captureMessage } from '../../../config/sentry.js';
+import { checkKeyRateLimit } from '../../../services/rate-limit.service.js';
 
 const mockCaptureMessage = vi.mocked(captureMessage);
+const mockCheckKeyRateLimit = vi.mocked(checkKeyRateLimit);
 
 describe('Widget Errors Route', () => {
   let fastify: FastifyInstance;
 
   beforeEach(async () => {
     mockCaptureMessage.mockClear();
+    mockCheckKeyRateLimit.mockClear();
+    mockCheckKeyRateLimit.mockResolvedValue({ allowed: true, remaining: 19, resetInSeconds: 60 });
     fastify = Fastify();
     widgetErrorsRoutes(fastify);
     await fastify.ready();
@@ -395,6 +403,89 @@ describe('Widget Errors Route', () => {
       });
 
       expect(response.statusCode).toBe(403);
+      expect(mockCaptureMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('should include rate limit headers in response', async () => {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/widget/errors',
+        headers: {
+          origin: 'https://dellshop.ru',
+          'content-type': 'application/json',
+        },
+        payload: {
+          errors: [
+            {
+              level: 'error',
+              message: 'Test error',
+              context: { userAgent: 'Test', url: 'https://x.ru', timestamp: '2025-12-30T12:00:00Z' },
+            },
+          ],
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['x-ratelimit-limit']).toBe('20');
+      expect(response.headers['x-ratelimit-remaining']).toBe('19');
+      expect(response.headers['x-ratelimit-reset']).toBe('60');
+    });
+
+    it('should use origin as rate limit key', async () => {
+      await fastify.inject({
+        method: 'POST',
+        url: '/api/widget/errors',
+        headers: {
+          origin: 'https://dellshop.ru',
+          'content-type': 'application/json',
+        },
+        payload: {
+          errors: [
+            {
+              level: 'error',
+              message: 'Test error',
+              context: { userAgent: 'Test', url: 'https://x.ru', timestamp: '2025-12-30T12:00:00Z' },
+            },
+          ],
+        },
+      });
+
+      expect(mockCheckKeyRateLimit).toHaveBeenCalledWith(
+        'widget-errors:https://dellshop.ru',
+        { maxRequests: 20, windowSeconds: 60 }
+      );
+    });
+
+    it('should return 429 when rate limit exceeded', async () => {
+      mockCheckKeyRateLimit.mockResolvedValue({ allowed: false, remaining: 0, resetInSeconds: 45 });
+
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/api/widget/errors',
+        headers: {
+          origin: 'https://dellshop.ru',
+          'content-type': 'application/json',
+        },
+        payload: {
+          errors: [
+            {
+              level: 'error',
+              message: 'Test error',
+              context: { userAgent: 'Test', url: 'https://x.ru', timestamp: '2025-12-30T12:00:00Z' },
+            },
+          ],
+        },
+      });
+
+      expect(response.statusCode).toBe(429);
+      expect(JSON.parse(response.body)).toEqual({
+        success: false,
+        error: { code: 'RATE_LIMIT', message: 'Too many requests' },
+      });
+      expect(response.headers['x-ratelimit-remaining']).toBe('0');
+      expect(response.headers['x-ratelimit-reset']).toBe('45');
       expect(mockCaptureMessage).not.toHaveBeenCalled();
     });
   });
