@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { getBotInfo, clearBotInfoCache } from '../bot-info.service.js';
+import { getBotInfo, getBotAvatar, clearBotInfoCache } from '../bot-info.service.js';
 
 // Mock bot
 vi.mock('../../bot/bot.js', () => ({
@@ -21,6 +21,10 @@ vi.mock('../../utils/logger.js', () => ({
     error: vi.fn(),
   },
 }));
+
+// Mock global fetch
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 describe('BotInfoService', () => {
   let bot: {
@@ -59,48 +63,17 @@ describe('BotInfoService', () => {
   });
 
   describe('getBotInfo', () => {
-    it('should return bot info with avatar', async () => {
+    it('should return bot info with proxy avatar URL', async () => {
       bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
-      bot.api.getFile.mockResolvedValue(mockFile);
 
       const result = await getBotInfo();
 
       expect(result).toEqual({
         name: 'Support Bot',
         username: 'support_bot',
-        avatarUrl: 'https://api.telegram.org/file/bottest-bot-token/photos/file_0.jpg',
+        avatarUrl: '/api/chat/bot-avatar',
       });
       expect(bot.api.getMe).toHaveBeenCalledTimes(1);
-      expect(bot.api.getUserProfilePhotos).toHaveBeenCalledWith(123456789, { limit: 1 });
-      expect(bot.api.getFile).toHaveBeenCalledWith('photo-file-id');
-    });
-
-    it('should return bot info without avatar when no photos', async () => {
-      bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
-
-      const result = await getBotInfo();
-
-      expect(result).toEqual({
-        name: 'Support Bot',
-        username: 'support_bot',
-        avatarUrl: null,
-      });
-      expect(bot.api.getFile).not.toHaveBeenCalled();
-    });
-
-    it('should return bot info without avatar when getUserProfilePhotos fails', async () => {
-      bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockRejectedValue(new Error('API error'));
-
-      const result = await getBotInfo();
-
-      expect(result).toEqual({
-        name: 'Support Bot',
-        username: 'support_bot',
-        avatarUrl: null,
-      });
     });
 
     it('should return bot info with only first_name when no last_name', async () => {
@@ -108,16 +81,15 @@ describe('BotInfoService', () => {
         ...mockBotUser,
         last_name: undefined,
       });
-      bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
 
       const result = await getBotInfo();
 
       expect(result.name).toBe('Support');
+      expect(result.avatarUrl).toBe('/api/chat/bot-avatar');
     });
 
     it('should return cached info on second call', async () => {
       bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
 
       const result1 = await getBotInfo();
       const result2 = await getBotInfo();
@@ -130,7 +102,6 @@ describe('BotInfoService', () => {
       vi.useFakeTimers();
 
       bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
 
       await getBotInfo();
       expect(bot.api.getMe).toHaveBeenCalledTimes(1);
@@ -146,7 +117,6 @@ describe('BotInfoService', () => {
 
     it('should return cached info when API fails', async () => {
       bot.api.getMe.mockResolvedValue(mockBotUser);
-      bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
 
       // First call - cache the result
       const cachedResult = await getBotInfo();
@@ -171,23 +141,143 @@ describe('BotInfoService', () => {
       expect(result).toEqual({
         name: 'Поддержка',
         username: '',
-        avatarUrl: null,
+        avatarUrl: '/api/chat/bot-avatar',
       });
     });
   });
 
-  describe('clearBotInfoCache', () => {
-    it('should clear cache and force refresh on next call', async () => {
+  describe('getBotAvatar', () => {
+    it('should return avatar binary when bot has avatar', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue(mockFile);
+
+      const mockImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'image/png' },
+        arrayBuffer: () => Promise.resolve(mockImageData.buffer),
+      });
+
+      const result = await getBotAvatar();
+
+      expect(result.contentType).toBe('image/png');
+      expect(result.data).toBeInstanceOf(Buffer);
+      expect(bot.api.getUserProfilePhotos).toHaveBeenCalledWith(123456789, { limit: 1 });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.telegram.org/file/bottest-bot-token/photos/file_0.jpg'
+      );
+    });
+
+    it('should return placeholder when bot has no photos', async () => {
       bot.api.getMe.mockResolvedValue(mockBotUser);
       bot.api.getUserProfilePhotos.mockResolvedValue({ total_count: 0, photos: [] });
 
-      await getBotInfo();
+      const result = await getBotAvatar();
+
+      expect(result.contentType).toBe('image/svg+xml');
+      expect(result.data.toString()).toContain('<svg');
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should return placeholder when getUserProfilePhotos fails', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockRejectedValue(new Error('API error'));
+
+      const result = await getBotAvatar();
+
+      expect(result.contentType).toBe('image/svg+xml');
+    });
+
+    it('should return placeholder when file has no path', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue({ file_id: 'photo-file-id' });
+
+      const result = await getBotAvatar();
+
+      expect(result.contentType).toBe('image/svg+xml');
+    });
+
+    it('should return placeholder when fetch fails', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue(mockFile);
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+
+      const result = await getBotAvatar();
+
+      expect(result.contentType).toBe('image/svg+xml');
+    });
+
+    it('should cache avatar binary', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue(mockFile);
+
+      const mockImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'image/jpeg' },
+        arrayBuffer: () => Promise.resolve(mockImageData.buffer),
+      });
+
+      await getBotAvatar();
+      await getBotAvatar();
+
       expect(bot.api.getMe).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should refresh avatar cache after TTL expires', async () => {
+      vi.useFakeTimers();
+
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue(mockFile);
+
+      const mockImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'image/jpeg' },
+        arrayBuffer: () => Promise.resolve(mockImageData.buffer),
+      });
+
+      await getBotAvatar();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      // Advance time by 1 hour + 1ms
+      vi.advanceTimersByTime(60 * 60 * 1000 + 1);
+
+      await getBotAvatar();
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('clearBotInfoCache', () => {
+    it('should clear both info and avatar cache', async () => {
+      bot.api.getMe.mockResolvedValue(mockBotUser);
+      bot.api.getUserProfilePhotos.mockResolvedValue(mockPhotos);
+      bot.api.getFile.mockResolvedValue(mockFile);
+
+      const mockImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'image/jpeg' },
+        arrayBuffer: () => Promise.resolve(mockImageData.buffer),
+      });
+
+      await getBotInfo();
+      await getBotAvatar();
+      expect(bot.api.getMe).toHaveBeenCalledTimes(2); // Once for info, once for avatar
 
       clearBotInfoCache();
 
       await getBotInfo();
-      expect(bot.api.getMe).toHaveBeenCalledTimes(2);
+      await getBotAvatar();
+      expect(bot.api.getMe).toHaveBeenCalledTimes(4); // Refreshed both
     });
   });
 });

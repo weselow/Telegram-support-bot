@@ -41,7 +41,7 @@ vi.mock('../../../services/bot-info.service.js', () => ({
   getBotInfo: vi.fn().mockResolvedValue({
     name: 'Test Bot',
     username: 'test_bot',
-    avatarUrl: null,
+    avatarUrl: '/api/chat/bot-avatar',
   }),
 }));
 
@@ -270,7 +270,7 @@ describe('Chat Routes CORS in Development', () => {
       getBotInfo: vi.fn().mockResolvedValue({
         name: 'Test Bot',
         username: 'test_bot',
-        avatarUrl: null,
+        avatarUrl: '/api/chat/bot-avatar',
       }),
     }));
 

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { webChatService } from '../../services/web-chat.service.js';
 import { getLocationByIp } from '../../services/geoip.service.js';
 import { checkIpRateLimit } from '../../services/rate-limit.service.js';
-import { getBotInfo } from '../../services/bot-info.service.js';
+import { getBotInfo, getBotAvatar } from '../../services/bot-info.service.js';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
 import { isOriginAllowedByConfig } from '../../utils/cors.js';
@@ -106,6 +106,29 @@ export function chatRoutes(fastify: FastifyInstance): void {
       return reply.status(500).send({
         success: false,
         error: { code: 'INTERNAL_ERROR', message: 'Failed to get bot info' },
+      });
+    }
+  });
+
+  // GET /api/chat/bot-avatar - Get bot avatar image
+  fastify.get('/api/chat/bot-avatar', async (request: FastifyRequest, reply) => {
+    if (!setCorsHeaders(request, reply)) {
+      return sendCorsError(reply);
+    }
+
+    try {
+      const avatar = await getBotAvatar();
+
+      // Cache for 1 hour (same as service cache TTL)
+      reply.header('Cache-Control', 'public, max-age=3600');
+      reply.header('Content-Type', avatar.contentType);
+
+      return await reply.send(avatar.data);
+    } catch (error) {
+      logger.error({ error }, 'Failed to get bot avatar');
+      return reply.status(500).send({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to get bot avatar' },
       });
     }
   });
