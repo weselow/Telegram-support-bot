@@ -66,7 +66,6 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-044](technical-debt/td-044-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | Средний |
 | [TD-045](technical-debt/td-045-error-logger-init-warning.md) | ErrorLogger: предупреждение без init() | Низкий |
 | [TD-046](technical-debt/td-046-bot-info-service-tests.md) | Unit-тесты для bot-info.service.ts | Средний |
 | [TD-047](technical-debt/td-047-bot-avatar-proxy.md) | Прокси для аватара бота (безопасность) | Низкий |
@@ -97,6 +96,7 @@
 | [TD-041](../bugs/2025-12-31-widget-error-handler-tests.md) | Widget Error Logger: тесты globalErrorHandler | DONE |
 | [TD-042](../bugs/2025-12-31-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | DONE |
 | [TD-043](../bugs/2025-12-31-sentry-unit-tests.md) | Unit-тесты для sentry.ts (фильтрация PII) | DONE |
+| [TD-044](../bugs/2025-12-31-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | DONE |
 
 ---
 
