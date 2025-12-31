@@ -37,6 +37,14 @@ vi.mock('../../../services/web-chat.service.js', () => ({
   },
 }));
 
+vi.mock('../../../services/bot-info.service.js', () => ({
+  getBotInfo: vi.fn().mockResolvedValue({
+    name: 'Test Bot',
+    username: 'test_bot',
+    avatarUrl: null,
+  }),
+}));
+
 import { chatRoutes } from '../chat.js';
 
 describe('Chat Routes CORS Integration', () => {
@@ -256,6 +264,14 @@ describe('Chat Routes CORS in Development', () => {
           unreadCount: 0,
         }),
       },
+    }));
+
+    vi.doMock('../../../services/bot-info.service.js', () => ({
+      getBotInfo: vi.fn().mockResolvedValue({
+        name: 'Test Bot',
+        username: 'test_bot',
+        avatarUrl: null,
+      }),
     }));
 
     const { chatRoutes: chatRoutesDev } = await import('../chat.js');

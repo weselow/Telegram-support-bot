@@ -66,12 +66,14 @@
 
 | # | Задача | Приоритет |
 |---|--------|-----------|
-| [TD-040](technical-debt/td-040-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | Низкий |
 | [TD-041](technical-debt/td-041-widget-error-handler-tests.md) | Widget Error Logger: тесты globalErrorHandler | Средний |
 | [TD-042](technical-debt/td-042-widget-errors-rate-limit.md) | Widget Errors: server-side rate limiting | Низкий |
 | [TD-043](technical-debt/td-043-sentry-unit-tests.md) | Unit-тесты для sentry.ts (фильтрация PII) | Высокий |
 | [TD-044](technical-debt/td-044-widget-ui-tests.md) | Unit-тесты для UI компонентов виджета | Средний |
 | [TD-045](technical-debt/td-045-error-logger-init-warning.md) | ErrorLogger: предупреждение без init() | Низкий |
+| [TD-046](technical-debt/td-046-bot-info-service-tests.md) | Unit-тесты для bot-info.service.ts | Средний |
+| [TD-047](technical-debt/td-047-bot-avatar-proxy.md) | Прокси для аватара бота (безопасность) | Низкий |
+| [TD-048](technical-debt/td-048-header-avatar-fallback-dry.md) | ChatHeader: DRY для avatar fallback | Низкий |
 
 ### Выполнено
 
@@ -94,6 +96,7 @@
 | [TD-033](../bugs/2025-12-30-widget-unit-tests.md) | Chat Widget: Unit-тесты | DONE |
 | [TD-035](../bugs/2025-12-30-statusbar-cleanup.md) | Chat Widget: Cleanup в StatusBar | DONE |
 | [TD-039](../bugs/2025-12-31-drawer-backdrop-blur.md) | Chat Widget: Drawer backdrop blur fix | DONE |
+| [TD-040](../bugs/2025-12-31-widget-bot-avatar.md) | Chat Widget: Аватар и имя бота в шапке | DONE |
 
 ---
 

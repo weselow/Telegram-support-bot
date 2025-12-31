@@ -50,6 +50,14 @@ export interface TelegramLinkResponse {
   }
 }
 
+export interface BotInfoResponse {
+  data: {
+    name: string
+    username: string
+    avatarUrl: string | null
+  }
+}
+
 /**
  * WebSocket Events - Server to Client
  * Format: { type: string, data: object }

@@ -5,7 +5,8 @@
 import type {
   InitResponse,
   HistoryResponse,
-  TelegramLinkResponse
+  TelegramLinkResponse,
+  BotInfoResponse
 } from '../types/messages'
 import { errorLogger } from '../utils/error-logger'
 
@@ -157,5 +158,12 @@ export class HttpClient {
     await this.request('/api/chat/close', {
       method: 'POST'
     })
+  }
+
+  /**
+   * Get bot info (name, avatar)
+   */
+  async getBotInfo(): Promise<BotInfoResponse> {
+    return this.rawRequest<BotInfoResponse>('/api/chat/bot-info')
   }
 }

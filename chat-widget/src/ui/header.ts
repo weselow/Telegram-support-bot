@@ -8,6 +8,7 @@ import { icons } from './icons'
 export interface ChatHeaderOptions {
   title?: string
   subtitle?: string
+  avatarUrl?: string | null
   onClose?: () => void
   onMinimize?: () => void
   onMenu?: () => void
@@ -20,7 +21,9 @@ export interface ChatHeaderOptions {
 
 export class ChatHeader {
   private element: HTMLElement
+  private titleElement: HTMLHeadingElement | null = null
   private subtitleElement: HTMLParagraphElement | null = null
+  private avatarElement: HTMLDivElement | null = null
   private unsubscribe: (() => void)[] = []
 
   constructor(private options: ChatHeaderOptions = {}) {
@@ -35,12 +38,46 @@ export class ChatHeader {
   }
 
   /**
+   * Update title text
+   */
+  setTitle(text: string): void {
+    if (this.titleElement) {
+      this.titleElement.textContent = text
+    }
+  }
+
+  /**
    * Update subtitle text
    */
   setSubtitle(text: string): void {
     if (this.subtitleElement) {
       this.subtitleElement.textContent = text
     }
+  }
+
+  /**
+   * Update avatar image
+   */
+  setAvatar(url: string): void {
+    if (!this.avatarElement) return
+
+    // Clear current content
+    this.avatarElement.innerHTML = ''
+
+    const img = createElement('img', {
+      src: url,
+      alt: 'Avatar',
+      className: 'chat-header__avatar-img'
+    }) as HTMLImageElement
+    img.onerror = () => {
+      // Fallback to icon on error
+      img.remove()
+      const iconWrapper = document.createElement('div')
+      iconWrapper.innerHTML = icons.support
+      const svg = iconWrapper.firstElementChild
+      if (svg && this.avatarElement) this.avatarElement.appendChild(svg)
+    }
+    this.avatarElement.appendChild(img)
   }
 
   /**
@@ -60,23 +97,40 @@ export class ChatHeader {
     const info = createElement('div', { className: 'chat-header__info' })
 
     // Avatar
-    const avatar = createElement('div', { className: 'chat-header__avatar' })
-    const avatarIcon = document.createElement('div')
-    avatarIcon.innerHTML = icons.support
-    const avatarSvg = avatarIcon.firstElementChild
-    if (avatarSvg) {
-      avatar.appendChild(avatarSvg)
+    this.avatarElement = createElement('div', { className: 'chat-header__avatar' }) as HTMLDivElement
+    if (this.options.avatarUrl) {
+      const img = createElement('img', {
+        src: this.options.avatarUrl,
+        alt: this.options.title || 'Avatar',
+        className: 'chat-header__avatar-img'
+      }) as HTMLImageElement
+      img.onerror = () => {
+        // Fallback to icon on error
+        img.remove()
+        const iconWrapper = document.createElement('div')
+        iconWrapper.innerHTML = icons.support
+        const svg = iconWrapper.firstElementChild
+        if (svg && this.avatarElement) this.avatarElement.appendChild(svg)
+      }
+      this.avatarElement.appendChild(img)
+    } else {
+      const avatarIcon = document.createElement('div')
+      avatarIcon.innerHTML = icons.support
+      const avatarSvg = avatarIcon.firstElementChild
+      if (avatarSvg) {
+        this.avatarElement.appendChild(avatarSvg)
+      }
     }
-    info.appendChild(avatar)
+    info.appendChild(this.avatarElement)
 
     // Text container
     const textContainer = createElement('div', { className: 'chat-header__text' })
 
     // Title
-    const title = createElement('h2', { className: 'chat-header__title' }, [
+    this.titleElement = createElement('h2', { className: 'chat-header__title' }, [
       this.options.title || 'Поддержка DellShop'
-    ])
-    textContainer.appendChild(title)
+    ]) as HTMLHeadingElement
+    textContainer.appendChild(this.titleElement)
 
     // Subtitle
     this.subtitleElement = createElement('p', { className: 'chat-header__subtitle' }, [

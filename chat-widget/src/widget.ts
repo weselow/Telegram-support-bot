@@ -42,6 +42,7 @@ export class ChatWidget {
   private initialized = false
   private _sessionId: string | null = null
   private resizeHandler: (() => void) | null = null
+  private botInfo: { name: string; avatarUrl: string | null } | null = null
 
   // Rate limiting: max 20 messages per minute
   private readonly MAX_MESSAGES_PER_MINUTE = 20
@@ -112,6 +113,9 @@ export class ChatWidget {
 
       this.initialized = true
       this.state.emit('widget:ready', undefined)
+
+      // Fetch bot info (non-blocking)
+      this.fetchBotInfo()
 
       // Auto-open if configured
       if (this.config.autoOpen) {
@@ -525,8 +529,9 @@ export class ChatWidget {
 
     // Create header
     this.header = new ChatHeader({
-      title: 'Поддержка DellShop',
+      title: this.botInfo?.name ?? 'Поддержка DellShop',
       subtitle: 'Мы онлайн',
+      avatarUrl: this.botInfo?.avatarUrl,
       onClose: () => this.close(),
       onMinimize: () => this.close(),
       onToggleVariant: () => this.toggleVariant(),
@@ -699,6 +704,25 @@ export class ChatWidget {
       oscillator.stop(audioContext.currentTime + 0.1)
     } catch (error) {
       console.warn('[ChatWidget] Notification sound failed:', error)
+    }
+  }
+
+  private async fetchBotInfo(): Promise<void> {
+    try {
+      const response = await this.httpClient.getBotInfo()
+      this.botInfo = {
+        name: response.data.name,
+        avatarUrl: response.data.avatarUrl
+      }
+      // Update header if already created
+      if (this.header) {
+        this.header.setTitle(this.botInfo.name)
+        if (this.botInfo.avatarUrl) {
+          this.header.setAvatar(this.botInfo.avatarUrl)
+        }
+      }
+    } catch (error) {
+      console.warn('[ChatWidget] Failed to fetch bot info:', error)
     }
   }
 }

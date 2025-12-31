@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { webChatService } from '../../services/web-chat.service.js';
 import { getLocationByIp } from '../../services/geoip.service.js';
 import { checkIpRateLimit } from '../../services/rate-limit.service.js';
+import { getBotInfo } from '../../services/bot-info.service.js';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
 import { isOriginAllowedByConfig } from '../../utils/cors.js';
@@ -86,6 +87,27 @@ export function chatRoutes(fastify: FastifyInstance): void {
       return sendCorsError(reply);
     }
     return reply.status(204).send();
+  });
+
+  // GET /api/chat/bot-info - Get bot information (name, avatar)
+  fastify.get('/api/chat/bot-info', async (request: FastifyRequest, reply) => {
+    if (!setCorsHeaders(request, reply)) {
+      return sendCorsError(reply);
+    }
+
+    try {
+      const botInfo = await getBotInfo();
+      return await reply.send({
+        success: true,
+        data: botInfo,
+      });
+    } catch (error) {
+      logger.error({ error }, 'Failed to get bot info');
+      return reply.status(500).send({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to get bot info' },
+      });
+    }
   });
 
   // POST /api/chat/init - Initialize session
