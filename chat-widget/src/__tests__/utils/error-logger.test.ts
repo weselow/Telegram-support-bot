@@ -322,4 +322,229 @@ describe('ErrorLogger', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('globalErrorHandler', () => {
+    it('should filter Script error. messages (cross-origin)', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      // Get the registered error handler
+      const errorHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'error'
+      )?.[1] as (event: ErrorEvent) => void
+
+      expect(errorHandler).toBeDefined()
+
+      // Simulate cross-origin script error
+      const crossOriginEvent = {
+        message: 'Script error.',
+        filename: '',
+        lineno: 0,
+        colno: 0,
+        error: null
+      } as ErrorEvent
+
+      errorHandler(crossOriginEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      // Should NOT send cross-origin errors
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('should include filename, lineno, colno in context', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      const errorHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'error'
+      )?.[1] as (event: ErrorEvent) => void
+
+      // Simulate error with file info
+      const errorEvent = {
+        message: 'ReferenceError: foo is not defined',
+        filename: 'https://example.com/widget.js',
+        lineno: 42,
+        colno: 15,
+        error: null
+      } as ErrorEvent
+
+      errorHandler(errorEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors[0].context.filename).toBe('https://example.com/widget.js')
+      expect(body.errors[0].context.lineno).toBe(42)
+      expect(body.errors[0].context.colno).toBe(15)
+    })
+
+    it('should handle ErrorEvent with error object and capture stack', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      const errorHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'error'
+      )?.[1] as (event: ErrorEvent) => void
+
+      const actualError = new Error('Actual error with stack')
+      const errorEvent = {
+        message: 'Error: Actual error with stack',
+        filename: 'https://example.com/widget.js',
+        lineno: 100,
+        colno: 5,
+        error: actualError
+      } as ErrorEvent
+
+      errorHandler(errorEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors[0].message).toBe('Actual error with stack')
+      expect(body.errors[0].stack).toContain('Error: Actual error with stack')
+    })
+  })
+
+  describe('rejectionHandler', () => {
+    it('should log unhandled promise rejections', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      const rejectionHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'unhandledrejection'
+      )?.[1] as (event: PromiseRejectionEvent) => void
+
+      expect(rejectionHandler).toBeDefined()
+
+      // Simulate unhandled rejection with string
+      const rejectionEvent = {
+        reason: 'Something went wrong'
+      } as PromiseRejectionEvent
+
+      rejectionHandler(rejectionEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors[0].message).toBe('Unhandled rejection: Something went wrong')
+    })
+
+    it('should handle rejection with Error object and capture stack', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      const rejectionHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'unhandledrejection'
+      )?.[1] as (event: PromiseRejectionEvent) => void
+
+      const error = new Error('Promise failed')
+      const rejectionEvent = {
+        reason: error
+      } as PromiseRejectionEvent
+
+      rejectionHandler(rejectionEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors[0].message).toBe('Unhandled rejection: Promise failed')
+      expect(body.errors[0].stack).toContain('Error: Promise failed')
+    })
+
+    it('should handle rejection with primitive value', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 50
+      })
+
+      const rejectionHandler = mockAddEventListener.mock.calls.find(
+        (call: unknown[]) => call[0] === 'unhandledrejection'
+      )?.[1] as (event: PromiseRejectionEvent) => void
+
+      // Simulate rejection with number
+      const rejectionEvent = {
+        reason: 404
+      } as PromiseRejectionEvent
+
+      rejectionHandler(rejectionEvent)
+
+      await new Promise(r => setTimeout(r, 100))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors[0].message).toBe('Unhandled rejection: 404')
+    })
+  })
+
+  describe('maxQueueSize', () => {
+    it('should drop errors when queue is full', async () => {
+      const { errorLogger } = errorLoggerModule
+
+      mockFetch.mockResolvedValue({ ok: true })
+
+      errorLogger.init({
+        apiUrl: 'https://api.example.com',
+        batchIntervalMs: 5000, // Long interval to prevent auto-flush
+        maxQueueSize: 3
+      })
+
+      // Fill queue beyond limit
+      errorLogger.logError('Error 1')
+      errorLogger.logError('Error 2')
+      errorLogger.logError('Error 3')
+      errorLogger.logError('Error 4') // Should be dropped
+      errorLogger.logError('Error 5') // Should be dropped
+
+      // Manually trigger flush via destroy
+      errorLogger.destroy()
+
+      await new Promise(r => setTimeout(r, 50))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.errors).toHaveLength(3)
+      expect(body.errors[0].message).toBe('Error 1')
+      expect(body.errors[1].message).toBe('Error 2')
+      expect(body.errors[2].message).toBe('Error 3')
+    })
+  })
 })
