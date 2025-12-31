@@ -45,6 +45,7 @@ class ErrorLogger {
   private batchTimer: ReturnType<typeof setTimeout> | null = null
   private sessionId: string | null = null
   private initialized = false
+  private warnedAboutInit = false
   private globalErrorHandler: ((event: ErrorEvent) => void) | null = null
   private rejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null
 
@@ -123,6 +124,7 @@ class ErrorLogger {
     this.errorTimestamps = []
     this.sessionId = null
     this.initialized = false
+    this.warnedAboutInit = false
   }
 
   private setupGlobalHandlers(): void {
@@ -156,7 +158,13 @@ class ErrorLogger {
     context?: ErrorContext,
     stack?: string
   ): void {
-    if (!this.initialized) return
+    if (!this.initialized) {
+      if (!this.warnedAboutInit) {
+        console.warn('[ChatWidget] ErrorLogger not initialized, errors will not be logged')
+        this.warnedAboutInit = true
+      }
+      return
+    }
 
     // Rate limiting check
     const now = Date.now()

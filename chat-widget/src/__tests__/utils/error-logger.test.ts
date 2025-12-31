@@ -57,9 +57,47 @@ describe('ErrorLogger', () => {
     })
   })
 
+  describe('initialization warning', () => {
+    it('should warn once when logging without init', () => {
+      const { errorLogger } = errorLoggerModule
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      errorLogger.logError('Test error 1')
+      errorLogger.logError('Test error 2')
+      errorLogger.logWarning('Test warning')
+
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[ChatWidget] ErrorLogger not initialized, errors will not be logged'
+      )
+
+      warnSpy.mockRestore()
+    })
+
+    it('should reset warning flag after destroy', () => {
+      const { errorLogger } = errorLoggerModule
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      // First usage without init
+      errorLogger.logError('Error before init')
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+
+      // Init and destroy
+      errorLogger.init({ apiUrl: 'https://api.example.com' })
+      errorLogger.destroy()
+
+      // Second usage without init should warn again
+      errorLogger.logError('Error after destroy')
+      expect(warnSpy).toHaveBeenCalledTimes(2)
+
+      warnSpy.mockRestore()
+    })
+  })
+
   describe('logError', () => {
     it('should not log if not initialized', async () => {
       const { errorLogger } = errorLoggerModule
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       errorLogger.logError('Test error')
 
@@ -67,6 +105,8 @@ describe('ErrorLogger', () => {
       await new Promise(r => setTimeout(r, 100))
 
       expect(mockFetch).not.toHaveBeenCalled()
+
+      warnSpy.mockRestore()
     })
 
     it('should batch errors and send after interval', async () => {
