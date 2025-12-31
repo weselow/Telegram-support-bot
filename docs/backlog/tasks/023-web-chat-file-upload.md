@@ -1,6 +1,6 @@
 # 023: Загрузка файлов из веб-чата
 
-**Статус:** TODO
+**Статус:** IN PROGRESS
 **Приоритет:** Средний
 **Оценка:** 6-8 часов
 
@@ -8,75 +8,77 @@
 
 Пользователь веб-чата должен иметь возможность отправлять файлы в чат поддержки: изображения, документы, архивы.
 
+## Принятые решения (2025-12-31)
+
+1. **Хранение через Telegram** — файл загружается на сервер → отправляется в Telegram → file_id сохраняется в БД
+2. **Без ClamAV** — антивирусная проверка отложена
+3. **Без конвертации форматов** — HEIC/BMP отправляются как есть (Telegram поддерживает)
+4. **MVP scope** — без Drag&Drop и отмены загрузки (вынесено в TD)
+
 ## Разрешённые типы файлов
 
 ### Изображения
-| Формат | MIME | Разрешён | Примечание |
-|--------|------|----------|------------|
-| JPG/JPEG | image/jpeg | ✅ | Основной формат фото |
-| PNG | image/png | ✅ | Скриншоты, графика |
-| GIF | image/gif | ✅ | Анимации |
-| WebP | image/webp | ✅ | Современный формат |
-| HEIC/HEIF | image/heic, image/heif | ✅ | Фото с iPhone (конвертировать в JPEG) |
-| BMP | image/bmp | ⚠️ | Конвертировать в PNG |
-| SVG | image/svg+xml | ❌ | XSS риски |
-| TIFF | image/tiff | ❌ | Слишком большие |
+| Формат | MIME | Разрешён |
+|--------|------|----------|
+| JPG/JPEG | image/jpeg | ✅ |
+| PNG | image/png | ✅ |
+| GIF | image/gif | ✅ |
+| WebP | image/webp | ✅ |
+| HEIC/HEIF | image/heic, image/heif | ✅ |
+| BMP | image/bmp | ✅ |
 
 ### Документы
-| Формат | MIME | Разрешён | Примечание |
-|--------|------|----------|------------|
-| PDF | application/pdf | ✅ | Основной документ |
-| DOC | application/msword | ✅ | Word старый |
-| DOCX | application/vnd.openxmlformats-officedocument.wordprocessingml.document | ✅ | Word новый |
-| XLS | application/vnd.ms-excel | ✅ | Excel старый |
-| XLSX | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | ✅ | Excel новый |
-| TXT | text/plain | ✅ | Текстовые файлы |
-| CSV | text/csv | ✅ | Таблицы данных |
-| RTF | application/rtf | ✅ | Rich Text |
+| Формат | MIME | Разрешён |
+|--------|------|----------|
+| PDF | application/pdf | ✅ |
+| DOC | application/msword | ✅ |
+| DOCX | application/vnd.openxmlformats-officedocument.wordprocessingml.document | ✅ |
+| XLS | application/vnd.ms-excel | ✅ |
+| XLSX | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | ✅ |
+| TXT | text/plain | ✅ |
+| CSV | text/csv | ✅ |
+| RTF | application/rtf | ✅ |
 
 ### Архивы
-| Формат | MIME | Разрешён | Примечание |
-|--------|------|----------|------------|
-| ZIP | application/zip | ✅ | Основной архив |
-| RAR | application/x-rar-compressed | ✅ | Популярный архив |
-| 7Z | application/x-7z-compressed | ⚠️ | По запросу |
+| Формат | MIME | Разрешён |
+|--------|------|----------|
+| ZIP | application/zip | ✅ |
+| RAR | application/x-rar-compressed | ✅ |
+| 7Z | application/x-7z-compressed | ✅ |
 
 ### Запрещённые типы (безопасность)
-| Формат | Причина |
-|--------|---------|
-| EXE, MSI, BAT, CMD | Исполняемые файлы |
-| JS, VBS, PS1 | Скрипты |
-| HTML, HTM | XSS риски |
-| PHP, PY, SH | Серверные скрипты |
-| DLL, SYS | Системные файлы |
+- EXE, MSI, BAT, CMD — исполняемые
+- JS, VBS, PS1 — скрипты
+- HTML, HTM, SVG — XSS риски
+- PHP, PY, SH — серверные скрипты
 
 ## Ограничения размера
 
-| Тип | Лимит | Обоснование |
-|-----|-------|-------------|
-| Изображения | 10 MB | Telegram Bot API лимит |
-| Документы | 20 MB | Telegram Bot API лимит для документов |
-| Архивы | 20 MB | Аналогично документам |
-| **Общий лимит** | **20 MB** | Ограничение Telegram |
+| Тип | Лимит |
+|-----|-------|
+| Изображения | 10 MB |
+| Документы/Архивы | 20 MB |
 
-## Требования
+## Требования MVP
 
 ### Функциональные
-- [ ] Кнопка прикрепления файла в ChatInput
-- [ ] Drag & Drop файлов в область чата
+- [x] Кнопка прикрепления файла в ChatInput
 - [ ] Валидация типа файла (whitelist)
 - [ ] Валидация размера с понятным сообщением
 - [ ] Превью изображения перед отправкой
 - [ ] Иконка типа файла для документов
 - [ ] Прогресс-бар загрузки
-- [ ] Отмена загрузки
+
+### Отложено (Technical Debt)
+- [ ] Drag & Drop файлов → TD-049
+- [ ] Отмена загрузки → TD-049
+- [ ] Magic bytes проверка → TD-050
+- [ ] Антивирусная проверка (ClamAV) → TD-051
 
 ### Технические
 - [ ] API endpoint `POST /api/chat/upload` (multipart/form-data)
-- [ ] Валидация MIME type на сервере (не доверять расширению)
-- [ ] Антивирусная проверка (опционально, ClamAV)
+- [ ] Валидация MIME type на сервере
 - [ ] Отправка в Telegram: `sendPhoto`, `sendDocument`
-- [ ] Сохранение `mediaFileId` в БД для отображения в истории
 - [ ] WebSocket уведомление о новом медиа
 
 ## API
@@ -84,54 +86,48 @@
 ```
 POST /api/chat/upload
 Content-Type: multipart/form-data
+Cookie: webchat_session=...
 
 file: <binary>
 
-Response:
+Response 201:
 {
   "success": true,
   "data": {
-    "id": "msg-id",
+    "messageId": "msg-id",
     "type": "image" | "document",
     "fileName": "report.pdf",
     "fileSize": 1024000,
     "mimeType": "application/pdf",
-    "mediaUrl": "/api/media/...",
-    "createdAt": "2025-12-30T12:00:00Z"
+    "timestamp": "2025-12-31T12:00:00Z"
   }
 }
 
 Errors:
-- 400: Invalid file type
-- 413: File too large (>20MB)
-- 415: Unsupported media type
+- 400 INVALID_FILE_TYPE: Этот тип файла не поддерживается
+- 400 FILE_TOO_LARGE: Файл слишком большой. Максимум: 20 МБ
+- 401 SESSION_NOT_FOUND: Сессия не найдена
+- 429 RATE_LIMITED: Слишком много запросов
 ```
 
 ## UI компоненты
 
-1. **AttachButton** — кнопка прикрепления (иконка скрепки)
-2. **FilePreview** — превью перед отправкой с кнопками отмена/отправить
-3. **UploadProgress** — индикатор загрузки с возможностью отмены
-4. **FileMessage** — отображение файла в списке сообщений
-
-## Сообщения об ошибках
-
-```typescript
-const ERROR_MESSAGES = {
-  FILE_TOO_LARGE: 'Файл слишком большой. Максимум: 20 МБ',
-  INVALID_TYPE: 'Этот тип файла не поддерживается',
-  UPLOAD_FAILED: 'Не удалось загрузить файл. Попробуйте ещё раз',
-}
-```
+1. **AttachButton** — кнопка-скрепка рядом с полем ввода
+2. **FilePreview** — превью перед отправкой (изображение или иконка + имя файла)
+3. **UploadProgress** — индикатор загрузки (процент или спиннер)
 
 ## Безопасность
 
 1. **Whitelist MIME types** — только разрешённые типы
-2. **Magic bytes проверка** — не доверять расширению файла
-3. **Ограничение имени файла** — sanitize, макс 255 символов
-4. **Изоляция хранения** — файлы вне webroot
-5. **Rate limiting** — макс 10 файлов в минуту
+2. **Ограничение размера** — 20 MB максимум
+3. **Sanitize имени файла** — удаление опасных символов
+4. **Rate limiting** — 10 файлов в минуту
 
-## Связанные задачи
+## Чеклист перед завершением
 
-- [007](../solutions/007-mirror-topic-to-user/007-mirror-topic-to-user.md) — Зеркалирование медиа из топика уже работает
+- [ ] Все требования MVP выполнены
+- [ ] Тесты написаны и проходят
+- [ ] `/check-code` запущен
+- [ ] `pnpm run lint && pnpm run typecheck && pnpm test` проходят
+- [ ] Документация обновлена
+- [ ] TD задачи созданы для отложенного функционала
