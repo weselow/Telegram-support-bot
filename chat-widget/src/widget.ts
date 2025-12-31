@@ -249,9 +249,14 @@ export class ChatWidget {
         file,
         (progress) => this.input?.showUploadProgress(progress)
       )
-      // File uploaded successfully - preview will be cleared by input component
+      // Show success indicator briefly
+      this.input?.showUploadResult(true)
+      await this.delay(500)
     } catch (error) {
       console.error('[ChatWidget] File upload failed:', error)
+      // Show error indicator
+      this.input?.showUploadResult(false)
+      await this.delay(1000)
       if (error instanceof RateLimitError) {
         this.statusBar?.show('error', error.message)
       } else {
@@ -775,5 +780,9 @@ export class ChatWidget {
         this.messages?.updateMessageStatus(msg.id, 'sent')
       }
     }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 }

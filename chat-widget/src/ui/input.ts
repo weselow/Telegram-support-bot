@@ -471,6 +471,30 @@ export class ChatInput {
   }
 
   /**
+   * Show upload result (success or error)
+   */
+  showUploadResult(success: boolean): void {
+    if (!this.previewContainer) return
+
+    // Add result indicator to progress bar
+    const progressBar = this.previewContainer.querySelector('.chat-input__progress-bar') as HTMLElement | null
+    if (progressBar) {
+      progressBar.style.width = '100%'
+      progressBar.classList.add(success ? 'chat-input__progress-bar--success' : 'chat-input__progress-bar--error')
+    }
+
+    // Show result icon
+    const progressContainer = this.previewContainer.querySelector('.chat-input__progress') as HTMLElement | null
+    if (progressContainer) {
+      const resultIcon = createElement('div', {
+        className: `chat-input__upload-result chat-input__upload-result--${success ? 'success' : 'error'}`
+      })
+      resultIcon.innerHTML = success ? icons.check : icons.error
+      progressContainer.appendChild(resultIcon)
+    }
+  }
+
+  /**
    * Set uploading state
    */
   setUploading(uploading: boolean): void {

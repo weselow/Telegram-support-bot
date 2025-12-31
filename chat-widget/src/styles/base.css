@@ -679,7 +679,42 @@
   height: 100%;
   width: 0%;
   background: var(--chat-primary);
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.chat-input__progress-bar--success {
+  background: var(--chat-success, #28a745);
+}
+
+.chat-input__progress-bar--error {
+  background: var(--chat-error);
+}
+
+.chat-input__upload-result {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-input__upload-result svg {
+  width: 12px;
+  height: 12px;
+  fill: white;
+}
+
+.chat-input__upload-result--success {
+  background: var(--chat-success, #28a745);
+}
+
+.chat-input__upload-result--error {
+  background: var(--chat-error);
 }
 
 /* Legacy support for old class name */
