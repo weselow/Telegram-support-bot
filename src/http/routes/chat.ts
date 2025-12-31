@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import multipart from '@fastify/multipart';
 import { randomUUID } from 'crypto';
 import { webChatService } from '../../services/web-chat.service.js';
 import { getLocationByIp } from '../../services/geoip.service.js';
@@ -7,6 +8,7 @@ import { getBotInfo, getBotAvatar } from '../../services/bot-info.service.js';
 import { logger } from '../../utils/logger.js';
 import { env } from '../../config/env.js';
 import { isOriginAllowedByConfig } from '../../utils/cors.js';
+import { validateFile, sanitizeFilename } from '../../utils/file-validation.js';
 import {
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_MAX_AGE,
@@ -14,6 +16,7 @@ import {
 } from '../utils/session.js';
 
 const MESSAGE_MAX_LENGTH = 4000;
+const FILE_MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
 interface InitBody {
   fingerprint?: string;
@@ -80,7 +83,14 @@ function sendCorsError(reply: FastifyReply) {
   });
 }
 
-export function chatRoutes(fastify: FastifyInstance): void {
+export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
+  // Register multipart plugin for file uploads
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: FILE_MAX_SIZE,
+    },
+  });
+
   // CORS preflight handler
   fastify.options('/api/chat/*', async (request, reply) => {
     if (!setCorsHeaders(request, reply)) {
@@ -327,6 +337,82 @@ export function chatRoutes(fastify: FastifyInstance): void {
       return reply.status(500).send({
         success: false,
         error: { code: 'INTERNAL_ERROR', message: 'Failed to send message' },
+      });
+    }
+  });
+
+  // POST /api/chat/upload - Upload a file
+  fastify.post('/api/chat/upload', async (request: FastifyRequest, reply) => {
+    if (!setCorsHeaders(request, reply)) {
+      return sendCorsError(reply);
+    }
+
+    const sessionId = getSessionId(request);
+    if (!sessionId) {
+      return reply.status(401).send({
+        success: false,
+        error: { code: 'SESSION_NOT_FOUND', message: 'No session cookie' },
+      });
+    }
+
+    // Rate limiting
+    const rateLimitResult = await checkIpRateLimit(request.ip);
+    if (!rateLimitResult.allowed) {
+      reply.header('Retry-After', rateLimitResult.resetInSeconds);
+      return reply.status(429).send({
+        success: false,
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      });
+    }
+
+    try {
+      const data = await request.file();
+      if (!data) {
+        return await reply.status(400).send({
+          success: false,
+          error: { code: 'NO_FILE', message: 'No file uploaded' },
+        });
+      }
+
+      const mimeType = data.mimetype;
+      const originalFilename = data.filename;
+      const fileBuffer = await data.toBuffer();
+      const fileSize = fileBuffer.length;
+
+      // Validate file type and size
+      const validation = validateFile(mimeType, fileSize);
+      if (!validation.valid || !validation.category) {
+        return await reply.status(400).send({
+          success: false,
+          error: validation.error ?? { code: 'INVALID_FILE_TYPE', message: 'Invalid file' },
+        });
+      }
+
+      const sanitizedFilename = sanitizeFilename(originalFilename);
+
+      const result = await webChatService.sendFile(
+        sessionId,
+        fileBuffer,
+        sanitizedFilename,
+        mimeType,
+        validation.category
+      );
+
+      return await reply.status(201).send({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      if ((error as Error).message === 'Session not found') {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' },
+        });
+      }
+      logger.error({ error, sessionId }, 'Failed to upload file');
+      return reply.status(500).send({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to upload file' },
       });
     }
   });

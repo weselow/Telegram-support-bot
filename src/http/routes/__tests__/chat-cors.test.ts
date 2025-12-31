@@ -52,7 +52,7 @@ describe('Chat Routes CORS Integration', () => {
 
   beforeEach(async () => {
     fastify = Fastify();
-    chatRoutes(fastify);
+    await chatRoutes(fastify);
     await fastify.ready();
   });
 
@@ -277,7 +277,7 @@ describe('Chat Routes CORS in Development', () => {
     const { chatRoutes: chatRoutesDev } = await import('../chat.js');
 
     fastify = Fastify();
-    chatRoutesDev(fastify);
+    await chatRoutesDev(fastify);
     await fastify.ready();
   });
 
@@ -324,7 +324,7 @@ describe('Chat Routes Cookie Attributes in Production', () => {
 
   beforeEach(async () => {
     fastify = Fastify();
-    chatRoutes(fastify);
+    await chatRoutes(fastify);
     await fastify.ready();
   });
 

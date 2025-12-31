@@ -1,3 +1,9 @@
 {
+  "permissions": {
+    "allow": [
+      "Skill(start-task)",
+      "Bash(git checkout:*)"
+    ]
+  },
   "enabledPlugins": {}
 }

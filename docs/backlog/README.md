@@ -53,7 +53,7 @@
 |---|--------|--------|-----------|
 | [021](../solutions/021-web-chat-api/021-web-chat-api.md) | Web Chat API | DONE | Высокий |
 | [022](../solutions/022-cors-configuration/022-cors-configuration.md) | CORS Configuration | DONE | Высокий |
-| [023](tasks/023-web-chat-file-upload.md) | Загрузка файлов из веб-чата | TODO | Средний |
+| [023](../solutions/023-web-chat-file-upload/023-web-chat-file-upload.md) | Загрузка файлов из веб-чата | DONE | Средний |
 | [024](tasks/024-delayed-response-message.md) | Сообщение при задержке ответа | TODO | Низкий |
 | [025](tasks/025-off-hours-message.md) | Сообщение в нерабочее время | TODO | Низкий |
 | [026](tasks/026-chat-history-page.md) | Страница истории чата для клиента | TODO | Средний |
@@ -64,7 +64,11 @@
 
 ### В ожидании
 
-*Нет задач*
+| # | Задача | Приоритет |
+|---|--------|-----------|
+| [TD-049](technical-debt/td-049-widget-dragdrop-cancel.md) | Widget: Drag&Drop и отмена загрузки | Низкий |
+| [TD-050](technical-debt/td-050-magic-bytes-validation.md) | Magic bytes validation для файлов | Средний |
+| [TD-051](technical-debt/td-051-clamav-integration.md) | ClamAV интеграция | Низкий |
 
 ### Выполнено
 

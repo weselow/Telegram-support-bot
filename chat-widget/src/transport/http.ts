@@ -6,7 +6,8 @@ import type {
   InitResponse,
   HistoryResponse,
   TelegramLinkResponse,
-  BotInfoResponse
+  BotInfoResponse,
+  FileUploadResponse
 } from '../types/messages'
 import { errorLogger } from '../utils/error-logger'
 
@@ -165,5 +166,73 @@ export class HttpClient {
    */
   async getBotInfo(): Promise<BotInfoResponse> {
     return this.rawRequest<BotInfoResponse>('/api/chat/bot-info')
+  }
+
+  /**
+   * Upload a file
+   */
+  async uploadFile(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<FileUploadResponse> {
+    const url = `${this.baseUrl}/api/chat/upload`
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // Use XMLHttpRequest for progress tracking
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const progress = Math.round((e.loaded / e.total) * 100)
+          onProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 429) {
+          const retryAfter = xhr.getResponseHeader('Retry-After')
+          errorLogger.logWarning('HTTP 429 rate limit', { endpoint: '/api/chat/upload', status: 429 })
+          reject(new RateLimitError(
+            'Слишком много запросов',
+            retryAfter ? parseInt(retryAfter, 10) : 60
+          ))
+          return
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText) as FileUploadResponse
+            resolve(response)
+          } catch {
+            reject(new ChatHttpError(xhr.status, 'Invalid JSON response'))
+          }
+        } else {
+          if (xhr.status !== 401) {
+            errorLogger.logError(`HTTP ${xhr.status}`, { endpoint: '/api/chat/upload', status: xhr.status })
+          }
+          try {
+            const response = JSON.parse(xhr.responseText) as FileUploadResponse
+            reject(new ChatHttpError(xhr.status, response.error?.message ?? 'Upload failed'))
+          } catch {
+            reject(new ChatHttpError(xhr.status, xhr.statusText))
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        errorLogger.logError('Network error during upload', { endpoint: '/api/chat/upload' })
+        reject(new ChatHttpError(0, 'Network error'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        reject(new ChatHttpError(0, 'Upload cancelled'))
+      })
+
+      xhr.open('POST', url)
+      xhr.withCredentials = true
+      xhr.send(formData)
+    })
   }
 }

@@ -58,6 +58,24 @@ export interface BotInfoResponse {
   }
 }
 
+export type FileType = 'image' | 'document'
+
+export interface FileUploadResponse {
+  success: boolean
+  data: {
+    messageId: string
+    type: FileType
+    fileName: string
+    fileSize: number
+    mimeType: string
+    timestamp: string
+  }
+  error?: {
+    code: string
+    message: string
+  }
+}
+
 /**
  * WebSocket Events - Server to Client
  * Format: { type: string, data: object }

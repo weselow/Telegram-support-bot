@@ -1,4 +1,5 @@
 import type { User, MessageMap, TicketStatus } from '../generated/prisma/client.js';
+import { InputFile } from 'grammy';
 import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
@@ -6,6 +7,7 @@ import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
 import { bot } from '../bot/bot.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import type { FileCategory } from '../utils/file-validation.js';
 
 export interface InitSessionResult {
   sessionId: string;
@@ -45,6 +47,15 @@ export interface LinkTelegramResult {
   token: string;
   telegramUrl: string;
   expiresAt: string;
+}
+
+export interface FileUploadResult {
+  messageId: string;
+  type: FileCategory;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  timestamp: string;
 }
 
 function mapMessageToChat(msg: MessageMap): ChatMessage {
@@ -319,5 +330,92 @@ export const webChatService = {
     );
 
     return user;
+  },
+
+  /**
+   * Send a file from web chat
+   */
+  async sendFile(
+    sessionId: string,
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string,
+    category: FileCategory
+  ): Promise<FileUploadResult> {
+    const user = await userRepository.findByWebSessionId(sessionId);
+    if (!user) {
+      throw new Error('Session not found');
+    }
+
+    // Create topic if doesn't exist
+    let topicId = user.topicId;
+    if (!topicId) {
+      const topicName = `Web: ${sessionId.slice(0, 8)}`;
+
+      logger.info({ sessionId, topicName }, 'Creating forum topic for web user');
+
+      const topic = await bot.api.createForumTopic(env.SUPPORT_GROUP_ID, topicName);
+      topicId = topic.message_thread_id;
+      await userRepository.updateTopicId(user.id, topicId);
+
+      logger.info({ sessionId, topicId }, 'Forum topic created for web user');
+
+      // Send ticket card
+      const webUserInfo = {
+        tgUserId: 0,
+        firstName: 'Web User',
+      };
+      const cardOptions: SendTicketCardOptions = {
+        sourceUrl: user.sourceUrl ?? undefined,
+        sourceCity: user.sourceCity ?? undefined,
+      };
+      await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
+    }
+
+    const inputFile = new InputFile(fileBuffer, fileName);
+    let topicMessageId: number;
+    let fileId: string;
+
+    if (category === 'image') {
+      const result = await bot.api.sendPhoto(env.SUPPORT_GROUP_ID, inputFile, {
+        message_thread_id: topicId,
+        caption: `[WEB] 📎 ${fileName}`,
+      });
+      topicMessageId = result.message_id;
+      // Get file_id from the largest photo size
+      const photo = result.photo;
+      fileId = photo[photo.length - 1]?.file_id ?? '';
+    } else {
+      const result = await bot.api.sendDocument(env.SUPPORT_GROUP_ID, inputFile, {
+        message_thread_id: topicId,
+        caption: `[WEB] 📎 ${fileName}`,
+      });
+      topicMessageId = result.message_id;
+      fileId = result.document.file_id;
+    }
+
+    // Save to message map with media info
+    const message = await messageRepository.createWebMessage({
+      userId: user.id,
+      topicMessageId,
+      direction: 'USER_TO_SUPPORT',
+      channel: 'WEB',
+      text: fileName,
+      mediaFileId: fileId,
+    });
+
+    logger.info(
+      { userId: user.id, messageId: message.id, fileName, category },
+      'Web file sent to topic'
+    );
+
+    return {
+      messageId: message.id,
+      type: category,
+      fileName,
+      fileSize: fileBuffer.length,
+      mimeType,
+      timestamp: message.createdAt.toISOString(),
+    };
   },
 };
