@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "node esbuild.config.js --watch",
     "dev:serve": "node esbuild.config.js --serve",
-    "build": "node esbuild.config.js",
-    "build:prod": "cross-env NODE_ENV=production node esbuild.config.js",
+    "build": "node esbuild.config.js && npm run copy",
+    "build:prod": "cross-env NODE_ENV=production node esbuild.config.js && npm run copy",
+    "copy": "node -e \"const fs=require('fs');const p='../public/chat-widget/';['chat-widget.js','base.css','modal.css','drawer.css'].forEach(f=>fs.copyFileSync('dist/'+f,p+f))\"",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
