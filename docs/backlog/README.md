@@ -64,14 +64,13 @@
 
 ### В ожидании
 
-| # | Задача | Приоритет |
-|---|--------|-----------|
-| [TD-048](technical-debt/td-048-header-avatar-fallback-dry.md) | ChatHeader: DRY для avatar fallback | Низкий |
+*Нет задач*
 
 ### Выполнено
 
 | # | Задача | Статус |
 |---|--------|--------|
+| [TD-048](../bugs/2025-12-31-header-avatar-fallback-dry.md) | ChatHeader: DRY для avatar fallback | DONE |
 | [TD-047](../bugs/2025-12-31-widget-bot-avatar.md) | Прокси для аватара бота (безопасность) | DONE |
 | [TD-037](../bugs/2025-12-30-widget-error-logger.md) | Chat Widget: Error Logger (мини-Sentry) | DONE |
 | [TD-001](../bugs/2025-12-27-notify-unsupported-message-types.md) | Уведомление о неподдерживаемых типах сообщений | DONE |

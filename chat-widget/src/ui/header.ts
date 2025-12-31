@@ -70,12 +70,8 @@ export class ChatHeader {
       className: 'chat-header__avatar-img'
     }) as HTMLImageElement
     img.onerror = () => {
-      // Fallback to icon on error
       img.remove()
-      const iconWrapper = document.createElement('div')
-      iconWrapper.innerHTML = icons.support
-      const svg = iconWrapper.firstElementChild
-      if (svg && this.avatarElement) this.avatarElement.appendChild(svg)
+      this.showFallbackIcon()
     }
     this.avatarElement.appendChild(img)
   }
@@ -105,21 +101,12 @@ export class ChatHeader {
         className: 'chat-header__avatar-img'
       }) as HTMLImageElement
       img.onerror = () => {
-        // Fallback to icon on error
         img.remove()
-        const iconWrapper = document.createElement('div')
-        iconWrapper.innerHTML = icons.support
-        const svg = iconWrapper.firstElementChild
-        if (svg && this.avatarElement) this.avatarElement.appendChild(svg)
+        this.showFallbackIcon()
       }
       this.avatarElement.appendChild(img)
     } else {
-      const avatarIcon = document.createElement('div')
-      avatarIcon.innerHTML = icons.support
-      const avatarSvg = avatarIcon.firstElementChild
-      if (avatarSvg) {
-        this.avatarElement.appendChild(avatarSvg)
-      }
+      this.showFallbackIcon()
     }
     info.appendChild(this.avatarElement)
 
@@ -177,6 +164,18 @@ export class ChatHeader {
     header.appendChild(actions)
 
     return header
+  }
+
+  /**
+   * Show fallback icon in avatar element
+   */
+  private showFallbackIcon(): void {
+    if (!this.avatarElement) return
+    this.avatarElement.innerHTML = ''
+    const iconWrapper = document.createElement('div')
+    iconWrapper.innerHTML = icons.support
+    const svg = iconWrapper.firstElementChild
+    if (svg) this.avatarElement.appendChild(svg)
   }
 
   private createActionButton(
