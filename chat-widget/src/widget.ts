@@ -226,6 +226,44 @@ export class ChatWidget {
   }
 
   /**
+   * Send file
+   */
+  async sendFile(file: File): Promise<void> {
+    // Rate limiting check
+    const now = Date.now()
+    const oneMinuteAgo = now - 60000
+    this.messageTimes = this.messageTimes.filter(time => time > oneMinuteAgo)
+
+    if (this.messageTimes.length >= this.MAX_MESSAGES_PER_MINUTE) {
+      this.statusBar?.show('error', 'Слишком много сообщений. Подождите немного.')
+      throw new Error('Rate limited')
+    }
+
+    this.messageTimes.push(now)
+
+    // Show uploading state
+    this.input?.setUploading(true)
+
+    try {
+      await this.httpClient.uploadFile(
+        file,
+        (progress) => this.input?.showUploadProgress(progress)
+      )
+      // File uploaded successfully - preview will be cleared by input component
+    } catch (error) {
+      console.error('[ChatWidget] File upload failed:', error)
+      if (error instanceof RateLimitError) {
+        this.statusBar?.show('error', error.message)
+      } else {
+        this.statusBar?.show('error', 'Не удалось отправить файл')
+      }
+      throw error
+    } finally {
+      this.input?.setUploading(false)
+    }
+  }
+
+  /**
    * Change widget variant
    */
   setVariant(variant: 'modal' | 'drawer'): void {
@@ -563,7 +601,8 @@ export class ChatWidget {
       placeholder: 'Введите сообщение...',
       maxLength: 4000,
       onSend: (text) => this.sendMessage(text),
-      onTyping: (isTyping) => this.wsClient.sendTyping(isTyping)
+      onTyping: (isTyping) => this.wsClient.sendTyping(isTyping),
+      onFileSend: (file) => this.sendFile(file)
     })
     containerEl.appendChild(this.input.getElement())
 

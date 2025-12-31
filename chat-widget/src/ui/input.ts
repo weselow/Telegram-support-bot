@@ -14,6 +14,7 @@ export interface ChatInputOptions {
   onSend?: (text: string) => void
   onTyping?: (isTyping: boolean) => void
   onFileSelect?: (file: File) => void
+  onFileSend?: (file: File) => Promise<void>
   enableDraft?: boolean
   enableFileUpload?: boolean
 }
@@ -237,19 +238,41 @@ export class ChatInput {
 
   private sendMessage(): void {
     const text = sanitizeInput(this.textarea.value)
-    if (!text) return
+    const file = this.selectedFile
 
-    if (this.options.onSend) {
+    // Nothing to send
+    if (!text && !file) return
+
+    // Send file if selected
+    if (file && this.options.onFileSend) {
+      this.options.onFileSend(file)
+        .then(() => {
+          // File sent successfully, clear preview
+          this.clearFilePreview()
+          this.updateSendButton()
+        })
+        .catch(() => {
+          // Error handled in widget, just update button state
+          this.updateSendButton()
+        })
+    }
+
+    // Send text if present
+    if (text && this.options.onSend) {
       this.options.onSend(text)
     }
 
-    this.clear()
+    // Clear text input
+    if (text) {
+      this.clear()
+    }
     this.stopTyping()
   }
 
   private updateSendButton(): void {
-    const hasContent = this.textarea.value.trim().length > 0
-    this.sendButton.disabled = !hasContent || this.textarea.disabled
+    const hasText = this.textarea.value.trim().length > 0
+    const hasFile = this.selectedFile !== null
+    this.sendButton.disabled = (!hasText && !hasFile) || this.textarea.disabled
   }
 
   private adjustHeight(): void {
