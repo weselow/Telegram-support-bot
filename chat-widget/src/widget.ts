@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.2'
+export const WIDGET_VERSION = '0.1.3'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -244,19 +244,58 @@ export class ChatWidget {
 
     this.messageTimes.push(now)
 
+    const tempId = uniqueId('msg')
+    const isImage = file.type.startsWith('image/')
+
+    // Create local preview for images
+    let imageUrl: string | undefined
+    if (isImage) {
+      imageUrl = URL.createObjectURL(file)
+    }
+
+    // Add message to UI immediately
+    const localMessage: Message = {
+      id: tempId,
+      text: isImage ? '' : `📎 ${file.name}`,
+      from: 'user',
+      timestamp: new Date().toISOString(),
+      status: 'sending',
+      temp_id: tempId,
+      imageUrl
+    }
+
+    this.state.addMessage(localMessage)
+    this.messages?.addMessage(localMessage)
+
     // Show uploading state
     this.input?.setUploading(true)
 
     try {
-      await this.httpClient.uploadFile(
+      const response = await this.httpClient.uploadFile(
         file,
         (progress) => this.input?.showUploadProgress(progress)
       )
+
+      // Update message with server ID and status
+      localMessage.id = response.data.messageId
+      localMessage.status = 'sent'
+      this.messages?.updateMessageStatus(tempId, 'sent')
+
       // Show success indicator briefly
       this.input?.showUploadResult(true)
       await this.delay(500)
     } catch (error) {
       console.error('[ChatWidget] File upload failed:', error)
+
+      // Update message status to failed
+      localMessage.status = 'failed'
+      this.messages?.updateMessageStatus(tempId, 'failed')
+
+      // Clean up blob URL on error
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl)
+      }
+
       // Show error indicator
       this.input?.showUploadResult(false)
       await this.delay(1000)

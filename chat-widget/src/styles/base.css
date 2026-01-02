@@ -923,8 +923,9 @@
 /* Version footer */
 .chat-version {
   text-align: center;
-  padding: 4px 0 8px;
+  padding: 2px 0 4px;
   font-size: var(--chat-font-size-xs);
   color: var(--chat-text-muted);
   user-select: none;
+  opacity: 0.6;
 }
