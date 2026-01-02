@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.4'
+export const WIDGET_VERSION = '0.1.5'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -416,6 +416,8 @@ export class ChatWidget {
           // Resolve relative media URLs to absolute
           const resolvedMessages = historyResponse.data.messages.map(m => this.resolveMediaUrls(m))
           this.state.setMessages(resolvedMessages)
+          // Clear DOM before adding to prevent duplicates on reconnect
+          this.messages?.clear()
           this.messages?.addMessages(resolvedMessages)
         }
       }
