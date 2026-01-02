@@ -269,6 +269,8 @@
   padding: var(--chat-spacing-sm) var(--chat-spacing-md);
   border-radius: var(--chat-border-radius-lg);
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .chat-message__image {

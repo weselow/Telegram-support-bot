@@ -395,12 +395,15 @@ export const webChatService = {
     }
 
     // Save to message map with media info
+    // For images, don't show filename (image speaks for itself)
+    // For documents, show filename with icon
+    const messageText = category === 'image' ? '' : `📎 ${fileName}`;
     const message = await messageRepository.createWebMessage({
       userId: user.id,
       topicMessageId,
       direction: 'USER_TO_SUPPORT',
       channel: 'WEB',
-      text: fileName,
+      text: messageText,
       mediaFileId: fileId,
     });
 
