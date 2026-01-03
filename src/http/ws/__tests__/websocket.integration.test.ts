@@ -190,13 +190,11 @@ describe('WebSocket Integration', () => {
 
   describe('Connection', () => {
     it('should connect with valid session in query', async () => {
-      // Create a fresh user for this test
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440010',
-          status: 'NEW',
-          topicId: 110,
-        },
+      // Create a fresh user for this test (with history to prevent welcome message)
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440010',
+        status: 'NEW',
+        topicId: 110,
       });
 
       try {
