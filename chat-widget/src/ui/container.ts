@@ -3,11 +3,12 @@
  */
 
 import { createElement, on, loadCSS } from '../utils/dom'
-import type { WidgetVariant } from '../types/config'
+import type { WidgetVariant, ThemePreset } from '../types/config'
 
 export interface ContainerOptions {
   variant: WidgetVariant
   baseUrl: string
+  themePreset?: ThemePreset
   onClose?: () => void
   onOverlayClick?: () => void
 }
@@ -18,6 +19,7 @@ export class ChatContainer {
   private overlay: HTMLElement | null = null
   private isOpen = false
   private cssLoaded = false
+  private themeCssLoaded = false
   private unsubscribe: (() => void)[] = []
 
   constructor(private options: ContainerOptions) {
@@ -31,6 +33,7 @@ export class ChatContainer {
 
     this.wrapper.appendChild(this.container)
     this.loadVariantCSS()
+    this.loadThemeCSS()
   }
 
   /**
@@ -134,6 +137,11 @@ export class ChatContainer {
       className: `chat-widget ${variantClass}`
     })
 
+    // Apply theme preset via data attribute
+    if (this.options.themePreset && this.options.themePreset !== 'default') {
+      wrapper.setAttribute('data-theme', this.options.themePreset)
+    }
+
     // Start hidden - will be shown when open() is called
     wrapper.style.display = 'none'
 
@@ -177,6 +185,21 @@ export class ChatContainer {
       this.cssLoaded = true
     } catch (error) {
       console.error(`[ChatWidget] Failed to load ${this.options.variant} CSS:`, error)
+    }
+  }
+
+  private async loadThemeCSS(): Promise<void> {
+    // Only load theme CSS for non-default themes
+    if (this.themeCssLoaded || !this.options.themePreset || this.options.themePreset === 'default') {
+      return
+    }
+
+    try {
+      const cssFile = `themes/${this.options.themePreset}.css`
+      await loadCSS(`${this.options.baseUrl}/${cssFile}`)
+      this.themeCssLoaded = true
+    } catch (error) {
+      console.error(`[ChatWidget] Failed to load theme CSS (${this.options.themePreset}):`, error)
     }
   }
 }

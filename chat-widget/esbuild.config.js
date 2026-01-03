@@ -61,6 +61,33 @@ function buildCSS() {
       console.log(`  CSS: ${file} -> ${destPath}`)
     }
   })
+
+  // Copy theme CSS files
+  const themesDir = path.join(cssDir, 'themes')
+  const distThemesDir = path.join('dist', 'themes')
+
+  if (fs.existsSync(themesDir)) {
+    if (!fs.existsSync(distThemesDir)) {
+      fs.mkdirSync(distThemesDir, { recursive: true })
+    }
+
+    const themeFiles = fs.readdirSync(themesDir).filter(f => f.endsWith('.css'))
+    themeFiles.forEach(file => {
+      const srcPath = path.join(themesDir, file)
+      let css = fs.readFileSync(srcPath, 'utf-8')
+
+      if (isProd) {
+        css = css
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/\s+/g, ' ')
+          .replace(/\s*([{}:;,])\s*/g, '$1')
+          .trim()
+      }
+
+      fs.writeFileSync(path.join(distThemesDir, file), css)
+      console.log(`  CSS: themes/${file} -> dist/themes/${file}`)
+    })
+  }
 }
 
 async function build() {

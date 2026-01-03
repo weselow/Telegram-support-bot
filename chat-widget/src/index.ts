@@ -50,7 +50,7 @@ export { ChatWidget as Widget }
   ) => (window as any).DellShopChat.instance?.on(event, handler)
 }
 
-// Parse config from script tag data attributes
+// Parse config from script tag data attributes and URL parameters
 function parseScriptConfig(): Partial<WidgetConfig> {
   const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
   const config: Partial<WidgetConfig> = { ...windowConfig }
@@ -59,6 +59,34 @@ function parseScriptConfig(): Partial<WidgetConfig> {
   const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
 
   if (currentScript) {
+    // Parse URL query parameters from script src
+    // e.g., chat-widget.js?theme=chatgpt&variant=drawer
+    try {
+      const scriptUrl = new URL(currentScript.src)
+      const urlParams = scriptUrl.searchParams
+
+      const urlTheme = urlParams.get('theme')
+      if (urlTheme === 'default' || urlTheme === 'chatgpt') {
+        config.themePreset = urlTheme
+      }
+
+      const urlVariant = urlParams.get('variant')
+      if (urlVariant === 'modal' || urlVariant === 'drawer' || urlVariant === 'auto') {
+        config.variant = urlVariant
+      }
+
+      if (urlParams.get('autoOpen') === 'true') config.autoOpen = true
+      if (urlParams.get('sound') === 'false') config.sound = false
+
+      const urlPosition = urlParams.get('position')
+      if (urlPosition === 'left' || urlPosition === 'right') {
+        config.position = urlPosition
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+
+    // Data attributes override URL parameters
     const variant = currentScript.dataset.variant as WidgetVariant
     if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
       config.variant = variant
@@ -73,6 +101,9 @@ function parseScriptConfig(): Partial<WidgetConfig> {
     if (currentScript.dataset.apiUrl) config.apiUrl = currentScript.dataset.apiUrl
     if (currentScript.dataset.wsUrl) config.wsUrl = currentScript.dataset.wsUrl
     if (currentScript.dataset.baseUrl) config.baseUrl = currentScript.dataset.baseUrl
+    if (currentScript.dataset.theme === 'default' || currentScript.dataset.theme === 'chatgpt') {
+      config.themePreset = currentScript.dataset.theme
+    }
   }
 
   return config

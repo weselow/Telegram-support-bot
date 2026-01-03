@@ -4,6 +4,7 @@
 
 export type WidgetVariant = 'modal' | 'drawer' | 'auto'
 export type WidgetPosition = 'bottom-right' | 'bottom-left'
+export type ThemePreset = 'default' | 'chatgpt'
 
 export interface ResponsiveConfig {
   breakpoint: number
@@ -36,7 +37,10 @@ export interface WidgetConfig {
   /** Responsive settings for auto variant */
   responsive: ResponsiveConfig
 
-  /** Theme customization */
+  /** Theme preset: 'default' or 'chatgpt' */
+  themePreset: ThemePreset
+
+  /** Theme customization (colors, etc.) */
   theme: ThemeConfig
 
   /** Enable debug logging */
@@ -74,6 +78,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     mobile: 'drawer',
     desktop: 'modal'
   },
+  themePreset: 'default',
   theme: {
     brandColor: '#1e3a8a'
   },

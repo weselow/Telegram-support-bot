@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.7'
+export const WIDGET_VERSION = '0.1.8'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -610,6 +610,7 @@ export class ChatWidget {
     this.container = new ChatContainer({
       variant: this.currentVariant,
       baseUrl: this.config.baseUrl,
+      themePreset: this.config.themePreset,
       onClose: () => this.close()
     })
 
