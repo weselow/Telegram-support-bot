@@ -96,8 +96,9 @@ async function handleLinkToken(ctx: Context, token: string): Promise<void> {
 
   logger.info({ tgUserId, userId: user.id }, 'Telegram account linked to web session');
 
-  await ctx.reply(
-    'Ваш Telegram аккаунт успешно привязан к веб-чату. ' +
-    'Теперь вы можете продолжить общение здесь, и сообщения будут синхронизироваться.'
-  );
+  // Send welcome message for web→telegram transition
+  await ctx.reply(messages.webToTelegram.welcome);
+
+  // Send phone request message
+  await ctx.reply(messages.webToTelegram.askPhone);
 }

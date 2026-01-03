@@ -14,6 +14,7 @@ export interface CreateWebUserData {
   webSessionId: string;
   sourceUrl?: string | undefined;
   sourceCity?: string | undefined;
+  sourceIp?: string | undefined;
 }
 
 export const userRepository = {
@@ -89,6 +90,7 @@ export const userRepository = {
         webSessionId: data.webSessionId,
         sourceUrl: data.sourceUrl ?? null,
         sourceCity: data.sourceCity ?? null,
+        sourceIp: data.sourceIp ?? null,
       },
     });
   },

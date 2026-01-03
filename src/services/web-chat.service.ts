@@ -4,6 +4,8 @@ import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
 import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
+import { connectionManager } from '../http/ws/connection-manager.js';
+import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
@@ -76,6 +78,39 @@ function mapMessageToChat(msg: MessageMap): ChatMessage {
   };
 }
 
+/**
+ * Send onboarding messages to a web user after their first message.
+ * Messages are saved to database and sent via WebSocket.
+ */
+async function sendWebOnboardingMessages(userId: string, topicId: number): Promise<void> {
+  const onboardingTexts = [
+    messages.webOnboarding.ticketCreated,
+    messages.webOnboarding.askPhone,
+  ];
+
+  for (const text of onboardingTexts) {
+    // Save to database
+    const savedMessage = await messageRepository.createWebMessage({
+      userId,
+      topicMessageId: undefined, // System messages, not from topic
+      direction: 'SUPPORT_TO_USER',
+      channel: 'WEB',
+      text,
+    });
+
+    // Send via WebSocket
+    connectionManager.sendToUser(userId, 'message', {
+      id: savedMessage.id,
+      text,
+      from: 'support',
+      channel: 'web',
+      timestamp: savedMessage.createdAt.toISOString(),
+    });
+  }
+
+  logger.info({ userId, topicId }, 'Web onboarding messages sent');
+}
+
 export const webChatService = {
   /**
    * Initialize or resume a web chat session
@@ -83,7 +118,8 @@ export const webChatService = {
   async initSession(
     sessionId: string,
     sourceUrl?: string,
-    sourceCity?: string
+    sourceCity?: string,
+    sourceIp?: string
   ): Promise<InitSessionResult> {
     let user = await userRepository.findByWebSessionId(sessionId);
     let isNewSession = false;
@@ -93,6 +129,7 @@ export const webChatService = {
         webSessionId: sessionId,
         sourceUrl,
         sourceCity,
+        sourceIp,
       });
       isNewSession = true;
       logger.info({ userId: user.id, sessionId }, 'Created new web chat user');
@@ -201,8 +238,12 @@ export const webChatService = {
       const cardOptions: SendTicketCardOptions = {
         sourceUrl: user.sourceUrl ?? undefined,
         sourceCity: user.sourceCity ?? undefined,
+        sourceIp: user.sourceIp ?? undefined,
       };
       await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
+
+      // Send onboarding messages to web user
+      await sendWebOnboardingMessages(user.id, topicId);
     }
 
     // Look up replyTo message to get topic message ID (only if belongs to same user)
@@ -368,8 +409,12 @@ export const webChatService = {
       const cardOptions: SendTicketCardOptions = {
         sourceUrl: user.sourceUrl ?? undefined,
         sourceCity: user.sourceCity ?? undefined,
+        sourceIp: user.sourceIp ?? undefined,
       };
       await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
+
+      // Send onboarding messages to web user
+      await sendWebOnboardingMessages(user.id, topicId);
     }
 
     const inputFile = new InputFile(fileBuffer, fileName);

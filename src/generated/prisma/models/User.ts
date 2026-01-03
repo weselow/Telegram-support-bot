@@ -50,6 +50,7 @@ export type UserMinAggregateOutputType = {
   phone: string | null
   sourceUrl: string | null
   sourceCity: string | null
+  sourceIp: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -66,6 +67,7 @@ export type UserMaxAggregateOutputType = {
   phone: string | null
   sourceUrl: string | null
   sourceCity: string | null
+  sourceIp: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -82,6 +84,7 @@ export type UserCountAggregateOutputType = {
   phone: number
   sourceUrl: number
   sourceCity: number
+  sourceIp: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -112,6 +115,7 @@ export type UserMinAggregateInputType = {
   phone?: true
   sourceUrl?: true
   sourceCity?: true
+  sourceIp?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -128,6 +132,7 @@ export type UserMaxAggregateInputType = {
   phone?: true
   sourceUrl?: true
   sourceCity?: true
+  sourceIp?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -144,6 +149,7 @@ export type UserCountAggregateInputType = {
   phone?: true
   sourceUrl?: true
   sourceCity?: true
+  sourceIp?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -247,6 +253,7 @@ export type UserGroupByOutputType = {
   phone: string | null
   sourceUrl: string | null
   sourceCity: string | null
+  sourceIp: string | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -286,6 +293,7 @@ export type UserWhereInput = {
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   sourceUrl?: Prisma.StringNullableFilter<"User"> | string | null
   sourceCity?: Prisma.StringNullableFilter<"User"> | string | null
+  sourceIp?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   events?: Prisma.TicketEventListRelationFilter
@@ -305,6 +313,7 @@ export type UserOrderByWithRelationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceIp?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   events?: Prisma.TicketEventOrderByRelationAggregateInput
@@ -327,6 +336,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   sourceUrl?: Prisma.StringNullableFilter<"User"> | string | null
   sourceCity?: Prisma.StringNullableFilter<"User"> | string | null
+  sourceIp?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   events?: Prisma.TicketEventListRelationFilter
@@ -346,6 +356,7 @@ export type UserOrderByWithAggregationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceIp?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -370,6 +381,7 @@ export type UserScalarWhereWithAggregatesInput = {
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   sourceUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   sourceCity?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  sourceIp?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -386,6 +398,7 @@ export type UserCreateInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
@@ -405,6 +418,7 @@ export type UserUncheckedCreateInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
@@ -424,6 +438,7 @@ export type UserUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
@@ -443,6 +458,7 @@ export type UserUncheckedUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
@@ -462,6 +478,7 @@ export type UserCreateManyInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -478,6 +495,7 @@ export type UserUpdateManyMutationInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -494,6 +512,7 @@ export type UserUncheckedUpdateManyInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -510,6 +529,7 @@ export type UserCountOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
   sourceCity?: Prisma.SortOrder
+  sourceIp?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -532,6 +552,7 @@ export type UserMaxOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
   sourceCity?: Prisma.SortOrder
+  sourceIp?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -548,6 +569,7 @@ export type UserMinOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
   sourceCity?: Prisma.SortOrder
+  sourceIp?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -649,6 +671,7 @@ export type UserCreateWithoutEventsInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageMapCreateNestedManyWithoutUserInput
@@ -667,6 +690,7 @@ export type UserUncheckedCreateWithoutEventsInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.MessageMapUncheckedCreateNestedManyWithoutUserInput
@@ -701,6 +725,7 @@ export type UserUpdateWithoutEventsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageMapUpdateManyWithoutUserNestedInput
@@ -719,6 +744,7 @@ export type UserUncheckedUpdateWithoutEventsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.MessageMapUncheckedUpdateManyWithoutUserNestedInput
@@ -737,6 +763,7 @@ export type UserCreateWithoutMessagesInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
@@ -755,6 +782,7 @@ export type UserUncheckedCreateWithoutMessagesInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
@@ -789,6 +817,7 @@ export type UserUpdateWithoutMessagesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
@@ -807,6 +836,7 @@ export type UserUncheckedUpdateWithoutMessagesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
@@ -825,6 +855,7 @@ export type UserCreateWithoutLinkTokensInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventCreateNestedManyWithoutUserInput
@@ -843,6 +874,7 @@ export type UserUncheckedCreateWithoutLinkTokensInput = {
   phone?: string | null
   sourceUrl?: string | null
   sourceCity?: string | null
+  sourceIp?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   events?: Prisma.TicketEventUncheckedCreateNestedManyWithoutUserInput
@@ -877,6 +909,7 @@ export type UserUpdateWithoutLinkTokensInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUpdateManyWithoutUserNestedInput
@@ -895,6 +928,7 @@ export type UserUncheckedUpdateWithoutLinkTokensInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   events?: Prisma.TicketEventUncheckedUpdateManyWithoutUserNestedInput
@@ -962,6 +996,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   phone?: boolean
   sourceUrl?: boolean
   sourceCity?: boolean
+  sourceIp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   events?: boolean | Prisma.User$eventsArgs<ExtArgs>
@@ -982,6 +1017,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   phone?: boolean
   sourceUrl?: boolean
   sourceCity?: boolean
+  sourceIp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -998,6 +1034,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   phone?: boolean
   sourceUrl?: boolean
   sourceCity?: boolean
+  sourceIp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1014,11 +1051,12 @@ export type UserSelectScalar = {
   phone?: boolean
   sourceUrl?: boolean
   sourceCity?: boolean
+  sourceIp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tgUserId" | "tgUsername" | "tgFirstName" | "webSessionId" | "topicId" | "cardMessageId" | "status" | "phone" | "sourceUrl" | "sourceCity" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tgUserId" | "tgUsername" | "tgFirstName" | "webSessionId" | "topicId" | "cardMessageId" | "status" | "phone" | "sourceUrl" | "sourceCity" | "sourceIp" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   events?: boolean | Prisma.User$eventsArgs<ExtArgs>
   messages?: boolean | Prisma.User$messagesArgs<ExtArgs>
@@ -1047,6 +1085,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     phone: string | null
     sourceUrl: string | null
     sourceCity: string | null
+    sourceIp: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1486,6 +1525,7 @@ export interface UserFieldRefs {
   readonly phone: Prisma.FieldRef<"User", 'String'>
   readonly sourceUrl: Prisma.FieldRef<"User", 'String'>
   readonly sourceCity: Prisma.FieldRef<"User", 'String'>
+  readonly sourceIp: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

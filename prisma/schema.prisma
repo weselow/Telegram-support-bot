@@ -57,6 +57,7 @@ model User {
   phone         String?
   sourceUrl     String?      @map("source_url")
   sourceCity    String?      @map("source_city")
+  sourceIp      String?      @map("source_ip")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 

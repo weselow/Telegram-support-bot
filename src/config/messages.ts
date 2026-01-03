@@ -16,6 +16,17 @@ const messagesSchema = z.object({
     phoneUpdated: z.string(),
   }),
 
+  webOnboarding: z.object({
+    welcome: z.string(),
+    ticketCreated: z.string(),
+    askPhone: z.string(),
+  }),
+
+  webToTelegram: z.object({
+    welcome: z.string(),
+    askPhone: z.string(),
+  }),
+
   ticketCreated: z.string(),
   ticketCreateError: z.string(),
   deliveryFailed: z.string(),

@@ -178,7 +178,8 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
       const result = await webChatService.initSession(
         sessionId,
         referer as string | undefined,
-        geoResult.city ?? undefined
+        geoResult.city ?? undefined,
+        ip
       );
 
       if (isNewCookie) {
