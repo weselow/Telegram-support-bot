@@ -86,9 +86,11 @@
 /* Drawer Input */
 .chat-widget--drawer .chat-input {
   flex-shrink: 0;
-  padding: var(--chat-spacing-md) var(--chat-spacing-lg);
-  padding-bottom: calc(var(--chat-spacing-lg) + env(safe-area-inset-bottom, 0));
   border-radius: 0;
+}
+
+.chat-widget--drawer .chat-input__row {
+  padding-bottom: calc(var(--chat-spacing-md) + env(safe-area-inset-bottom, 0));
 }
 
 .chat-widget--drawer .chat-input__field {
@@ -145,11 +147,6 @@
 
   .chat-widget--drawer .chat-messages {
     padding: var(--chat-spacing-xl);
-  }
-
-  .chat-widget--drawer .chat-input {
-    padding: var(--chat-spacing-lg) var(--chat-spacing-xl);
-    padding-bottom: calc(var(--chat-spacing-xl) + env(safe-area-inset-bottom, 0));
   }
 }
 

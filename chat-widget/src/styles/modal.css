@@ -94,6 +94,9 @@
 
   .chat-widget--modal .chat-input {
     border-radius: 0;
+  }
+
+  .chat-widget--modal .chat-input__row {
     padding-bottom: calc(var(--chat-spacing-md) + env(safe-area-inset-bottom, 0));
   }
 
