@@ -123,6 +123,24 @@ describe('WebSocket Integration', () => {
     });
   }
 
+  // Create user with existing message history (prevents welcome message)
+  async function createUserWithHistory(data: {
+    webSessionId: string;
+    status: 'NEW' | 'IN_PROGRESS' | 'WAITING_CLIENT' | 'CLOSED';
+    topicId: number;
+  }) {
+    const user = await prisma.user.create({ data });
+    await prisma.messageMap.create({
+      data: {
+        userId: user.id,
+        direction: 'USER_TO_SUPPORT',
+        channel: 'WEB',
+        text: 'Previous message',
+      },
+    });
+    return user;
+  }
+
   // Creates client and waits for connected message atomically to avoid race condition
   function createClientWithConnected(
     sessionId: string
@@ -225,12 +243,10 @@ describe('WebSocket Integration', () => {
 
   describe('Messages', () => {
     it('should send message and receive confirmation', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440011',
-          status: 'NEW',
-          topicId: 111,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440011',
+        status: 'NEW',
+        topicId: 111,
       });
 
       try {
@@ -255,12 +271,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should reject empty message', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440012',
-          status: 'NEW',
-          topicId: 112,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440012',
+        status: 'NEW',
+        topicId: 112,
       });
 
       try {
@@ -283,12 +297,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should reject message exceeding max length', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440013',
-          status: 'NEW',
-          topicId: 113,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440013',
+        status: 'NEW',
+        topicId: 113,
       });
 
       try {
@@ -311,12 +323,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should reject invalid JSON', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440014',
-          status: 'NEW',
-          topicId: 114,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440014',
+        status: 'NEW',
+        topicId: 114,
       });
 
       try {
@@ -339,12 +349,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should reject invalid message format', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440015',
-          status: 'NEW',
-          topicId: 115,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440015',
+        status: 'NEW',
+        topicId: 115,
       });
 
       try {
@@ -369,12 +377,10 @@ describe('WebSocket Integration', () => {
 
   describe('Typing', () => {
     it('should forward typing indicator to topic', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440016',
-          status: 'NEW',
-          topicId: 116,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440016',
+        status: 'NEW',
+        topicId: 116,
       });
 
       try {
@@ -426,12 +432,10 @@ describe('WebSocket Integration', () => {
 
   describe('Close Ticket', () => {
     it('should close ticket with resolved status', async () => {
-      const closeTestUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440002',
-          status: 'NEW',
-          topicId: 101,
-        },
+      const closeTestUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440002',
+        status: 'NEW',
+        topicId: 101,
       });
 
       try {
@@ -452,12 +456,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should reject closing already closed ticket', async () => {
-      const closedUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440003',
-          status: 'CLOSED',
-          topicId: 102,
-        },
+      const closedUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440003',
+        status: 'CLOSED',
+        topicId: 102,
       });
 
       try {
@@ -512,12 +514,10 @@ describe('WebSocket Integration', () => {
     it('should reject messages when rate limited', async () => {
       vi.mocked(checkKeyRateLimit).mockResolvedValue({ allowed: false, remaining: 0 });
 
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440019',
-          status: 'NEW',
-          topicId: 119,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440019',
+        status: 'NEW',
+        topicId: 119,
       });
 
       try {
@@ -542,12 +542,10 @@ describe('WebSocket Integration', () => {
 
   describe('Unknown Message Type', () => {
     it('should reject unknown message type', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440020',
-          status: 'NEW',
-          topicId: 120,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440020',
+        status: 'NEW',
+        topicId: 120,
       });
 
       try {
@@ -572,12 +570,10 @@ describe('WebSocket Integration', () => {
 
   describe('Receiving Messages from Support', () => {
     it('should receive message from support via connectionManager', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440021',
-          status: 'NEW',
-          topicId: 121,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440021',
+        status: 'NEW',
+        topicId: 121,
       });
 
       try {
@@ -611,12 +607,10 @@ describe('WebSocket Integration', () => {
     });
 
     it('should receive status update from support', async () => {
-      const testUser = await prisma.user.create({
-        data: {
-          webSessionId: '550e8400-e29b-41d4-a716-446655440022',
-          status: 'NEW',
-          topicId: 122,
-        },
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440022',
+        status: 'NEW',
+        topicId: 122,
       });
 
       try {
