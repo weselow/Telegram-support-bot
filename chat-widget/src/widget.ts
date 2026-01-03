@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.5'
+export const WIDGET_VERSION = '0.1.6'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>

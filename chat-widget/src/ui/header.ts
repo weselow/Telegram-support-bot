@@ -67,7 +67,8 @@ export class ChatHeader {
     const img = createElement('img', {
       src: url,
       alt: 'Avatar',
-      className: 'chat-header__avatar-img'
+      className: 'chat-header__avatar-img',
+      crossOrigin: 'anonymous'
     }) as HTMLImageElement
     img.onerror = () => {
       img.remove()
@@ -98,7 +99,8 @@ export class ChatHeader {
       const img = createElement('img', {
         src: this.options.avatarUrl,
         alt: this.options.title || 'Avatar',
-        className: 'chat-header__avatar-img'
+        className: 'chat-header__avatar-img',
+        crossOrigin: 'anonymous'
       }) as HTMLImageElement
       img.onerror = () => {
         img.remove()
