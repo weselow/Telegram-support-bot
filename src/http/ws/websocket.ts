@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import websocket from '@fastify/websocket';
 import { userRepository } from '../../db/repositories/user.repository.js';
+import { messageRepository } from '../../db/repositories/message.repository.js';
 import { connectionManager } from './connection-manager.js';
 import { handleWebSocketMessage } from './handler.js';
+import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { isOriginAllowedByConfig, getConfiguredBaseDomain } from '../../utils/cors.js';
 import { parseSessionIdFromCookie, isValidSessionId } from '../utils/session.js';
@@ -66,12 +68,37 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
     // Register connection
     connectionManager.add(sessionId, user.id, socket);
 
+    // Check if user has any message history
+    const history = await messageRepository.getHistory(user.id, { limit: 1 });
+    const hasHistory = history.length > 0;
+
     // Send connected event
     connectionManager.send(sessionId, 'connected', {
       sessionId,
       ticketStatus: user.status,
       unreadCount: 0,
     });
+
+    // Send welcome message for new users (no history yet)
+    if (!hasHistory) {
+      const welcomeMessage = await messageRepository.createWebMessage({
+        userId: user.id,
+        topicMessageId: undefined,
+        direction: 'SUPPORT_TO_USER',
+        channel: 'WEB',
+        text: messages.webOnboarding.welcome,
+      });
+
+      connectionManager.send(sessionId, 'message', {
+        id: welcomeMessage.id,
+        text: messages.webOnboarding.welcome,
+        from: 'support',
+        channel: 'web',
+        timestamp: welcomeMessage.createdAt.toISOString(),
+      });
+
+      logger.info({ sessionId, userId: user.id }, 'Web welcome message sent to new user');
+    }
 
     logger.info({ sessionId, userId: user.id }, 'WebSocket client connected');
 
