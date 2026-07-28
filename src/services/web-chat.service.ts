@@ -4,6 +4,7 @@ import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
 import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
+import { startSlaTimers } from './sla.service.js';
 import { connectionManager } from '../http/ws/connection-manager.js';
 import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
@@ -109,6 +110,41 @@ async function sendWebOnboardingMessages(userId: string, topicId: number): Promi
   }
 
   logger.info({ userId, topicId }, 'Web onboarding messages sent');
+}
+
+/**
+ * Return the topic of a web user, creating it on first contact.
+ * A new topic also gets a ticket card, onboarding messages and SLA timers.
+ */
+async function ensureTopic(user: User, sessionId: string): Promise<number> {
+  if (user.topicId) {
+    return user.topicId;
+  }
+
+  const topicName = `Web: ${sessionId.slice(0, 8)}`;
+  logger.info({ sessionId, topicName }, 'Creating forum topic for web user');
+
+  const topic = await bot.api.createForumTopic(env.SUPPORT_GROUP_ID, topicName);
+  const topicId = topic.message_thread_id;
+  await userRepository.updateTopicId(user.id, topicId);
+
+  logger.info({ sessionId, topicId }, 'Forum topic created for web user');
+
+  const webUserInfo = {
+    tgUserId: 0,
+    firstName: 'Web User',
+  };
+  const cardOptions: SendTicketCardOptions = {
+    sourceUrl: user.sourceUrl ?? undefined,
+    sourceCity: user.sourceCity ?? undefined,
+    sourceIp: user.sourceIp ?? undefined,
+  };
+  await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
+
+  await sendWebOnboardingMessages(user.id, topicId);
+  await startSlaTimers(user.id, topicId);
+
+  return topicId;
 }
 
 export const webChatService = {
@@ -217,34 +253,7 @@ export const webChatService = {
       throw new Error('Session not found');
     }
 
-    // Create topic if doesn't exist
-    let topicId = user.topicId;
-    if (!topicId) {
-      const topicName = `Web: ${sessionId.slice(0, 8)}`;
-
-      logger.info({ sessionId, topicName }, 'Creating forum topic for web user');
-
-      const topic = await bot.api.createForumTopic(env.SUPPORT_GROUP_ID, topicName);
-      topicId = topic.message_thread_id;
-      await userRepository.updateTopicId(user.id, topicId);
-
-      logger.info({ sessionId, topicId }, 'Forum topic created for web user');
-
-      // Send ticket card
-      const webUserInfo = {
-        tgUserId: 0,
-        firstName: 'Web User',
-      };
-      const cardOptions: SendTicketCardOptions = {
-        sourceUrl: user.sourceUrl ?? undefined,
-        sourceCity: user.sourceCity ?? undefined,
-        sourceIp: user.sourceIp ?? undefined,
-      };
-      await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
-
-      // Send onboarding messages to web user
-      await sendWebOnboardingMessages(user.id, topicId);
-    }
+    const topicId = await ensureTopic(user, sessionId);
 
     // Look up replyTo message to get topic message ID (only if belongs to same user)
     let replyToMessageId: number | undefined;
@@ -388,34 +397,7 @@ export const webChatService = {
       throw new Error('Session not found');
     }
 
-    // Create topic if doesn't exist
-    let topicId = user.topicId;
-    if (!topicId) {
-      const topicName = `Web: ${sessionId.slice(0, 8)}`;
-
-      logger.info({ sessionId, topicName }, 'Creating forum topic for web user');
-
-      const topic = await bot.api.createForumTopic(env.SUPPORT_GROUP_ID, topicName);
-      topicId = topic.message_thread_id;
-      await userRepository.updateTopicId(user.id, topicId);
-
-      logger.info({ sessionId, topicId }, 'Forum topic created for web user');
-
-      // Send ticket card
-      const webUserInfo = {
-        tgUserId: 0,
-        firstName: 'Web User',
-      };
-      const cardOptions: SendTicketCardOptions = {
-        sourceUrl: user.sourceUrl ?? undefined,
-        sourceCity: user.sourceCity ?? undefined,
-        sourceIp: user.sourceIp ?? undefined,
-      };
-      await sendTicketCard(bot.api, topicId, user.id, webUserInfo, cardOptions);
-
-      // Send onboarding messages to web user
-      await sendWebOnboardingMessages(user.id, topicId);
-    }
+    const topicId = await ensureTopic(user, sessionId);
 
     const inputFile = new InputFile(fileBuffer, fileName);
     let topicMessageId: number;

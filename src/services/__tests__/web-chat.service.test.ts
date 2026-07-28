@@ -32,11 +32,17 @@ vi.mock('../topic.service.js', () => ({
   sendTicketCard: vi.fn(),
 }));
 
+vi.mock('../sla.service.js', () => ({
+  startSlaTimers: vi.fn(),
+}));
+
 vi.mock('../../bot/bot.js', () => ({
   bot: {
     api: {
       createForumTopic: vi.fn(),
       sendMessage: vi.fn(),
+      sendPhoto: vi.fn(),
+      sendDocument: vi.fn(),
     },
   },
 }));
@@ -56,7 +62,7 @@ vi.mock('../../utils/logger.js', () => ({
   },
 }));
 
-describe('WebChatService', () => {
+describe('web-chat.service', () => {
   let userRepository: {
     findByWebSessionId: Mock;
     createWebUser: Mock;
@@ -74,7 +80,10 @@ describe('WebChatService', () => {
     findValidByToken: Mock;
     markUsed: Mock;
   };
-  let bot: { api: { createForumTopic: Mock; sendMessage: Mock } };
+  let bot: {
+    api: { createForumTopic: Mock; sendMessage: Mock; sendPhoto: Mock; sendDocument: Mock };
+  };
+  let startSlaTimers: Mock;
 
   const mockUser = {
     id: 'user-1',
@@ -106,11 +115,13 @@ describe('WebChatService', () => {
     const msgRepo = await import('../../db/repositories/message.repository.js');
     const tokenRepo = await import('../../db/repositories/web-link-token.repository.js');
     const botModule = await import('../../bot/bot.js');
+    const slaService = await import('../sla.service.js');
 
     userRepository = userRepo.userRepository as typeof userRepository;
     messageRepository = msgRepo.messageRepository as typeof messageRepository;
     webLinkTokenRepository = tokenRepo.webLinkTokenRepository as typeof webLinkTokenRepository;
     bot = botModule.bot as typeof bot;
+    startSlaTimers = slaService.startSlaTimers as Mock;
   });
 
   describe('initSession', () => {
@@ -268,6 +279,18 @@ describe('WebChatService', () => {
       expect(result.from).toBe('user');
     });
 
+    it('should start SLA timers when topic is created', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      bot.api.createForumTopic.mockResolvedValue({ message_thread_id: 200 });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello support');
+
+      expect(startSlaTimers).toHaveBeenCalledWith('user-1', 200);
+    });
+
     it('should use existing topic when available', async () => {
       const userWithTopic = { ...mockUser, topicId: 100 };
       userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
@@ -276,6 +299,7 @@ describe('WebChatService', () => {
 
       await webChatService.sendMessage('session-123', 'Hello');
 
+      expect(startSlaTimers).not.toHaveBeenCalled();
       expect(bot.api.createForumTopic).not.toHaveBeenCalled();
       expect(bot.api.sendMessage).toHaveBeenCalledWith(
         '-1001234567890',
@@ -304,6 +328,65 @@ describe('WebChatService', () => {
         '[WEB] Reply text',
         { message_thread_id: 100, reply_to_message_id: 50 }
       );
+    });
+  });
+
+  describe('sendFile', () => {
+    it('should create topic and start SLA timers for first file', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      bot.api.createForumTopic.mockResolvedValue({ message_thread_id: 200 });
+      bot.api.sendDocument.mockResolvedValue({
+        message_id: 400,
+        document: { file_id: 'file-abc' },
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendFile(
+        'session-123',
+        Buffer.from('content'),
+        'report.pdf',
+        'application/pdf',
+        'document'
+      );
+
+      expect(userRepository.updateTopicId).toHaveBeenCalledWith('user-1', 200);
+      expect(startSlaTimers).toHaveBeenCalledWith('user-1', 200);
+    });
+
+    it('should not start SLA timers when topic already exists', async () => {
+      const userWithTopic = { ...mockUser, topicId: 100 };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
+      bot.api.sendDocument.mockResolvedValue({
+        message_id: 400,
+        document: { file_id: 'file-abc' },
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendFile(
+        'session-123',
+        Buffer.from('content'),
+        'report.pdf',
+        'application/pdf',
+        'document'
+      );
+
+      expect(bot.api.createForumTopic).not.toHaveBeenCalled();
+      expect(startSlaTimers).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when session not found', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(null);
+
+      await expect(
+        webChatService.sendFile(
+          'invalid-session',
+          Buffer.from('content'),
+          'report.pdf',
+          'application/pdf',
+          'document'
+        )
+      ).rejects.toThrow('Session not found');
     });
   });
 
