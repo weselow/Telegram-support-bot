@@ -206,6 +206,18 @@ describe('CORS utilities', () => {
       expect(check('https://beforetheygo.web.codecitadel.ru')).toBe(true);
     });
 
+    it('should treat a listed subdomain as itself, not as its parent domain', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'shop.dellshop.ru',
+      });
+
+      expect(check('https://shop.dellshop.ru')).toBe(true);
+      expect(check('https://api.shop.dellshop.ru')).toBe(true);
+      expect(check('https://dellshop.ru')).toBe(false);
+      expect(check('https://www.dellshop.ru')).toBe(false);
+    });
+
     it('should reject origins outside the list', async () => {
       const { isOriginAllowedByConfig: check } = await loadWith({
         SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
