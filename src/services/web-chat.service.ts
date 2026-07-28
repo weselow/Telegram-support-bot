@@ -4,7 +4,9 @@ import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
 import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
-import { startSlaTimers } from './sla.service.js';
+import { cancelAllSlaTimers, startSlaTimers } from './sla.service.js';
+import { autoChangeStatus } from './status.service.js';
+import { cancelAutocloseTimer } from './autoclose.service.js';
 import { connectionManager } from '../http/ws/connection-manager.js';
 import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
@@ -147,6 +149,41 @@ async function ensureTopic(user: User, sessionId: string): Promise<number> {
   return topicId;
 }
 
+/**
+ * Reopen a closed ticket before mirroring a new client message.
+ * Mirrors the Telegram flow in bot/handlers/message.ts: notify support
+ * and restart SLA timers from scratch.
+ */
+async function reopenIfClosed(user: User, topicId: number): Promise<void> {
+  if (user.status !== 'CLOSED') {
+    return;
+  }
+
+  const result = await autoChangeStatus(bot.api, user, 'CLIENT_REOPEN');
+  if (!result.changed) {
+    return;
+  }
+
+  await bot.api.sendMessage(env.SUPPORT_GROUP_ID, messages.reopened, {
+    message_thread_id: topicId,
+  });
+
+  await cancelAllSlaTimers(user.id, topicId);
+  await startSlaTimers(user.id, topicId);
+}
+
+/**
+ * Apply status changes caused by a client message: drop the autoclose
+ * timer and move WAITING_CLIENT → IN_PROGRESS.
+ */
+async function applyClientReply(user: User, topicId: number): Promise<void> {
+  if (user.status === 'WAITING_CLIENT') {
+    await cancelAutocloseTimer(user.id, topicId);
+  }
+
+  await autoChangeStatus(bot.api, user, 'CLIENT_REPLY');
+}
+
 export const webChatService = {
   /**
    * Initialize or resume a web chat session
@@ -254,6 +291,7 @@ export const webChatService = {
     }
 
     const topicId = await ensureTopic(user, sessionId);
+    await reopenIfClosed(user, topicId);
 
     // Look up replyTo message to get topic message ID (only if belongs to same user)
     let replyToMessageId: number | undefined;
@@ -283,6 +321,8 @@ export const webChatService = {
     });
 
     logger.info({ userId: user.id, messageId: message.id }, 'Web message sent to topic');
+
+    await applyClientReply(user, topicId);
 
     return mapMessageToChat(message);
   },
@@ -326,7 +366,10 @@ export const webChatService = {
       throw new Error('Ticket already closed');
     }
 
-    await userRepository.updateStatus(user.id, 'CLOSED');
+    const result = await autoChangeStatus(bot.api, user, 'CLIENT_RESOLVED');
+    if (!result.changed) {
+      throw new Error('Failed to close ticket');
+    }
 
     // Notify in topic
     if (user.topicId) {
@@ -398,6 +441,7 @@ export const webChatService = {
     }
 
     const topicId = await ensureTopic(user, sessionId);
+    await reopenIfClosed(user, topicId);
 
     const inputFile = new InputFile(fileBuffer, fileName);
     let topicMessageId: number;
@@ -438,6 +482,8 @@ export const webChatService = {
       { userId: user.id, messageId: message.id, fileName, category },
       'Web file sent to topic'
     );
+
+    await applyClientReply(user, topicId);
 
     return {
       messageId: message.id,

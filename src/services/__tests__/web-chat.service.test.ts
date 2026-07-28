@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { webChatService } from '../web-chat.service.js';
+import { messages } from '../../config/messages.js';
 
 // Mock dependencies
 vi.mock('../../db/repositories/user.repository.js', () => ({
@@ -34,6 +35,15 @@ vi.mock('../topic.service.js', () => ({
 
 vi.mock('../sla.service.js', () => ({
   startSlaTimers: vi.fn(),
+  cancelAllSlaTimers: vi.fn(),
+}));
+
+vi.mock('../status.service.js', () => ({
+  autoChangeStatus: vi.fn(),
+}));
+
+vi.mock('../autoclose.service.js', () => ({
+  cancelAutocloseTimer: vi.fn(),
 }));
 
 vi.mock('../../bot/bot.js', () => ({
@@ -84,6 +94,9 @@ describe('web-chat.service', () => {
     api: { createForumTopic: Mock; sendMessage: Mock; sendPhoto: Mock; sendDocument: Mock };
   };
   let startSlaTimers: Mock;
+  let cancelAllSlaTimers: Mock;
+  let autoChangeStatus: Mock;
+  let cancelAutocloseTimer: Mock;
 
   const mockUser = {
     id: 'user-1',
@@ -116,12 +129,23 @@ describe('web-chat.service', () => {
     const tokenRepo = await import('../../db/repositories/web-link-token.repository.js');
     const botModule = await import('../../bot/bot.js');
     const slaService = await import('../sla.service.js');
+    const statusService = await import('../status.service.js');
+    const autocloseService = await import('../autoclose.service.js');
 
     userRepository = userRepo.userRepository as typeof userRepository;
     messageRepository = msgRepo.messageRepository as typeof messageRepository;
     webLinkTokenRepository = tokenRepo.webLinkTokenRepository as typeof webLinkTokenRepository;
     bot = botModule.bot as typeof bot;
     startSlaTimers = slaService.startSlaTimers as Mock;
+    cancelAllSlaTimers = slaService.cancelAllSlaTimers as Mock;
+    autoChangeStatus = statusService.autoChangeStatus as Mock;
+    cancelAutocloseTimer = autocloseService.cancelAutocloseTimer as Mock;
+
+    autoChangeStatus.mockResolvedValue({
+      changed: true,
+      oldStatus: 'IN_PROGRESS',
+      newStatus: 'IN_PROGRESS',
+    });
   });
 
   describe('initSession', () => {
@@ -329,6 +353,90 @@ describe('web-chat.service', () => {
         { message_thread_id: 100, reply_to_message_id: 50 }
       );
     });
+
+    it('should change status to in progress on client reply', async () => {
+      const waitingUser = { ...mockUser, topicId: 100, status: 'WAITING_CLIENT' };
+      userRepository.findByWebSessionId.mockResolvedValue(waitingUser);
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, waitingUser, 'CLIENT_REPLY');
+    });
+
+    it('should cancel autoclose timer when client was awaited', async () => {
+      const waitingUser = { ...mockUser, topicId: 100, status: 'WAITING_CLIENT' };
+      userRepository.findByWebSessionId.mockResolvedValue(waitingUser);
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(cancelAutocloseTimer).toHaveBeenCalledWith('user-1', 100);
+    });
+
+    it('should not cancel autoclose timer for other statuses', async () => {
+      const activeUser = { ...mockUser, topicId: 100, status: 'IN_PROGRESS' };
+      userRepository.findByWebSessionId.mockResolvedValue(activeUser);
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(cancelAutocloseTimer).not.toHaveBeenCalled();
+    });
+
+    it('should reopen closed ticket before sending message', async () => {
+      const closedUser = { ...mockUser, topicId: 100, status: 'CLOSED' };
+      userRepository.findByWebSessionId.mockResolvedValue(closedUser);
+      autoChangeStatus.mockResolvedValue({ changed: true, oldStatus: 'CLOSED', newStatus: 'NEW' });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello again');
+
+      expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, closedUser, 'CLIENT_REOPEN');
+      expect(bot.api.sendMessage).toHaveBeenNthCalledWith(1, '-1001234567890', messages.reopened, {
+        message_thread_id: 100,
+      });
+      expect(bot.api.sendMessage).toHaveBeenNthCalledWith(2, '-1001234567890', '[WEB] Hello again', {
+        message_thread_id: 100,
+      });
+    });
+
+    it('should restart SLA timers when ticket is reopened', async () => {
+      const closedUser = { ...mockUser, topicId: 100, status: 'CLOSED' };
+      userRepository.findByWebSessionId.mockResolvedValue(closedUser);
+      autoChangeStatus.mockResolvedValue({ changed: true, oldStatus: 'CLOSED', newStatus: 'NEW' });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello again');
+
+      expect(cancelAllSlaTimers).toHaveBeenCalledWith('user-1', 100);
+      expect(startSlaTimers).toHaveBeenCalledWith('user-1', 100);
+    });
+
+    it('should not notify support when reopen did not change status', async () => {
+      const closedUser = { ...mockUser, topicId: 100, status: 'CLOSED' };
+      userRepository.findByWebSessionId.mockResolvedValue(closedUser);
+      autoChangeStatus.mockResolvedValue({
+        changed: false,
+        oldStatus: 'CLOSED',
+        newStatus: 'CLOSED',
+      });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello again');
+
+      expect(bot.api.sendMessage).toHaveBeenCalledTimes(1);
+      expect(bot.api.sendMessage).toHaveBeenCalledWith('-1001234567890', '[WEB] Hello again', {
+        message_thread_id: 100,
+      });
+      expect(startSlaTimers).not.toHaveBeenCalled();
+    });
   });
 
   describe('sendFile', () => {
@@ -375,6 +483,53 @@ describe('web-chat.service', () => {
       expect(startSlaTimers).not.toHaveBeenCalled();
     });
 
+    it('should change status to in progress on client file', async () => {
+      const waitingUser = { ...mockUser, topicId: 100, status: 'WAITING_CLIENT' };
+      userRepository.findByWebSessionId.mockResolvedValue(waitingUser);
+      bot.api.sendDocument.mockResolvedValue({
+        message_id: 400,
+        document: { file_id: 'file-abc' },
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendFile(
+        'session-123',
+        Buffer.from('content'),
+        'report.pdf',
+        'application/pdf',
+        'document'
+      );
+
+      expect(cancelAutocloseTimer).toHaveBeenCalledWith('user-1', 100);
+      expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, waitingUser, 'CLIENT_REPLY');
+    });
+
+    it('should reopen closed ticket before sending file', async () => {
+      const closedUser = { ...mockUser, topicId: 100, status: 'CLOSED' };
+      userRepository.findByWebSessionId.mockResolvedValue(closedUser);
+      autoChangeStatus.mockResolvedValue({ changed: true, oldStatus: 'CLOSED', newStatus: 'NEW' });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      bot.api.sendDocument.mockResolvedValue({
+        message_id: 400,
+        document: { file_id: 'file-abc' },
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendFile(
+        'session-123',
+        Buffer.from('content'),
+        'report.pdf',
+        'application/pdf',
+        'document'
+      );
+
+      expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, closedUser, 'CLIENT_REOPEN');
+      expect(bot.api.sendMessage).toHaveBeenCalledWith('-1001234567890', messages.reopened, {
+        message_thread_id: 100,
+      });
+      expect(startSlaTimers).toHaveBeenCalledWith('user-1', 100);
+    });
+
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
@@ -416,13 +571,18 @@ describe('web-chat.service', () => {
 
   describe('closeTicket', () => {
     it('should close ticket with resolved status', async () => {
-      const userWithTopic = { ...mockUser, topicId: 100, status: 'OPEN' };
+      const userWithTopic = { ...mockUser, topicId: 100, status: 'IN_PROGRESS' };
       userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
+      autoChangeStatus.mockResolvedValue({
+        changed: true,
+        oldStatus: 'IN_PROGRESS',
+        newStatus: 'CLOSED',
+      });
       bot.api.sendMessage.mockResolvedValue({});
 
       const result = await webChatService.closeTicket('session-123', true, 'Great support!');
 
-      expect(userRepository.updateStatus).toHaveBeenCalledWith('user-1', 'CLOSED');
+      expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, userWithTopic, 'CLIENT_RESOLVED');
       expect(bot.api.sendMessage).toHaveBeenCalledWith(
         -1001234567890,
         '[WEB] ✅ Клиент закрыл тикет: "Great support!"',
@@ -431,8 +591,23 @@ describe('web-chat.service', () => {
       expect(result.status).toBe('CLOSED');
     });
 
+    it('should throw error when status change failed', async () => {
+      const userWithTopic = { ...mockUser, topicId: 100, status: 'IN_PROGRESS' };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
+      autoChangeStatus.mockResolvedValue({
+        changed: false,
+        oldStatus: 'IN_PROGRESS',
+        newStatus: 'IN_PROGRESS',
+      });
+
+      await expect(webChatService.closeTicket('session-123', true)).rejects.toThrow(
+        'Failed to close ticket'
+      );
+      expect(bot.api.sendMessage).not.toHaveBeenCalled();
+    });
+
     it('should close ticket with unresolved status', async () => {
-      const userWithTopic = { ...mockUser, topicId: 100, status: 'OPEN' };
+      const userWithTopic = { ...mockUser, topicId: 100, status: 'IN_PROGRESS' };
       userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
       bot.api.sendMessage.mockResolvedValue({});
 
@@ -459,7 +634,7 @@ describe('web-chat.service', () => {
     });
 
     it('should not send message when no topic exists', async () => {
-      const userWithoutTopic = { ...mockUser, topicId: null, status: 'OPEN' };
+      const userWithoutTopic = { ...mockUser, topicId: null, status: 'IN_PROGRESS' };
       userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
 
       await webChatService.closeTicket('session-123', true);
