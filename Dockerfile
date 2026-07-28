@@ -3,10 +3,11 @@
 # =============================================================================
 FROM node:22-alpine AS widget-builder
 
-# pnpm is pinned on purpose: pnpm 11 dropped the "pnpm" field in package.json,
+# pnpm version comes from the "packageManager" field in chat-widget/package.json.
+# It is pinned there on purpose: pnpm 11 dropped the "pnpm" field in package.json,
 # so onlyBuiltDependencies was ignored and esbuild's install script never ran
-# (ERR_PNPM_IGNORED_BUILDS). Keep this in sync with the version used locally.
-RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
+# (ERR_PNPM_IGNORED_BUILDS).
+RUN corepack enable
 
 WORKDIR /widget
 
@@ -24,8 +25,8 @@ RUN pnpm build:prod
 # =============================================================================
 FROM node:22-alpine AS builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
+# pnpm version comes from the "packageManager" field in package.json
+RUN corepack enable
 
 WORKDIR /app
 
@@ -50,8 +51,8 @@ RUN pnpm run build
 # Production stage
 FROM node:22-alpine AS production
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
+# pnpm version comes from the "packageManager" field in package.json
+RUN corepack enable
 
 WORKDIR /app
 
