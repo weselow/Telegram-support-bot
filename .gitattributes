@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Скрипты запускаются в контейнерах Linux: перевод строк только LF. При сборке
+# образа на Windows перевод строки CRLF попадал в строку запуска интерпретатора
+# и контейнер падал с «no such file or directory».
+*.sh text eol=lf
