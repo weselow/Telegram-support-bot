@@ -4,6 +4,7 @@
   "description": "Embeddable live chat widget for DellShop support",
   "main": "dist/chat-widget.js",
   "types": "dist/index.d.ts",
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "node esbuild.config.js --watch",
     "dev:serve": "node esbuild.config.js --serve",
