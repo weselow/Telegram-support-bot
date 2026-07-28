@@ -159,4 +159,109 @@ describe('CORS utilities', () => {
       expect(isOriginAllowedByConfigNoEnv('https://any-domain.com')).toBe(false);
     });
   });
+
+  describe('isOriginAllowedByConfig with ALLOWED_ORIGINS', () => {
+    beforeEach(() => {
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.resetModules();
+    });
+
+    async function loadWith(envOverrides: Record<string, string | undefined>) {
+      vi.doMock('../../config/env.js', () => ({
+        env: { NODE_ENV: 'production', ...envOverrides },
+      }));
+      return import('../cors.js');
+    }
+
+    it('should allow a domain from the list', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru,example.com',
+      });
+
+      expect(check('https://dellshop.ru')).toBe(true);
+      expect(check('https://example.com')).toBe(true);
+    });
+
+    it('should allow subdomains of a listed domain', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      expect(check('https://www.dellshop.ru')).toBe(true);
+      expect(check('https://shop.dellshop.ru')).toBe(true);
+    });
+
+    it('should still allow the base domain of SUPPORT_DOMAIN', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      expect(check('https://codecitadel.ru')).toBe(true);
+      expect(check('https://beforetheygo.web.codecitadel.ru')).toBe(true);
+    });
+
+    it('should reject origins outside the list', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      expect(check('https://evil.com')).toBe(false);
+      expect(check('https://notdellshop.ru')).toBe(false);
+    });
+
+    it('should tolerate spaces, empty entries and full origins in the list', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: ' dellshop.ru , , https://example.com/ ',
+      });
+
+      expect(check('https://dellshop.ru')).toBe(true);
+      expect(check('https://example.com')).toBe(true);
+      expect(check('https://evil.com')).toBe(false);
+    });
+
+    it('should work without SUPPORT_DOMAIN when the list is set', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      expect(check('https://dellshop.ru')).toBe(true);
+      expect(check('https://www.dellshop.ru')).toBe(true);
+    });
+
+    it('should enable the origin check when only ALLOWED_ORIGINS is set', async () => {
+      const { isOriginCheckEnabled } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      expect(isOriginCheckEnabled()).toBe(true);
+    });
+
+    it('should enable the origin check when only SUPPORT_DOMAIN is set', async () => {
+      const { isOriginCheckEnabled } = await loadWith({
+        SUPPORT_DOMAIN: 'beforetheygo.web.codecitadel.ru',
+        ALLOWED_ORIGINS: undefined,
+      });
+
+      expect(isOriginCheckEnabled()).toBe(true);
+    });
+
+    it('should disable the origin check when nothing is configured', async () => {
+      const { isOriginCheckEnabled } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: undefined,
+      });
+
+      expect(isOriginCheckEnabled()).toBe(false);
+    });
+  });
 });

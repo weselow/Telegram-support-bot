@@ -6,7 +6,7 @@ import { connectionManager } from './connection-manager.js';
 import { handleWebSocketMessage } from './handler.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
-import { isOriginAllowedByConfig, getConfiguredBaseDomain } from '../../utils/cors.js';
+import { isOriginAllowedByConfig, isOriginCheckEnabled } from '../../utils/cors.js';
 import { parseSessionIdFromCookie, isValidSessionId } from '../utils/session.js';
 
 const PING_INTERVAL = 30000; // 30 seconds
@@ -38,8 +38,7 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
 
   fastify.get('/ws/chat', { websocket: true }, async (socket, request) => {
     // Reject WebSocket connections from unauthorized origins
-    const baseDomain = getConfiguredBaseDomain();
-    if (baseDomain) {
+    if (isOriginCheckEnabled()) {
       const origin = request.headers.origin;
       if (!isOriginAllowedByConfig(origin)) {
         logger.warn({ origin }, 'WebSocket connection rejected: origin not allowed');

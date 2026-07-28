@@ -1,0 +1,22 @@
+{
+  "version": "3.5.0",
+  "installed_at": "2026-07-28T10:31:32.458190+00:00",
+  "files": {
+    "agents/code-reviewer.md": "sha256:e72745d2b2a3909979e4b5d85f857eba4d44db289c5c7b946d32a4e83b2f8ea4",
+    "agents/merge-supervisor.md": "sha256:a1ee81609f55c31cbf34e7b8246b3f744a37b1b6bd09c49d40497841125ec703",
+    "hooks/bash-guard.cjs": "sha256:3fb3be67e1021999bfb26517a03ca7375bfea61644ade841a0b1b02f43e46f20",
+    "hooks/enforce-branch-before-edit.cjs": "sha256:0cdae545a8487cd1e71830569072561ccbc39d1062abc554fa0cd5f39f346e78",
+    "hooks/hook-utils.cjs": "sha256:ef2bf226e5f7dbccb7b7348b46a0ee7ce8648428e7be26e9e717842afacb08df",
+    "hooks/nudge-claude-md-update.cjs": "sha256:7d29dba4809b13b1b01c7e1062d6a138dcc6007c2dc4ae8c4c0fc96cf885c167",
+    "hooks/session-start.cjs": "sha256:11b66d21fc5d5eb15bb61318b5c41c15980dbdff2ce3144ee7cdef7ec305e347",
+    "hooks/validate-completion.cjs": "sha256:00a106fbbeecc7ee2da7a7a1e0ab98e82bc9e0360ea119fb36350b3d9e6e2302",
+    "rules/beads-workflow.md": "sha256:b75ff879e414235f0f794f23c7170c1a14a0b3cf1d5d4d8dd81abfd6ac06cfad",
+    "rules/communication-style.md": "sha256:b35d24accc6aa0b5310b447e15d34ec6458a35ee478b276607d3f3af2817d555",
+    "rules/debugging-standard.md": "sha256:6d9837a8fa54660836903f8c6b62919d7b7568ce052bc599e49423dc7551d73c",
+    "rules/implementation-standard.md": "sha256:b0312daf08ba844baf1257add14224c336e4701305ce1accf64f0b0e7a9eefc7",
+    "rules/logging-standard.md": "sha256:8f4f37a7d3fc01dbb20f4adf6f003d32f0a220863817b936d90dddb24b8bd0a3",
+    "rules/resilience-standard.md": "sha256:daa6f30045e39156e18507b127e740152fc8d9d890eb9c5805bdedb1dbf90852",
+    "rules/tdd-workflow.md": "sha256:fff4937d5b5ee8f8e59bd8d6419b4235a5a51ffa6148df4d8bd6ae645af7e874",
+    "skills/project-discovery/SKILL.md": "sha256:8c5ae44a043af5c820f811ede16363ffd2b4b7c9f9b1d0f5754fefcd47068ab1"
+  }
+}

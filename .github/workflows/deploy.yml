@@ -6,20 +6,19 @@
 #
 # Шаги:
 #   1. Build Docker образ
-#   2. Push в GitHub Container Registry (latest + previous)
-#   3. SSH на prod сервер
-#   4. Обновить только app контейнер (postgres/redis не трогаем)
+#   2. Push в GitHub Container Registry (latest + previous + sha)
+#   3. Дёрнуть webhook развёртывания Coolify
+#   4. Дождаться, пока /health на боевом домене снова отвечает
+#
+# Переменные окружения приложения (BOT_TOKEN, DATABASE_URL и прочие) живут
+# в Coolify, а не здесь — см. docs/deployment.md
 #
 # Требуемые secrets:
-#   - PROD_HOST, PROD_USER, SSH_PRIVATE_KEY (подключение к серверу)
-#   - BOT_TOKEN, SUPPORT_GROUP_ID (Telegram)
-#   - DATABASE_PASSWORD (пароль PostgreSQL)
-#   - DADATA_API_KEY, SENTRY_DSN (опционально)
+#   - COOLIFY_WEBHOOK (адрес webhook развёртывания, содержит uuid ресурса)
+#   - COOLIFY_TOKEN (токен API Coolify с правом deploy)
 #
 # Требуемые variables:
-#   - DEPLOY_PATH (путь на сервере, например /opt/support-bot)
-#   - BOT_USERNAME (username бота)
-#   - SUPPORT_DOMAIN (домен для Caddy, например support.example.com)
+#   - SUPPORT_DOMAIN (боевой домен, например chat.dellshop.ru)
 #
 # =============================================================================
 
@@ -107,7 +106,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ---------------------------------------------------------------------------
-  # Deploy на production сервер
+  # Deploy: Coolify скачивает свежий образ и перезапускает приложение
   # ---------------------------------------------------------------------------
   deploy:
     needs: build
@@ -115,83 +114,36 @@ jobs:
     environment: production
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
+      - name: Trigger Coolify deployment
+        run: |
+          set -euo pipefail
+          # COOLIFY_WEBHOOK уже содержит ?uuid=<ресурс>, поэтому добавляем через &
+          # force=true — перекачать образ, даже если метка latest не изменилась
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            "${{ secrets.COOLIFY_WEBHOOK }}&force=true"
 
-            # Создать директорию проекта если не существует
-            mkdir -p ${{ vars.DEPLOY_PATH }}
-            cd ${{ vars.DEPLOY_PATH }}
+      - name: Wait for the app to come back
+        run: |
+          set -euo pipefail
 
-            # Скачать/обновить docker-compose.yml
-            curl -fsSL -o docker-compose.yml \
-              https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+          # Выкатка без простоя выключена (бот работает на long polling),
+          # поэтому старый контейнер сначала гаснет — ждём, чтобы не поймать
+          # ответ уходящей версии.
+          sleep 30
 
-            # Создать директории для volumes
-            mkdir -p .volumes/postgres .volumes/redis .volumes/caddy/data .volumes/caddy/config
+          for attempt in $(seq 1 30); do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --max-time 10 "https://${{ vars.SUPPORT_DOMAIN }}/health" || true)
 
-            # Создать/обновить Caddyfile
-            cat > Caddyfile << 'CADDYFILE'
-            ${{ vars.SUPPORT_DOMAIN }} {
-                reverse_proxy app:3000
-                encode gzip
-                log {
-                    output stdout
-                    format console
-                }
-                header {
-                    X-Content-Type-Options nosniff
-                    X-Frame-Options DENY
-                    Referrer-Policy strict-origin-when-cross-origin
-                }
-            }
-            CADDYFILE
+            if [ "$code" = "200" ]; then
+              echo "Health check OK after ${attempt} attempt(s)"
+              exit 0
+            fi
 
-            # Создать/обновить .env файл
-            cat > .env << 'EOF'
-            # Telegram
-            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
-            BOT_USERNAME=${{ vars.BOT_USERNAME }}
-            SUPPORT_GROUP_ID=${{ secrets.SUPPORT_GROUP_ID }}
+            echo "Attempt ${attempt}: /health returned ${code}, retry in 10s"
+            sleep 10
+          done
 
-            # Database
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-            DATABASE_URL=postgresql://postgres:${{ secrets.DATABASE_PASSWORD }}@postgres:5432/support_bot
-
-            # Redis
-            REDIS_URL=redis://redis:6379
-
-            # HTTP
-            HTTP_PORT=3000
-            SUPPORT_DOMAIN=${{ vars.SUPPORT_DOMAIN }}
-
-            # Optional
-            DADATA_API_KEY=${{ secrets.DADATA_API_KEY }}
-            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-
-            # Environment
-            NODE_ENV=production
-            LOG_LEVEL=info
-            EOF
-
-            # Скачать новый образ app
-            docker compose pull app
-
-            # Запустить все сервисы
-            # up -d: запустит всё, но перезапустит только изменившиеся (app)
-            # postgres, redis, caddy — не перезапустятся если уже работают
-            docker compose up -d
-
-            # Проверить что контейнеры запустились
-            sleep 5
-            docker compose ps | grep -E "(app|caddy)" | grep -q "Up" || exit 1
-
-            # Очистка старых образов
-            docker image prune -f
-
-            echo "Deploy completed successfully!"
+          echo "Health check failed: /health did not answer 200 within 5 minutes"
+          exit 1

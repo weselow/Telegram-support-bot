@@ -16,6 +16,8 @@ const envSchema = z.object({
   // Website integration
   HTTP_PORT: z.string().default('3000'),
   SUPPORT_DOMAIN: z.string().optional(),
+  // Домены сайтов, на которых стоит виджет, через запятую (кроме SUPPORT_DOMAIN)
+  ALLOWED_ORIGINS: z.string().optional(),
   DADATA_API_KEY: z.string().optional(),
 });
 

@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "Telegram_support_bot",
+  "project_id": "b9507cd2-2618-41bd-a8b3-3c8040ca3fd5"
+}

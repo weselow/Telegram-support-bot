@@ -9,6 +9,7 @@ import { askSupportRoute } from './routes/ask-support.js';
 import { chatRoutes } from './routes/chat.js';
 import { mediaRoutes } from './routes/media.routes.js';
 import { widgetErrorsRoutes } from './routes/widget-errors.js';
+import { securityHeadersHook } from './middleware/security-headers.js';
 import { registerWebSocket } from './ws/websocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,8 +20,11 @@ let server: FastifyInstance | null = null;
 export async function startHttpServer(): Promise<FastifyInstance> {
   server = Fastify({
     logger: false, // We use our own logger
-    trustProxy: true, // Trust X-Forwarded-For from Caddy/nginx
+    trustProxy: true, // Trust X-Forwarded-For from the reverse proxy
   });
+
+  // Security headers on every response (proxy-independent)
+  server.addHook('onRequest', securityHeadersHook);
 
   // Serve chat widget static files
   await server.register(fastifyStatic, {

@@ -1,230 +1,136 @@
-# Деплой Telegram Support Bot
+# Развёртывание Telegram Support Bot
 
 ## Обзор
 
-Деплой происходит автоматически при push в `main`:
-
 ```
-Push в main → Тесты → Build образа → Push в ghcr.io → SSH → Обновление app контейнера
+Push в main → Тесты → Сборка образа → Публикация в ghcr.io → Webhook Coolify → Ожидание /health
 ```
 
-PostgreSQL и Redis **не перезапускаются** при деплое — обновляется только app.
+Боевая среда работает под управлением **Coolify** на отдельном сервере. Разделение обязанностей:
+
+| Где | За что отвечает |
+|-----|-----------------|
+| GitHub Actions | Тесты, сборка образа, публикация в `ghcr.io`, запуск выкатки |
+| Coolify | Переменные окружения, домен и HTTPS, PostgreSQL, Redis, резервные копии, перезапуск приложения |
+
+Приложение разворачивается **готовым образом** — Coolify ничего не собирает. Это сохраняет предохранитель: пока тесты в GitHub красные, до выкатки дело не доходит.
 
 ---
 
-## 1. Настройка GitHub Secrets и Variables
+## 1. Ресурсы в Coolify
 
-### Repository Settings → Secrets and variables → Actions
+Три отдельных ресурса в одном проекте и окружении:
 
-#### Secrets (зашифрованные, не видны никому)
+| Ресурс | Тип | Примечание |
+|--------|-----|------------|
+| Приложение | Docker Image | `ghcr.io/weselow/telegram-support-bot:latest`, образ публичный — доступ к реестру не нужен |
+| PostgreSQL 18 | База данных | Имя базы `support_bot`, та же версия в тестах |
+| Redis 7 | База данных | Пароль задаёт Coolify — он должен быть в `REDIS_URL` |
 
-| Имя | Описание | Пример |
-|-----|----------|--------|
-| `PROD_HOST` | IP или домен prod сервера | `123.45.67.89` |
-| `PROD_USER` | SSH пользователь | `deploy` |
-| `SSH_PRIVATE_KEY` | Приватный SSH ключ | `-----BEGIN OPENSSH...` |
-| `BOT_TOKEN` | Токен Telegram бота | `123456789:ABC...` |
-| `SUPPORT_GROUP_ID` | ID супергруппы поддержки | `-1001234567890` |
-| `DATABASE_PASSWORD` | Пароль PostgreSQL | `strong_password_here` |
-| `DADATA_API_KEY` | API ключ DaData (опционально) | `abc123...` |
-| `SENTRY_DSN` | DSN для Sentry (опционально) | `https://...@sentry.io/...` |
+Настройки приложения:
 
-#### Variables (не зашифрованы, видны в public repo)
+- домен `beforetheygo.web.codecitadel.ru`, внутренний порт `3000`, порт на хост-машину **не пробрасывать**;
+- проверка здоровья — путь `/health`;
+- **выкатка без простоя выключена** — см. раздел 5;
+- если приложение не видит базу, дело в сети: ресурсы должны быть в одном проекте и окружении либо связаны общей сетью.
 
-| Имя | Описание | Пример |
-|-----|----------|--------|
-| `DEPLOY_PATH` | Путь к проекту на сервере | `/opt/support-bot` |
-| `BOT_USERNAME` | Username бота (без @) | `my_support_bot` |
-| `SUPPORT_DOMAIN` | Домен для Caddy (HTTPS) | `support.example.com` |
+Миграции базы накатываются сами при старте контейнера (`docker-entrypoint.sh` → `prisma migrate deploy`), отдельного шага не нужно.
 
 ---
 
-## 2. Настройка Production сервера
+## 2. Переменные окружения
 
-### 2.1 Требования
+Задаются **в Coolify**, у ресурса приложения. Проверка при старте — `src/config/env.ts`; если обязательной переменной нет, контейнер останавливается.
 
-- Ubuntu 22.04+ / Debian 12+
-- Docker + Docker Compose
-- Минимум 2 GB RAM, 20 GB SSD
+| Имя | Обязательна | Значение |
+|-----|-------------|----------|
+| `BOT_TOKEN` | да | Токен бота |
+| `BOT_USERNAME` | да | `dellshop_support_bot` |
+| `SUPPORT_GROUP_ID` | да | Идентификатор супергруппы поддержки |
+| `DATABASE_URL` | да | Внутренний адрес PostgreSQL из Coolify, база `support_bot` |
+| `REDIS_URL` | нет (по умолчанию localhost) | Внутренний адрес Redis **с паролем** |
+| `HTTP_PORT` | нет (3000) | `3000` |
+| `SUPPORT_DOMAIN` | нет | `beforetheygo.web.codecitadel.ru` |
+| `ALLOWED_ORIGINS` | нет | Домены сайтов с виджетом через запятую, например `dellshop.ru,example.com`. Разрешается домен и его поддомены |
+| `NODE_ENV` | нет (development) | `production` |
+| `LOG_LEVEL` | нет (info) | `info` |
+| `SENTRY_DSN` | нет | Адрес проекта в Sentry |
+| `DADATA_API_KEY` | нет | Ключ DaData |
 
-### 2.2 Создание пользователя для деплоя
+### Секреты и переменные в GitHub
 
-```bash
-# На сервере от root
-adduser deploy
-usermod -aG docker deploy
+Repository Settings → Secrets and variables → Actions.
 
-# Создать директорию проекта
-mkdir -p /opt/support-bot
-chown deploy:deploy /opt/support-bot
-```
+| Имя | Тип | Значение |
+|-----|-----|----------|
+| `COOLIFY_WEBHOOK` | секрет | Адрес webhook развёртывания, уже содержит `?uuid=<ресурс>` |
+| `COOLIFY_TOKEN` | секрет | Токен API Coolify с правом `deploy` |
+| `SUPPORT_DOMAIN` | переменная | `beforetheygo.web.codecitadel.ru` — по нему проверяется `/health` после выкатки |
 
-### 2.3 Настройка SSH ключа
-
-```bash
-# На ЛОКАЛЬНОЙ машине — сгенерировать ключ
-ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/github_deploy
-
-# Скопировать ПУБЛИЧНЫЙ ключ на сервер
-ssh-copy-id -i ~/.ssh/github_deploy.pub deploy@YOUR_SERVER_IP
-
-# Скопировать ПРИВАТНЫЙ ключ в GitHub Secret SSH_PRIVATE_KEY
-cat ~/.ssh/github_deploy
-```
-
-### 2.4 Права на DEPLOY_PATH
-
-```bash
-# Убедиться что deploy может писать в /opt/
-sudo mkdir -p /opt/support-bot
-sudo chown deploy:deploy /opt/support-bot
-```
-
-### 2.5 Открыть порты в firewall
-
-```bash
-# Для UFW
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw reload
-```
-
-**Готово!** GitHub Actions при первом деплое сам создаст:
-- `docker-compose.yml`, `.env`, `Caddyfile`
-- Директории `.volumes/`
-- Скачает образы и запустит контейнеры
+Больше в GitHub ничего боевого не хранится: токен бота, пароль базы и остальное живут только в Coolify.
 
 ---
 
-## 3. Как работает деплой
+## 3. Как проходит выкатка
 
-### Автоматический (при push в main)
+Автоматически при push в `main` (кроме изменений в `docs/**`, `*.md`, `.vscode/**`, `.idea/**`, `LICENSE`). Вручную: GitHub → Actions → Deploy → Run workflow.
 
-1. GitHub Actions запускает тесты
-2. Собирает Docker образ
-3. Пушит в `ghcr.io/weselow/telegram-support-bot:latest`
-4. Предыдущий `latest` переименовывается в `previous`
-5. SSH на сервер:
-   - Обновляет `.env` из secrets
-   - `docker compose pull app`
-   - `docker compose up -d app` (запустит postgres/redis если не запущены)
+1. Прогоняются тесты (`test.yml`): линтинг и проверка типов, юнит-тесты с покрытием, интеграционные тесты на настоящих PostgreSQL и Redis.
+2. Текущий образ `latest` перевешивается на метку `previous` — запас для отката.
+3. Собирается и публикуется новый образ с метками `latest` и хешем коммита.
+4. GitHub дёргает webhook Coolify (`force=true`, чтобы образ перекачался несмотря на неизменную метку `latest`).
+5. Шаг ожидания: пауза 30 секунд, затем `/health` опрашивается до 30 раз с интервалом 10 секунд. Не ответил за пять минут — выкатка считается упавшей.
 
-### Ручной запуск
-
-GitHub → Actions → Deploy → Run workflow
+Пауза нужна, потому что старый контейнер гаснет не мгновенно, и без неё проверка успела бы поймать ответ уходящей версии.
 
 ---
 
-## 4. Откат на предыдущую версию
+## 4. Откат
 
-```bash
-# На сервере
-cd /opt/support-bot
+**Через Coolify** — в разделе развёртываний выбрать предыдущее и повторить его.
 
-# Изменить тег в docker-compose.yml
-sed -i 's/:latest/:previous/' docker-compose.yml
+**По метке образа** — у ресурса приложения сменить `:latest` на `:previous` (или на конкретный хеш коммита) и развернуть заново. Метка `previous` всегда указывает на предыдущую успешную сборку, метки по хешу коммита позволяют вернуться на любую.
 
-# Применить
-docker compose pull app
-docker compose up -d --no-deps app
-
-# Вернуть обратно
-sed -i 's/:previous/:latest/' docker-compose.yml
-```
-
-Или через GitHub: откатить коммит и push.
+**Через репозиторий** — откатить коммит и запушить в `main`, дальше обычная выкатка.
 
 ---
 
-## 5. Мониторинг
+## 5. Почему выключена выкатка без простоя
 
-### Логи
+Бот работает на длинном опросе (`bot.start()` в `src/bot/bot.ts`). Телеграм разрешает только один опрашивающий экземпляр: если новый контейнер поднимется раньше, чем погаснет старый, оба получат ошибку 409, часть сообщений придёт с задержкой, а журнал забьётся ошибками.
 
-```bash
-# Все сервисы
-docker compose logs -f
-
-# Только app
-docker compose logs -f app
-
-# Последние 100 строк
-docker compose logs --tail=100 app
-```
-
-### Статус
-
-```bash
-docker compose ps
-```
-
-### Ресурсы
-
-```bash
-docker stats
-```
+Поэтому у ресурса выключено обновление с подменой контейнера: сначала старый останавливается, потом стартует новый. Цена — несколько секунд простоя на выкатку. Если понадобится выкатка без простоя, сначала надо перевести бота с длинного опроса на webhook.
 
 ---
 
-## 6. Troubleshooting
+## 6. Резервные копии и восстановление
 
-### Контейнер не запускается
+Расписание копий настраивается у ресурса PostgreSQL в Coolify, там же список готовых копий и выгрузка в хранилище S3.
 
-```bash
-# Проверить логи
-docker compose logs app
+Восстановление: остановить приложение (иначе оно будет писать в базу во время заливки), залить выгрузку в базу `support_bot`, запустить приложение обратно. Миграции при старте догонят схему, если копия старее текущего состояния.
 
-# Проверить .env
-cat .env
-
-# Проверить подключение к БД
-docker compose exec postgres psql -U postgres -c "SELECT 1"
-```
-
-### SSH не работает
-
-```bash
-# Проверить подключение локально
-ssh -i ~/.ssh/github_deploy deploy@SERVER_IP
-
-# Проверить права на ключ
-chmod 600 ~/.ssh/github_deploy
-```
+Redis содержит только очереди задач, ограничение частоты запросов и временные данные — потеря означает потерю запланированных напоминаний по срокам ответа, но не переписки. Отдельные копии для него не нужны.
 
 ---
 
-## 7. Структура на сервере
+## 7. Диагностика
 
-```
-/opt/support-bot/
-├── docker-compose.yml      # Только этот файл (без override!)
-├── Caddyfile               # Конфиг reverse proxy (создаётся при деплое)
-├── .env                    # Создаётся автоматически при деплое
-└── .volumes/
-    ├── postgres/           # Данные PostgreSQL
-    ├── redis/              # Данные Redis
-    └── caddy/              # SSL сертификаты и конфиг Caddy
-        ├── data/
-        └── config/
-```
-
-**Важно:** `docker-compose.override.yml` — только для development!
-На production его НЕ должно быть.
+- **Журналы** — вкладка журналов у ресурса приложения в Coolify.
+- **Ошибки** — Sentry, туда уходят все `error` и `fatal`.
+- **Проверка снаружи** — `curl -i https://beforetheygo.web.codecitadel.ru/health`, ожидается `200` и `{"status":"ok"}`.
+- **Заголовки безопасности** отдаёт само приложение (`src/http/middleware/security-headers.ts`), а не прокси — если они пропали, дело в приложении.
+- **Контейнер не стартует** — почти всегда не хватает обязательной переменной окружения либо неверный `DATABASE_URL`; сообщение о конкретной переменной будет в первых строках журнала.
+- **Бот молчит, в журнале ошибки 409** — где-то запущен второй экземпляр с тем же токеном (локальная разработка или не погашенный старый сервер).
 
 ---
 
-## 8. Caddy (HTTPS)
+## 8. Локальная разработка
 
-Caddy автоматически получает SSL сертификаты от Let's Encrypt.
+`docker-compose.yml` в корне репозитория — **только для разработки**, на боевой сервер он больше не выкладывается. Вместе с `docker-compose.override.yml` он открывает на localhost приложение (3000), PostgreSQL (5433) и Redis (6380).
 
-**Требования:**
-- Домен должен указывать на IP сервера (A-запись)
-- Порты 80 и 443 должны быть открыты
-
-**Проверка:**
 ```bash
-# Логи Caddy
-docker compose logs caddy
-
-# Статус сертификата
-curl -I https://your-domain.com
+docker compose build
+docker compose up -d
 ```
+
+Переменные берутся из локального `.env` (образец — `.env.example`).
