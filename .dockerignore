@@ -1,23 +1,37 @@
 # Dependencies
-node_modules
+# Две звёздочки обязательны: шаблон `node_modules` исключает только каталог в
+# корне, поэтому chat-widget/node_modules уезжал в контекст сборки и затирал
+# зависимости, установленные внутри образа.
+**/node_modules
 
 # Build output
-dist
+**/dist
+coverage
 
 # Git
 .git
 .gitignore
+.gitattributes
 
-# IDE
+# Локальные рабочие копии, данные контейнеров и база задач
+.worktrees
+.volumes
+.beads
+
+# IDE и служебные каталоги помощников
 .idea
 .vscode
+.claude
+.codex
+.agents
 *.swp
 *.swo
 
-# Environment
+# Environment и секреты
 .env
 .env.local
 .env.*.local
+credentials.txt
 
 # Logs
 logs
@@ -25,11 +39,11 @@ logs
 npm-debug.log*
 
 # Test
-coverage
 tests
 
 # Documentation
 docs
+screens
 *.md
 !README.md
 
