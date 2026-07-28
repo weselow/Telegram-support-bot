@@ -3,7 +3,10 @@
 # =============================================================================
 FROM node:22-alpine AS widget-builder
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# pnpm is pinned on purpose: pnpm 11 dropped the "pnpm" field in package.json,
+# so onlyBuiltDependencies was ignored and esbuild's install script never ran
+# (ERR_PNPM_IGNORED_BUILDS). Keep this in sync with the version used locally.
+RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
 
 WORKDIR /widget
 
@@ -22,7 +25,7 @@ RUN pnpm build:prod
 FROM node:22-alpine AS builder
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
 
 WORKDIR /app
 
@@ -48,7 +51,7 @@ RUN pnpm run build
 FROM node:22-alpine AS production
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.25.0 --activate
 
 WORKDIR /app
 
