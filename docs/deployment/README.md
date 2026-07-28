@@ -50,8 +50,8 @@ Push в main → Тесты → Сборка образа → Публикаци
 | `DATABASE_URL` | да | Внутренний адрес PostgreSQL из Coolify, база `support_bot` |
 | `REDIS_URL` | нет (по умолчанию localhost) | Внутренний адрес Redis **с паролем** |
 | `HTTP_PORT` | нет (3000) | `3000` |
-| `SUPPORT_DOMAIN` | нет | `beforetheygo.web.codecitadel.ru` |
-| `ALLOWED_ORIGINS` | нет | Домены сайтов с виджетом через запятую, например `dellshop.ru,example.com`. Разрешается домен и его поддомены |
+| `SUPPORT_DOMAIN` | нет | `beforetheygo.web.codecitadel.ru`. Сводится к домену второго уровня, поэтому разрешает весь `codecitadel.ru` и его поддомены |
+| `ALLOWED_ORIGINS` | нет | Домены сайтов с виджетом через запятую, например `dellshop.ru,example.com`. Запись разрешает сама себя и свои поддомены, но не родительский домен: `shop.dellshop.ru` не открывает `dellshop.ru` и `www.dellshop.ru` — впишите родительский домен отдельной записью |
 | `NODE_ENV` | нет (development) | `production` |
 | `LOG_LEVEL` | нет (info) | `info` |
 | `SENTRY_DSN` | нет | Адрес проекта в Sentry |

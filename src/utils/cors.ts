@@ -101,6 +101,13 @@ function normalizeDomain(entry: string): string {
 /**
  * All domains the widget may be embedded on:
  * base domain of SUPPORT_DOMAIN plus everything listed in ALLOWED_ORIGINS
+ *
+ * The two settings deliberately differ. SUPPORT_DOMAIN is reduced to its base
+ * domain, so chat.dellshop.ru also allows dellshop.ru and its other subdomains.
+ * ALLOWED_ORIGINS entries are taken as written: an entry allows itself and its
+ * own subdomains, never its parent domain. So 'shop.dellshop.ru' allows
+ * shop.dellshop.ru and api.shop.dellshop.ru, but not dellshop.ru — list the
+ * parent domain explicitly if that is what you want.
  */
 export function getAllowedDomains(): string[] {
   const domains: string[] = [];
