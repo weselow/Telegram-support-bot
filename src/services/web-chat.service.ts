@@ -7,6 +7,7 @@ import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
 import { cancelAllSlaTimers, startSlaTimers } from './sla.service.js';
 import { autoChangeStatus } from './status.service.js';
 import { cancelAutocloseTimer } from './autoclose.service.js';
+import { acquireLock, releaseLock } from './lock.service.js';
 import { connectionManager } from '../http/ws/connection-manager.js';
 import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
@@ -115,14 +116,10 @@ async function sendWebOnboardingMessages(userId: string, topicId: number): Promi
 }
 
 /**
- * Return the topic of a web user, creating it on first contact.
- * A new topic also gets a ticket card, onboarding messages and SLA timers.
+ * Create a forum topic for a web user together with its ticket card,
+ * onboarding messages and SLA timers.
  */
-async function ensureTopic(user: User, sessionId: string): Promise<number> {
-  if (user.topicId) {
-    return user.topicId;
-  }
-
+async function createTopic(user: User, sessionId: string): Promise<number> {
   const topicName = `Web: ${sessionId.slice(0, 8)}`;
   logger.info({ sessionId, topicName }, 'Creating forum topic for web user');
 
@@ -147,6 +144,39 @@ async function ensureTopic(user: User, sessionId: string): Promise<number> {
   await startSlaTimers(user.id, topicId);
 
   return topicId;
+}
+
+/**
+ * Return the topic of a web user, creating it on first contact.
+ * A message and a file upload can arrive at the same time, so topic creation
+ * runs under a lock and re-reads the user: a parallel request may have created
+ * the topic while we were waiting. Without the lock (Redis down) the re-read
+ * still removes most of the race.
+ */
+async function ensureTopic(user: User, sessionId: string): Promise<number> {
+  if (user.topicId) {
+    return user.topicId;
+  }
+
+  const lockKey = `topic:${user.id}`;
+  const lockToken = await acquireLock(lockKey);
+
+  try {
+    const currentUser = await userRepository.findById(user.id);
+    if (currentUser?.topicId) {
+      logger.info(
+        { userId: user.id, topicId: currentUser.topicId },
+        'Topic already created by a parallel request'
+      );
+      return currentUser.topicId;
+    }
+
+    return await createTopic(user, sessionId);
+  } finally {
+    if (lockToken) {
+      await releaseLock(lockKey, lockToken);
+    }
+  }
 }
 
 /**
