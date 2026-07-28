@@ -5,12 +5,18 @@ import { messages } from '../../config/messages.js';
 // Mock dependencies
 vi.mock('../../db/repositories/user.repository.js', () => ({
   userRepository: {
+    findById: vi.fn(),
     findByWebSessionId: vi.fn(),
     createWebUser: vi.fn(),
     updateTopicId: vi.fn(),
     updateStatus: vi.fn(),
     linkTelegramAccount: vi.fn(),
   },
+}));
+
+vi.mock('../lock.service.js', () => ({
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
 }));
 
 vi.mock('../../db/repositories/message.repository.js', () => ({
@@ -74,6 +80,7 @@ vi.mock('../../utils/logger.js', () => ({
 
 describe('web-chat.service', () => {
   let userRepository: {
+    findById: Mock;
     findByWebSessionId: Mock;
     createWebUser: Mock;
     updateTopicId: Mock;
@@ -97,6 +104,8 @@ describe('web-chat.service', () => {
   let cancelAllSlaTimers: Mock;
   let autoChangeStatus: Mock;
   let cancelAutocloseTimer: Mock;
+  let acquireLock: Mock;
+  let releaseLock: Mock;
 
   const mockUser = {
     id: 'user-1',
@@ -131,6 +140,7 @@ describe('web-chat.service', () => {
     const slaService = await import('../sla.service.js');
     const statusService = await import('../status.service.js');
     const autocloseService = await import('../autoclose.service.js');
+    const lockService = await import('../lock.service.js');
 
     userRepository = userRepo.userRepository as typeof userRepository;
     messageRepository = msgRepo.messageRepository as typeof messageRepository;
@@ -140,12 +150,16 @@ describe('web-chat.service', () => {
     cancelAllSlaTimers = slaService.cancelAllSlaTimers as Mock;
     autoChangeStatus = statusService.autoChangeStatus as Mock;
     cancelAutocloseTimer = autocloseService.cancelAutocloseTimer as Mock;
+    acquireLock = lockService.acquireLock as Mock;
+    releaseLock = lockService.releaseLock as Mock;
 
     autoChangeStatus.mockResolvedValue({
       changed: true,
       oldStatus: 'IN_PROGRESS',
       newStatus: 'IN_PROGRESS',
     });
+    acquireLock.mockResolvedValue('lock-token');
+    userRepository.findById.mockResolvedValue({ ...mockUser, topicId: null });
   });
 
   describe('initSession', () => {
@@ -542,6 +556,63 @@ describe('web-chat.service', () => {
           'document'
         )
       ).rejects.toThrow('Session not found');
+    });
+  });
+
+  describe('ensureTopic', () => {
+    it('should reuse topic created by a parallel request', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      userRepository.findById.mockResolvedValue({ ...mockUser, topicId: 200 });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(bot.api.createForumTopic).not.toHaveBeenCalled();
+      expect(userRepository.updateTopicId).not.toHaveBeenCalled();
+      expect(startSlaTimers).not.toHaveBeenCalled();
+      expect(bot.api.sendMessage).toHaveBeenCalledWith('-1001234567890', '[WEB] Hello', {
+        message_thread_id: 200,
+      });
+    });
+
+    it('should take and release the lock around topic creation', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      bot.api.createForumTopic.mockResolvedValue({ message_thread_id: 200 });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(acquireLock).toHaveBeenCalledWith('topic:user-1');
+      expect(releaseLock).toHaveBeenCalledWith('topic:user-1', 'lock-token');
+    });
+
+    it('should create topic when the lock could not be taken', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      acquireLock.mockResolvedValue(null);
+      bot.api.createForumTopic.mockResolvedValue({ message_thread_id: 200 });
+      bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await webChatService.sendMessage('session-123', 'Hello');
+
+      expect(bot.api.createForumTopic).toHaveBeenCalled();
+      expect(releaseLock).not.toHaveBeenCalled();
+    });
+
+    it('should release the lock when topic creation fails', async () => {
+      const userWithoutTopic = { ...mockUser, topicId: null };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
+      bot.api.createForumTopic.mockRejectedValue(new Error('Telegram down'));
+
+      await expect(webChatService.sendMessage('session-123', 'Hello')).rejects.toThrow(
+        'Telegram down'
+      );
+      expect(releaseLock).toHaveBeenCalledWith('topic:user-1', 'lock-token');
     });
   });
 
