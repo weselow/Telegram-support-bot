@@ -16,6 +16,9 @@ public/chat-widget/*.css
 .env.local
 .env.*.local
 
+# Доступы и секреты (репозиторий публичный — никогда не коммитить)
+connections.md
+
 # Logs
 logs/
 *.log
@@ -50,3 +53,7 @@ prisma/*.db-journal
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Beads orchestration
+.worktrees/
+.claude/.upgrades/

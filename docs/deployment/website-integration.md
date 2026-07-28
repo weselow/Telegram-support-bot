@@ -115,47 +115,13 @@ DADATA_API_KEY=your-api-key
 
 ## Инфраструктура
 
-### Docker Compose
+Боевая среда развёрнута в Coolify: приложение, PostgreSQL и Redis — отдельные ресурсы, HTTPS и домен обслуживает встроенный прокси. Настройка ресурсов, переменные окружения и порядок выкатки описаны в [README.md](README.md).
 
-```yaml
-services:
-  bot:
-    # ... существующие настройки
-    ports:
-      - "3000:3000"  # HTTP сервер для /ask-support
-    environment:
-      - HTTP_PORT=3000
-      - BOT_USERNAME=your_support_bot
-      - DADATA_API_KEY=${DADATA_API_KEY}
-
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-    depends_on:
-      - bot
-
-volumes:
-  caddy_data:
-```
-
-### Caddyfile
-
-```
-support.yoursite.com {
-    reverse_proxy bot:3000
-}
-```
-
-Caddy автоматически получит SSL сертификат от Let's Encrypt.
+Локально приложение поднимается через `docker-compose.yml` в корне репозитория, HTTP-сервер доступен на `127.0.0.1:3000`.
 
 ### Важно: Trust Proxy
 
-HTTP сервер настроен с `trustProxy: true`, поэтому корректно получает реальный IP клиента из `X-Forwarded-For` header, который добавляет Caddy/nginx.
+HTTP сервер настроен с `trustProxy: true`, поэтому корректно получает реальный IP клиента из заголовка `X-Forwarded-For`, который добавляет обратный прокси.
 
 ---
 
