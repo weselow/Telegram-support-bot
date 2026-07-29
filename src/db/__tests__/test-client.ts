@@ -20,6 +20,13 @@ export async function disconnectTestDatabase(): Promise<void> {
   await testPrisma.$disconnect();
 }
 
+/**
+ * Очищает тестовую базу целиком.
+ *
+ * Затрагивает все строки, а не только созданные вызывающим файлом, поэтому
+ * интеграционные файлы обязаны выполняться по очереди
+ * (`fileParallelism: false` в vitest.integration.config.ts).
+ */
 export async function cleanDatabase(): Promise<void> {
   // Delete in order respecting foreign keys
   await testPrisma.messageMap.deleteMany();
