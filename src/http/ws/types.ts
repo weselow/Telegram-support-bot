@@ -38,7 +38,7 @@ export interface ServerMessageData {
     voiceDuration?: number;
   };
   status: { status: string; assignedTo?: string };
-  channel_linked: { telegram: string; historyCopied: boolean };
+  channel_linked: { telegram: string };
   error: { code: string; message: string };
   ping: { timestamp: number };
 }

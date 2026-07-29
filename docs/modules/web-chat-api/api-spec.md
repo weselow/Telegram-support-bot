@@ -280,8 +280,7 @@ Telegram аккаунт успешно привязан.
 {
   "type": "channel_linked",
   "data": {
-    "telegram": "@ivan_petrov",
-    "historyCopied": true
+    "telegram": "@ivan_petrov"
   }
 }
 ```
