@@ -4,8 +4,8 @@ import { userRepository } from '../db/repositories/user.repository.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { webLinkTokenRepository } from '../db/repositories/web-link-token.repository.js';
 import { sendTicketCard, type SendTicketCardOptions } from './topic.service.js';
-import { cancelAllSlaTimers, startSlaTimers } from './sla.service.js';
-import { autoChangeStatus } from './status.service.js';
+import { startSlaTimers } from './sla.service.js';
+import { autoChangeStatus, reopenTicket } from './status.service.js';
 import { cancelAutocloseTimer } from './autoclose.service.js';
 import { acquireLock, releaseLock } from './lock.service.js';
 import { sendToUser } from '../http/ws/connection-manager.js';
@@ -189,29 +189,6 @@ async function ensureTopic(user: User, sessionId: string): Promise<number> {
       await releaseLock(lockKey, lockToken);
     }
   }
-}
-
-/**
- * Reopen a closed ticket before mirroring a new client message.
- * Mirrors the Telegram flow in bot/handlers/message.ts: notify support
- * and restart SLA timers from scratch.
- */
-async function reopenIfClosed(user: User, topicId: number): Promise<void> {
-  if (user.status !== 'CLOSED') {
-    return;
-  }
-
-  const result = await autoChangeStatus(bot.api, user, 'CLIENT_REOPEN');
-  if (!result.changed) {
-    return;
-  }
-
-  await bot.api.sendMessage(env.SUPPORT_GROUP_ID, messages.reopened, {
-    message_thread_id: topicId,
-  });
-
-  await cancelAllSlaTimers(user.id, topicId);
-  await startSlaTimers(user.id, topicId);
 }
 
 /**
@@ -437,7 +414,7 @@ export async function sendMessage(sessionId: string, text: string, replyTo?: str
   const user = await requireWebUser(sessionId);
 
   const topicId = await ensureTopic(user, sessionId);
-  await reopenIfClosed(user, topicId);
+  await reopenTicket(bot.api, user, topicId);
 
   const replyToMessageId = await findReplyTargetId(replyTo, user.id);
   const topicMessageId = await sendTextToTopic(topicId, text, replyToMessageId);
@@ -554,7 +531,7 @@ export async function sendFile(
   const user = await requireWebUser(sessionId);
 
   const topicId = await ensureTopic(user, sessionId);
-  await reopenIfClosed(user, topicId);
+  await reopenTicket(bot.api, user, topicId);
 
   const sent = await sendFileToTopic(topicId, fileBuffer, fileName, category);
   const message = await saveFileMessage(user.id, fileName, category, sent);

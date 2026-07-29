@@ -34,6 +34,7 @@ vi.mock('../../../services/sla.service.js', () => ({
 
 vi.mock('../../../services/status.service.js', () => ({
   autoChangeStatus: vi.fn(),
+  reopenTicket: vi.fn(),
 }));
 
 vi.mock('../../../services/autoclose.service.js', () => ({
@@ -87,8 +88,8 @@ describe('onboarding', () => {
   let mirrorUserMessage: Mock;
   let updateSourceUrl: Mock;
   let autoChangeStatus: Mock;
+  let reopenTicket: Mock;
   let startSlaTimers: Mock;
-  let cancelAllSlaTimers: Mock;
   let cancelAutocloseTimer: Mock;
   let mockCtx: MockContext;
 
@@ -131,15 +132,16 @@ describe('onboarding', () => {
 
     const statusService = await import('../../../services/status.service.js');
     autoChangeStatus = statusService.autoChangeStatus as Mock;
+    reopenTicket = statusService.reopenTicket as Mock;
 
     const slaService = await import('../../../services/sla.service.js');
     startSlaTimers = slaService.startSlaTimers as Mock;
-    cancelAllSlaTimers = slaService.cancelAllSlaTimers as Mock;
 
     const autocloseService = await import('../../../services/autoclose.service.js');
     cancelAutocloseTimer = autocloseService.cancelAutocloseTimer as Mock;
 
     autoChangeStatus.mockResolvedValue({ changed: true, oldStatus: 'CLOSED', newStatus: 'NEW' });
+    reopenTicket.mockResolvedValue(false);
 
     getOnboardingState.mockResolvedValue({ step: 'awaiting_question' });
     findUserByTgId.mockResolvedValue(null);
@@ -277,49 +279,34 @@ describe('onboarding', () => {
     it('should reopen a closed ticket through the status service', async () => {
       const eventRepo = await import('../../../db/repositories/event.repository.js');
       findUserByTgId.mockResolvedValue(closedUser);
+      reopenTicket.mockResolvedValue(true);
 
       await handleOnboarding(mockCtx as unknown as Context);
 
-      expect(autoChangeStatus).toHaveBeenCalledWith(mockCtx.api, closedUser, 'CLIENT_REOPEN');
+      expect(reopenTicket).toHaveBeenCalledWith(mockCtx.api, closedUser, 342);
       expect(eventRepo.eventRepository.create).not.toHaveBeenCalled();
       expect(mirrorUserMessage).toHaveBeenCalled();
     });
 
-    it('should notify the topic and restart SLA timers on reopen', async () => {
+    it('should reopen the ticket before mirroring the question', async () => {
       findUserByTgId.mockResolvedValue(closedUser);
+      reopenTicket.mockResolvedValue(true);
 
       await handleOnboarding(mockCtx as unknown as Context);
 
-      expect(mockCtx.api.sendMessage).toHaveBeenCalledWith(SUPPORT_GROUP_ID, messages.reopened, {
-        message_thread_id: 342,
-      });
-      expect(cancelAllSlaTimers).toHaveBeenCalledWith('user-5', 342);
-      expect(startSlaTimers).toHaveBeenCalledWith('user-5', 342);
-    });
-
-    it('should notify the topic about the reopen before the question', async () => {
-      findUserByTgId.mockResolvedValue(closedUser);
-
-      await handleOnboarding(mockCtx as unknown as Context);
-
-      expect(mockCtx.api.sendMessage).toHaveBeenCalled();
-      const noticeOrder = mockCtx.api.sendMessage?.mock.invocationCallOrder[0] ?? 0;
+      const reopenOrder = reopenTicket.mock.invocationCallOrder[0] ?? 0;
       const mirrorOrder = mirrorUserMessage.mock.invocationCallOrder[0] ?? 0;
-      expect(noticeOrder).toBeLessThan(mirrorOrder);
+      expect(reopenOrder).toBeLessThan(mirrorOrder);
     });
 
-    it('should not notify the topic when the status did not change', async () => {
+    it('should not touch the autoclose timer of a reopened ticket', async () => {
       findUserByTgId.mockResolvedValue(closedUser);
-      autoChangeStatus.mockResolvedValue({
-        changed: false,
-        oldStatus: 'CLOSED',
-        newStatus: 'CLOSED',
-      });
+      reopenTicket.mockResolvedValue(true);
 
       await handleOnboarding(mockCtx as unknown as Context);
 
-      expect(mockCtx.api.sendMessage).not.toHaveBeenCalled();
-      expect(startSlaTimers).not.toHaveBeenCalled();
+      expect(cancelAutocloseTimer).not.toHaveBeenCalled();
+      expect(autoChangeStatus).not.toHaveBeenCalled();
     });
 
     it('should cancel the autoclose timer when the client was awaited', async () => {
@@ -359,9 +346,9 @@ describe('onboarding', () => {
       expect(mirrorUserMessage).toHaveBeenCalled();
     });
 
-    it('should continue the onboarding when the reopen notification fails', async () => {
+    it('should continue the onboarding when the reopen fails', async () => {
       findUserByTgId.mockResolvedValue(closedUser);
-      mockCtx.api.sendMessage?.mockRejectedValue(new Error('Topic deleted'));
+      reopenTicket.mockRejectedValue(new Error('Topic deleted'));
 
       await handleOnboarding(mockCtx as unknown as Context);
 

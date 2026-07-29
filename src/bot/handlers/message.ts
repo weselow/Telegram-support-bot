@@ -2,8 +2,7 @@ import type { Context } from 'grammy';
 import { GrammyError } from 'grammy';
 import { findUserByTgId } from '../../services/ticket.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
-import { autoChangeStatus } from '../../services/status.service.js';
-import { cancelAllSlaTimers, startSlaTimers } from '../../services/sla.service.js';
+import { autoChangeStatus, reopenTicket } from '../../services/status.service.js';
 import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
 import { checkRateLimit } from '../../services/rate-limit.service.js';
 import { handleOnboarding } from './onboarding.js';
@@ -59,24 +58,13 @@ export async function privateMessageHandler(ctx: Context): Promise<void> {
   try {
     const supportGroupId = Number(env.SUPPORT_GROUP_ID);
 
-    // Handle reopening closed tickets
-    if (user.status === 'CLOSED') {
-      const result = await autoChangeStatus(ctx.api, user, 'CLIENT_REOPEN');
-      if (result.changed) {
-        // Notify support about reopening
-        await ctx.api.sendMessage(supportGroupId, messages.reopened, {
-          message_thread_id: user.topicId,
-        });
-
-        // Cancel any stale timers and start fresh SLA timers
-        await cancelAllSlaTimers(user.id, user.topicId);
-        await startSlaTimers(user.id, user.topicId);
-
-        // Ask for phone confirmation
-        await ctx.reply(buildPhoneConfirmMessage(user.phone), {
-          reply_markup: buildPhoneConfirmKeyboard(user.id, !!user.phone),
-        });
-      }
+    // Порядок переоткрытия общий для всех каналов, он живёт в status.service
+    const reopened = await reopenTicket(ctx.api, user, user.topicId);
+    if (reopened) {
+      // Ask for phone confirmation
+      await ctx.reply(buildPhoneConfirmMessage(user.phone), {
+        reply_markup: buildPhoneConfirmKeyboard(user.id, !!user.phone),
+      });
     }
 
     // Add [TG] prefix if user has both web and Telegram channels linked
