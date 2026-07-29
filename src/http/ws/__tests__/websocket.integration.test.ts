@@ -713,4 +713,49 @@ describe('WebSocket Integration', () => {
       }
     });
   });
+
+  describe('Reconnect With Same Session', () => {
+    it('should keep new connection in registry after old socket closes', async () => {
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440024',
+        status: 'NEW',
+        topicId: 124,
+      });
+
+      try {
+        const first = await createClientWithConnected(testUser.webSessionId!);
+        const firstClosed = waitForClose(first.ws);
+
+        // Второе подключение с тем же идентификатором сессии — сервер закрывает первое
+        const second = await createClientWithConnected(testUser.webSessionId!);
+        await firstClosed;
+
+        // Клиент узнаёт о закрытии раньше, чем сервер успевает выполнить свой
+        // обработчик close. Ждём, чтобы проверять реестр уже после него.
+        await new Promise((r) => setTimeout(r, 300));
+
+        const sent = sendToUser(testUser.id, 'message', {
+          id: 'reconnect-msg-1',
+          text: 'Hello after reconnect',
+          from: 'support' as const,
+          channel: 'telegram' as const,
+          timestamp: new Date().toISOString(),
+        });
+
+        expect(sent).toBe(true);
+
+        const message = await waitForMessage(second.ws);
+        expect(message.type).toBe('message');
+        expect(message.data).toMatchObject({
+          id: 'reconnect-msg-1',
+          text: 'Hello after reconnect',
+        });
+
+        await closeClient(second.ws);
+      } finally {
+        await prisma.messageMap.deleteMany({ where: { userId: testUser.id } });
+        await prisma.user.delete({ where: { id: testUser.id } }).catch(() => {});
+      }
+    });
+  });
 });
