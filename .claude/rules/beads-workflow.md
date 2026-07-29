@@ -104,4 +104,5 @@ CLI: `bd prime` for overview, `bd <cmd> --help` for details
 - Implementing without BEAD_ID
 - Merging your own branch (user merges via PR)
 - Editing files outside your worktree
+- Running `docker compose up` from inside a worktree — volume paths in `docker-compose.yml` are relative, so the containers bind to `.worktrees/bd-<id>/.volumes/...`. When the worktree is removed after the merge, postgres and redis stop starting and local integration tests break. Run compose from the main repo root. Details: `docs/deployment/local-development.md`
 - Raw `git worktree add` / `git worktree remove` — MUST use `bd worktree create` / `bd worktree remove`. Raw git worktree creates shadow `.beads/` copies, spawns orphan dolt-server processes, blocks file deletion, and loses bead data. See: docs on `.beads/redirect` mechanism.
