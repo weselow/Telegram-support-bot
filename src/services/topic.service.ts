@@ -40,21 +40,31 @@ export interface TicketCardData {
   createdAt: Date;
 }
 
+/**
+ * The card is sent as HTML, so everything coming from outside — the visitor
+ * name, the page address, the city — has to be escaped. Markdown would be worse
+ * here: a page address like /catalog/dell_poweredge_r740 breaks its parser and
+ * Telegram rejects the whole message.
+ */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function formatCardText(data: TicketCardData): string {
-  const usernameLine = data.username ? `\n👤 Username: @${data.username}` : '';
-  const phoneLine = data.phone ? `\n📱 Телефон: ${data.phone}` : '';
-  const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${data.sourceUrl}` : '';
+  const usernameLine = data.username ? `\n👤 Username: @${escapeHtml(data.username)}` : '';
+  const phoneLine = data.phone ? `\n📱 Телефон: ${escapeHtml(data.phone)}` : '';
+  const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${escapeHtml(data.sourceUrl)}` : '';
 
   // Combine IP and city: "🌐 IP: 95.67.12.34 (Саратов)" or just IP if no city
   let ipLine = '';
   if (data.sourceIp) {
-    const cityPart = data.sourceCity ? ` (${data.sourceCity})` : '';
-    ipLine = `\n🌐 IP: \`${data.sourceIp}\`${cityPart}`;
+    const cityPart = data.sourceCity ? ` (${escapeHtml(data.sourceCity)})` : '';
+    ipLine = `\n🌐 IP: <code>${escapeHtml(data.sourceIp)}</code>${cityPart}`;
   }
 
   return (
-    `📋 *Тикет*\n\n` +
-    `👤 Пользователь: ${data.firstName}` +
+    `📋 <b>Тикет</b>\n\n` +
+    `👤 Пользователь: ${escapeHtml(data.firstName)}` +
     usernameLine +
     phoneLine +
     sourceLine +
@@ -112,7 +122,7 @@ export async function sendTicketCard(
 
   const message = await api.sendMessage(env.SUPPORT_GROUP_ID, cardText, {
     message_thread_id: topicId,
-    parse_mode: 'Markdown',
+    parse_mode: 'HTML',
     reply_markup: keyboard,
   });
 
@@ -135,7 +145,7 @@ export async function updateTicketCard(
   const keyboard = buildStatusKeyboard(userId, cardData.status);
 
   await api.editMessageText(env.SUPPORT_GROUP_ID, messageId, cardText, {
-    parse_mode: 'Markdown',
+    parse_mode: 'HTML',
     reply_markup: keyboard,
   });
 }

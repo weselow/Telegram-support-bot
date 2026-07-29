@@ -79,7 +79,7 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should send empty JSON body for POST', async () => {
+    it('should send the current page url in the body', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({})
@@ -87,8 +87,22 @@ describe('HttpClient', () => {
 
       await client.init()
 
+      const body = mockFetch.mock.calls[0]?.[1]?.body as string
+      expect(JSON.parse(body)).toEqual({ pageUrl: window.location.href })
+    })
+  })
+
+  describe('close', () => {
+    it('should send empty JSON body for POST', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({})
+      })
+
+      await client.close()
+
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.any(String),
+        'https://api.example.com/api/chat/close',
         expect.objectContaining({
           body: '{}'
         })

@@ -114,10 +114,15 @@ export class HttpClient {
 
   /**
    * Initialize chat session (uses rawRequest to avoid retry loop)
+   *
+   * The page address is sent explicitly: for a request to another origin the
+   * browser cuts the Referer header down to the origin, so the server would
+   * only see the domain instead of the page the visitor is writing from.
    */
   async init(): Promise<InitResponse> {
     return this.rawRequest<InitResponse>('/api/chat/init', {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ pageUrl: window.location.href })
     })
   }
 

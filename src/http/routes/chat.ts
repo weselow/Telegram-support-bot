@@ -22,12 +22,14 @@ import {
   SESSION_COOKIE_MAX_AGE,
   parseSessionIdFromCookie,
 } from '../utils/session.js';
+import { resolvePageUrl } from '../utils/page-url.js';
 
 const MESSAGE_MAX_LENGTH = 4000;
 const FILE_MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
 interface InitBody {
   fingerprint?: string;
+  pageUrl?: string;
 }
 
 interface MessageBody {
@@ -152,7 +154,8 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // POST /api/chat/init - Initialize session
-  fastify.post('/api/chat/init', async (request: FastifyRequest<{ Body: InitBody }>, reply) => {
+  // Body is nullable on purpose: a request may carry a JSON literal null
+  fastify.post('/api/chat/init', async (request: FastifyRequest<{ Body: InitBody | null }>, reply) => {
     if (!setCorsHeaders(request, reply)) {
       return sendCorsError(reply);
     }
@@ -181,14 +184,14 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     // Get GeoIP for source city
     const geoResult = await getLocationByIp(ip);
     const referer = request.headers.referer ?? request.headers.referrer ?? undefined;
+    const pageUrl = resolvePageUrl(
+      request.body?.pageUrl,
+      request.headers.origin,
+      referer as string | undefined
+    );
 
     try {
-      const result = await initSession(
-        sessionId,
-        referer as string | undefined,
-        geoResult.city ?? undefined,
-        ip
-      );
+      const result = await initSession(sessionId, pageUrl, geoResult.city ?? undefined, ip);
 
       if (isNewCookie) {
         setSessionCookie(reply, sessionId);
