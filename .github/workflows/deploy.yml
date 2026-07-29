@@ -100,6 +100,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            APP_COMMIT=${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha
@@ -124,6 +126,8 @@ jobs:
             "${{ secrets.COOLIFY_WEBHOOK }}&force=true"
 
       - name: Wait for the app to come back
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
 
@@ -132,18 +136,22 @@ jobs:
           # ответ уходящей версии.
           sleep 30
 
+          # Кода 200 мало: старая версия отвечает им же. Ждём, пока /health
+          # назовёт хеш коммита этой сборки — он приезжает в образ build-
+          # аргументом APP_COMMIT (см. Dockerfile).
           for attempt in $(seq 1 30); do
-            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            code=$(curl --silent --output /tmp/health.json --write-out '%{http_code}' \
               --max-time 10 "https://${{ vars.SUPPORT_DOMAIN }}/health" || true)
+            commit=$(jq -r '.commit // empty' /tmp/health.json 2>/dev/null || true)
 
-            if [ "$code" = "200" ]; then
-              echo "Health check OK after ${attempt} attempt(s)"
+            if [ "$commit" = "$EXPECTED_COMMIT" ]; then
+              echo "Health check OK after ${attempt} attempt(s): commit ${commit}"
               exit 0
             fi
 
-            echo "Attempt ${attempt}: /health returned ${code}, retry in 10s"
+            echo "Attempt ${attempt}: /health returned ${code}, commit ${commit:-none}, retry in 10s"
             sleep 10
           done
 
-          echo "Health check failed: /health did not answer 200 within 5 minutes"
+          echo "Health check failed: /health did not report commit ${EXPECTED_COMMIT} within 5 minutes"
           exit 1
