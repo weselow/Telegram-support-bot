@@ -32,10 +32,6 @@ export function removeConnection(sessionId: string): void {
   }
 }
 
-export function getConnection(sessionId: string): WebSocketConnection | undefined {
-  return connections.get(sessionId);
-}
-
 export function getConnectionByUserId(userId: string): WebSocketConnection | undefined {
   for (const conn of connections.values()) {
     if (conn.userId === userId) {
@@ -82,25 +78,6 @@ export function sendToUser<T extends ServerMessageType>(
     return false;
   }
   return sendToSession(conn.sessionId, type, data);
-}
-
-export function broadcast<T extends ServerMessageType>(type: T, data: ServerMessageData[T]): void {
-  const message: ServerMessage<T> = { type, data };
-  const payload = JSON.stringify(message);
-
-  for (const conn of connections.values()) {
-    if (conn.ws.readyState === 1) {
-      try {
-        conn.ws.send(payload);
-      } catch (error) {
-        logger.debug({ error, sessionId: conn.sessionId }, 'Failed to send broadcast message');
-      }
-    }
-  }
-}
-
-export function getConnectionCount(): number {
-  return connections.size;
 }
 
 export function getAllConnections(): WebSocketConnection[] {
