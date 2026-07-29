@@ -56,8 +56,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
       POSTGRES_DB: support_bot
+    # Начиная с 18-й версии официальный образ хранит данные в подкаталоге с
+    # номером версии (/var/lib/postgresql/18/docker) — так рядом уживаются две
+    # версии и работает переход через pg_upgrade. Подключать нужно весь каталог
+    # /var/lib/postgresql: со старым путём /var/lib/postgresql/data образ 18
+    # отказывается стартовать и уходит в бесконечный перезапуск.
     volumes:
-      - ./.volumes/postgres:/var/lib/postgresql/data
+      - ./.volumes/postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
