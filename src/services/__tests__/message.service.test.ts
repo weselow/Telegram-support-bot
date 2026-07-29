@@ -23,6 +23,11 @@ describe('message.service', () => {
     findByTopicMessageId: Mock;
   };
 
+  const createdRecord = {
+    id: 'map-1',
+    createdAt: new Date('2026-07-29T10:00:00.000Z'),
+  };
+
   const mockApi = {
     sendMessage: vi.fn(),
     sendPhoto: vi.fn(),
@@ -73,7 +78,36 @@ describe('message.service', () => {
         dmMessageId: 1,
         topicMessageId: 100,
         direction: 'USER_TO_SUPPORT',
+        channel: 'TELEGRAM',
+        text: 'Hello support',
+        mediaFileId: undefined,
+        mediaDuration: undefined,
       });
+    });
+
+    it('should save text without [TG] prefix when channel prefix is used', async () => {
+      const message: Partial<Message> = {
+        message_id: 1,
+        text: 'Hello support',
+      };
+      mockApi.sendMessage.mockResolvedValue({ message_id: 100 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorUserMessage(
+        mockApi as any,
+        message as Message,
+        'user-1',
+        50,
+        -1001234567890,
+        { channelPrefix: 'TG' }
+      );
+
+      expect(mockApi.sendMessage).toHaveBeenCalledWith(-1001234567890, '[TG] Hello support', {
+        message_thread_id: 50,
+      });
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'Hello support' })
+      );
     });
 
     it('should mirror photo message to topic', async () => {
@@ -102,6 +136,66 @@ describe('message.service', () => {
         message_thread_id: 50,
         caption: 'Check this',
       });
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'Check this', mediaFileId: 'large' })
+      );
+    });
+
+    it('should save image placeholder for photo without caption', async () => {
+      const message: Partial<Message> = {
+        message_id: 8,
+        photo: [
+          { file_id: 'small', file_unique_id: 's1', width: 100, height: 100 },
+          { file_id: 'large', file_unique_id: 'l1', width: 800, height: 600 },
+        ],
+      };
+      mockApi.sendPhoto.mockResolvedValue({ message_id: 106 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorUserMessage(mockApi as any, message as Message, 'user-1', 50, -1001234567890);
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channel: 'TELEGRAM',
+          text: '[Изображение]',
+          mediaFileId: 'large',
+          mediaDuration: undefined,
+        })
+      );
+    });
+
+    it('should save voice placeholder with file id and duration', async () => {
+      const message: Partial<Message> = {
+        message_id: 9,
+        voice: { file_id: 'voice-123', file_unique_id: 'v1', duration: 10 },
+      };
+      mockApi.sendVoice.mockResolvedValue({ message_id: 107 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorUserMessage(mockApi as any, message as Message, 'user-1', 50, -1001234567890);
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: '[Голосовое сообщение]',
+          mediaFileId: 'voice-123',
+          mediaDuration: 10,
+        })
+      );
+    });
+
+    it('should save document caption and file id', async () => {
+      const message: Partial<Message> = {
+        message_id: 10,
+        document: { file_id: 'doc-123', file_unique_id: 'd1' },
+      };
+      mockApi.sendDocument.mockResolvedValue({ message_id: 108 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorUserMessage(mockApi as any, message as Message, 'user-1', 50, -1001234567890);
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: '[Документ]', mediaFileId: 'doc-123' })
+      );
     });
 
     it('should mirror document message to topic', async () => {
@@ -233,7 +327,7 @@ describe('message.service', () => {
       };
       const sentMessage = { message_id: 1 };
       mockApi.sendMessage.mockResolvedValue(sentMessage);
-      messageRepository.create.mockResolvedValue({});
+      messageRepository.create.mockResolvedValue(createdRecord);
 
       const result = await mirrorSupportMessage(
         mockApi as any,
@@ -242,7 +336,7 @@ describe('message.service', () => {
         BigInt(123456)
       );
 
-      expect(result).toBe(1);
+      expect(result).toEqual(createdRecord);
       expect(mockApi.sendMessage).toHaveBeenCalledWith(123456, 'Hello user', {
         reply_markup: expect.objectContaining({
           inline_keyboard: [[expect.objectContaining({ text: '✅ Спасибо, вопрос решён' })]],
@@ -253,6 +347,10 @@ describe('message.service', () => {
         dmMessageId: 1,
         topicMessageId: 100,
         direction: 'SUPPORT_TO_USER',
+        channel: 'TELEGRAM',
+        text: 'Hello user',
+        mediaFileId: undefined,
+        mediaDuration: undefined,
       });
     });
 
@@ -264,7 +362,7 @@ describe('message.service', () => {
       };
       const sentMessage = { message_id: 2 };
       mockApi.sendPhoto.mockResolvedValue(sentMessage);
-      messageRepository.create.mockResolvedValue({});
+      messageRepository.create.mockResolvedValue(createdRecord);
 
       const result = await mirrorSupportMessage(
         mockApi as any,
@@ -273,11 +371,56 @@ describe('message.service', () => {
         BigInt(123456)
       );
 
-      expect(result).toBe(2);
+      expect(result).toEqual(createdRecord);
       expect(mockApi.sendPhoto).toHaveBeenCalledWith(123456, 'photo-123', {
         caption: 'See this',
         reply_markup: expect.any(Object),
       });
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'See this', mediaFileId: 'photo-123' })
+      );
+    });
+
+    it('should save image placeholder for photo without caption', async () => {
+      const message: Partial<Message> = {
+        message_id: 103,
+        photo: [
+          { file_id: 'photo-small', file_unique_id: 'p1', width: 100, height: 100 },
+          { file_id: 'photo-large', file_unique_id: 'p2', width: 800, height: 600 },
+        ],
+      };
+      mockApi.sendPhoto.mockResolvedValue({ message_id: 3 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorSupportMessage(mockApi as any, message as Message, 'user-1', BigInt(123456));
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channel: 'TELEGRAM',
+          text: '[Изображение]',
+          mediaFileId: 'photo-large',
+          mediaDuration: undefined,
+        })
+      );
+    });
+
+    it('should save voice placeholder with file id and duration', async () => {
+      const message: Partial<Message> = {
+        message_id: 104,
+        voice: { file_id: 'voice-777', file_unique_id: 'v1', duration: 7 },
+      };
+      mockApi.sendVoice.mockResolvedValue({ message_id: 4 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorSupportMessage(mockApi as any, message as Message, 'user-1', BigInt(123456));
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: '[Голосовое сообщение]',
+          mediaFileId: 'voice-777',
+          mediaDuration: 7,
+        })
+      );
     });
 
     it('should return null for unsupported message type', async () => {
@@ -294,6 +437,7 @@ describe('message.service', () => {
       );
 
       expect(result).toBeNull();
+      expect(messageRepository.create).not.toHaveBeenCalled();
     });
   });
 

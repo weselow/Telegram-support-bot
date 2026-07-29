@@ -26,6 +26,18 @@ vi.mock('../../../config/sentry.js', () => ({
   addBreadcrumb: vi.fn(),
 }));
 
+vi.mock('../../../db/repositories/message.repository.js', () => ({
+  messageRepository: {
+    createWebMessage: vi.fn(),
+  },
+}));
+
+vi.mock('../../../http/ws/connection-manager.js', () => ({
+  sendToUser: vi.fn(),
+}));
+
+type MockPhotoSize = { file_id: string; file_unique_id: string; width: number; height: number };
+
 type MockContext = {
   from?: {
     id: number;
@@ -36,6 +48,8 @@ type MockContext = {
     message_thread_id?: number;
     text?: string;
     caption?: string;
+    photo?: MockPhotoSize[];
+    voice?: { file_id: string; file_unique_id: string; duration: number };
   };
   api: {
     sendMessage: Mock;
@@ -49,6 +63,18 @@ describe('supportMessageHandler', () => {
   let mirrorSupportMessage: Mock;
   let autoChangeStatus: Mock;
   let cancelAllSlaTimers: Mock;
+  let createWebMessage: Mock;
+  let sendToUser: Mock;
+
+  const mirroredRecord = {
+    id: 'map-1',
+    createdAt: new Date('2026-07-29T10:00:00.000Z'),
+  };
+
+  const webRecord = {
+    id: 'web-1',
+    createdAt: new Date('2026-07-29T11:00:00.000Z'),
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -57,11 +83,17 @@ describe('supportMessageHandler', () => {
     const messageService = await import('../../../services/message.service.js');
     const statusService = await import('../../../services/status.service.js');
     const slaService = await import('../../../services/sla.service.js');
+    const messageRepo = await import('../../../db/repositories/message.repository.js');
+    const connectionManager = await import('../../../http/ws/connection-manager.js');
 
     findUserByTopicId = ticketService.findUserByTopicId as Mock;
     mirrorSupportMessage = messageService.mirrorSupportMessage as Mock;
     autoChangeStatus = statusService.autoChangeStatus as Mock;
     cancelAllSlaTimers = slaService.cancelAllSlaTimers as Mock;
+    createWebMessage = messageRepo.messageRepository.createWebMessage as Mock;
+    sendToUser = connectionManager.sendToUser as Mock;
+
+    createWebMessage.mockResolvedValue(webRecord);
 
     mockCtx = {
       from: {
@@ -189,7 +221,7 @@ describe('supportMessageHandler', () => {
 
     beforeEach(() => {
       findUserByTopicId.mockResolvedValue(mockUser);
-      mirrorSupportMessage.mockResolvedValue(1);
+      mirrorSupportMessage.mockResolvedValue(mirroredRecord);
     });
 
     it('should mirror message to user DM', async () => {
@@ -201,6 +233,13 @@ describe('supportMessageHandler', () => {
         'user-1',
         BigInt(999)
       );
+    });
+
+    it('should not touch web chat for a Telegram-only user', async () => {
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).not.toHaveBeenCalled();
+      expect(sendToUser).not.toHaveBeenCalled();
     });
 
     it('should cancel SLA timers after reply', async () => {
@@ -216,6 +255,129 @@ describe('supportMessageHandler', () => {
         mockCtx.api,
         mockUser,
         'SUPPORT_REPLY'
+      );
+    });
+  });
+
+  describe('delivery to web chat', () => {
+    const webOnlyUser = {
+      id: 'user-1',
+      tgUserId: null,
+      webSessionId: 'session-1',
+      topicId: 100,
+    };
+
+    const linkedUser = {
+      id: 'user-1',
+      tgUserId: BigInt(999),
+      webSessionId: 'session-1',
+      topicId: 100,
+    };
+
+    it('should save and push the message for a web-only user', async () => {
+      findUserByTopicId.mockResolvedValue(webOnlyUser);
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(mirrorSupportMessage).not.toHaveBeenCalled();
+      expect(createWebMessage).toHaveBeenCalledWith({
+        userId: 'user-1',
+        topicMessageId: 1,
+        direction: 'SUPPORT_TO_USER',
+        channel: 'TELEGRAM',
+        text: 'Hello user',
+        mediaFileId: undefined,
+        mediaDuration: undefined,
+      });
+      expect(sendToUser).toHaveBeenCalledWith('user-1', 'message', {
+        id: 'web-1',
+        text: 'Hello user',
+        from: 'support',
+        channel: 'telegram',
+        timestamp: webRecord.createdAt.toISOString(),
+      });
+    });
+
+    it('should store exactly one record for a user with both channels', async () => {
+      findUserByTopicId.mockResolvedValue(linkedUser);
+      mirrorSupportMessage.mockResolvedValue(mirroredRecord);
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(mirrorSupportMessage).toHaveBeenCalledTimes(1);
+      expect(createWebMessage).not.toHaveBeenCalled();
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({
+          id: mirroredRecord.id,
+          text: 'Hello user',
+          timestamp: mirroredRecord.createdAt.toISOString(),
+        })
+      );
+      expect(mockCtx.reply).not.toHaveBeenCalled();
+    });
+
+    it('should push photo without caption as media for a linked user', async () => {
+      findUserByTopicId.mockResolvedValue(linkedUser);
+      mirrorSupportMessage.mockResolvedValue(mirroredRecord);
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        photo: [
+          { file_id: 'small', file_unique_id: 's1', width: 100, height: 100 },
+          { file_id: 'large', file_unique_id: 'l1', width: 800, height: 600 },
+        ],
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).not.toHaveBeenCalled();
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({
+          id: mirroredRecord.id,
+          imageUrl: '/api/media/large',
+        })
+      );
+    });
+
+    it('should save voice placeholder for a web-only user', async () => {
+      findUserByTopicId.mockResolvedValue(webOnlyUser);
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        voice: { file_id: 'voice-1', file_unique_id: 'v1', duration: 12 },
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: '[Голосовое сообщение]',
+          mediaFileId: 'voice-1',
+          mediaDuration: 12,
+        })
+      );
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({ voiceUrl: '/api/media/voice-1', voiceDuration: 12 })
+      );
+    });
+
+    it('should fall back to a web record when mirroring returned null', async () => {
+      findUserByTopicId.mockResolvedValue(linkedUser);
+      mirrorSupportMessage.mockResolvedValue(null);
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).toHaveBeenCalledTimes(1);
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({ id: 'web-1' })
       );
     });
   });

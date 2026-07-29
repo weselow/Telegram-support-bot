@@ -138,11 +138,17 @@
                │ 5. Запись в messages_map:
                │    userId, dmMessageId, topicMessageId,
                │    direction: USER_TO_SUPPORT,
-               │    channel: TELEGRAM (значение по умолчанию)
+               │    channel: TELEGRAM,
+               │    text + mediaFileId/mediaDuration для вложений
 ```
 
-`messageRepository.create()` сохраняет только связку идентификаторов сообщений —
-текст в эту запись не пишется, он остаётся в самом Telegram.
+`messageRepository.create()` сохраняет и связку идентификаторов, и содержимое:
+текст сообщения либо подпись вложения. Если ни того ни другого нет, пишется
+короткая заглушка по типу вложения (`[Изображение]`, `[Голосовое сообщение]`,
+`[Документ]` и так далее), а `mediaFileId` хранит идентификатор файла Telegram —
+по нему веб-чат открывает вложение через `/api/media/{file_id}`.
+Длительность в `mediaDuration` заполняется только для голосовых: именно по этому
+полю история отличает голосовое от картинки.
 
 ### Формат сообщения в теме
 
@@ -153,6 +159,8 @@
 Без префикса. Если у пользователя связаны оба канала (`user.webSessionId` заполнен),
 `privateMessageHandler` передаёт `mirrorUserMessage` признак `channelPrefix: 'TG'`,
 и текстовое сообщение уходит в тему как `[TG] Привет, нужна помощь с заказом`.
+В историю при этом попадает исходный текст, без приставки: в своём чате
+пользователь должен видеть то, что написал.
 
 ---
 
@@ -183,12 +191,12 @@
  user.tgUserId есть?      user.webSessionId есть?
        ▼                        ▼
 ┌───────────────────┐   ┌────────────────────────┐
-│ services/         │   │ messageRepository      │
-│ message.service   │   │ .createWebMessage()    │
-│ mirrorSupport     │   │           ↓            │
-│ Message()         │   │ http/ws/               │
-│                   │   │ connection-manager     │
-│                   │   │ sendToUser()           │
+│ services/         │   │ deliverToWebChat()     │
+│ message.service   │   │ берёт запись из        │
+│ mirrorSupport     │   │ mirrorSupportMessage,  │
+│ Message()         │   │ иначе createWebMessage │
+│ → запись в        │   │           ↓            │
+│   messages_map    │   │ http/ws/ sendToUser()  │
 └─────────┬─────────┘   └───────────┬────────────┘
           ▼                         ▼
 ┌───────────────────┐   ┌────────────────────────┐
@@ -207,28 +215,13 @@
 
 ```typescript
 // src/bot/handlers/support.ts, supportMessageHandler
+let mirrored: MessageMap | null = null;
 if (user.tgUserId) {
-  await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+  mirrored = await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
 }
 
 if (user.webSessionId) {
-  const savedMessage = await messageRepository.createWebMessage({
-    userId: user.id,
-    topicMessageId: ctx.message.message_id,
-    direction: 'SUPPORT_TO_USER',
-    channel: 'TELEGRAM',
-    text: msgText || placeholderText,
-    mediaFileId,
-    mediaDuration: voiceDuration,
-  });
-
-  sendToUser(user.id, 'message', {
-    id: savedMessage.id,
-    text: msgText,
-    from: 'support',
-    channel: 'telegram',
-    timestamp: savedMessage.createdAt.toISOString(),
-  });
+  await deliverToWebChat(user.id, ctx.message, mirrored);
 }
 ```
 
@@ -240,9 +233,13 @@ if (user.webSessionId) {
   (см. раздел 6);
 - вложения превращаются в ссылки на собственный прокси `/api/media/{file_id}` —
   токен бота наружу не отдаётся;
-- для пользователя со связанными каналами один ответ поддержки даёт **две** записи
-  в `messages_map`: связку идентификаторов из `mirrorSupportMessage` (без текста) и
-  запись с текстом из `createWebMessage`.
+- один ответ поддержки даёт **ровно одну** запись в `messages_map`. Если у
+  пользователя есть Telegram, запись заводит `mirrorSupportMessage`, и
+  `deliverToWebChat` берёт готовую — вторую заводить нельзя: на пару
+  (`user_id`, `topic_message_id`) стоит уникальный указатель, и база отвергла бы
+  вставку. Своя запись через `createWebMessage` создаётся только когда
+  зеркалирования не было: у пользователя нет Telegram либо тип сообщения не
+  поддержан и `mirrorSupportMessage` вернул `null`.
 
 ---
 
@@ -374,8 +371,9 @@ if (user.webSessionId) {
 │ bot/handlers/support.ts    │
 │ supportMessageHandler()    │
 └──────────────┬─────────────┘
-               │ 1. messageRepository.createWebMessage() —
-               │    сообщение попадает в messages_map всегда
+               │ 1. deliverToWebChat() — сообщение попадает
+               │    в messages_map всегда (своей записью
+               │    или записью зеркалирования)
                │ 2. sendToUser(...)
                │
                ├── соединение есть ──► отдаётся сразу, вернёт true
