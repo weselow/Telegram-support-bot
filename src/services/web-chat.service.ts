@@ -355,7 +355,7 @@ export async function initSession(
   sourceIp?: string
 ): Promise<InitSessionResult> {
   let user = await userRepository.findByWebSessionId(sessionId);
-  let isNewSession = false;
+  const isNewSession = user === null;
 
   if (!user) {
     user = await userRepository.createWebUser({
@@ -364,17 +364,15 @@ export async function initSession(
       sourceCity,
       sourceIp,
     });
-    isNewSession = true;
     logger.info({ userId: user.id, sessionId }, 'Created new web chat user');
   }
 
   const history = await messageRepository.getHistory(user.id, { limit: 1 });
-  const hasHistory = history.length > 0;
 
   return {
     sessionId,
     isNewSession,
-    hasHistory,
+    hasHistory: history.length > 0,
     telegramLinked: user.tgUserId !== null,
     status: user.status,
   };
@@ -399,20 +397,16 @@ export async function getHistory(
   const hasMore = history.length > limit;
   const resultMessages = hasMore ? history.slice(0, -1) : history;
 
-  // Reverse if fetching new messages (after) to get chronological order
+  // The repository sorts ascending for `after`, descending otherwise.
+  // Reverse it so both branches end up newest first.
   if (options.after) {
     resultMessages.reverse();
   }
 
-  // After reverse, first element is oldest; without reverse, last element is oldest
-  const oldestId = resultMessages.length > 0
-    ? (options.after ? resultMessages[0]?.id : resultMessages[resultMessages.length - 1]?.id)
-    : undefined;
-
   return {
     messages: resultMessages.map(mapMessageToChat),
     hasMore,
-    oldestId,
+    oldestId: resultMessages[resultMessages.length - 1]?.id,
   };
 }
 

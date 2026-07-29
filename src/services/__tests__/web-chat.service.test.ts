@@ -269,6 +269,42 @@ describe('web-chat.service', () => {
         expect.objectContaining({ limit: 101 }) // 100 + 1 for hasMore check
       );
     });
+
+    it('should return earliest message id as oldestId without after', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, id: 'msg-3', createdAt: new Date('2025-01-03T00:00:00Z') },
+        { ...mockMessage, id: 'msg-2', createdAt: new Date('2025-01-02T00:00:00Z') },
+        { ...mockMessage, id: 'msg-1', createdAt: new Date('2025-01-01T00:00:00Z') },
+      ]);
+
+      const result = await getHistory('session-123', { limit: 50 });
+
+      expect(result.oldestId).toBe('msg-1');
+    });
+
+    it('should return earliest message id as oldestId when fetching after', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, id: 'msg-1', createdAt: new Date('2025-01-01T00:00:00Z') },
+        { ...mockMessage, id: 'msg-2', createdAt: new Date('2025-01-02T00:00:00Z') },
+        { ...mockMessage, id: 'msg-3', createdAt: new Date('2025-01-03T00:00:00Z') },
+      ]);
+
+      const result = await getHistory('session-123', { limit: 50, after: 'msg-0' });
+
+      expect(result.messages.map((m) => m.id)).toEqual(['msg-3', 'msg-2', 'msg-1']);
+      expect(result.oldestId).toBe('msg-1');
+    });
+
+    it('should return undefined oldestId when there are no messages', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([]);
+
+      const result = await getHistory('session-123', { limit: 50 });
+
+      expect(result.oldestId).toBeUndefined();
+    });
   });
 
   describe('getStatus', () => {
