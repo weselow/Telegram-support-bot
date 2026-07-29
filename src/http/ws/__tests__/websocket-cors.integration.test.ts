@@ -1,36 +1,36 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 import WebSocket from 'ws';
+import { getTestDatabaseUrl } from '../../../db/__tests__/test-database-url.js';
 
 // Create shared test prisma instance
 const { testPrisma: prisma } = await vi.hoisted(async () => {
   const { PrismaPg } = await import('@prisma/adapter-pg');
   const { PrismaClient } = await import('../../../generated/prisma/client.js');
-
-  const TEST_DATABASE_URL =
-    process.env.DATABASE_URL_TEST ||
-    'postgresql://postgres:postgres@localhost:5433/support_bot_test';
+  const { getTestDatabaseUrl } = await import('../../../db/__tests__/test-database-url.js');
 
   const adapter = new PrismaPg({
-    connectionString: TEST_DATABASE_URL,
+    connectionString: getTestDatabaseUrl(),
   });
 
   return { testPrisma: new PrismaClient({ adapter }) };
 });
 
 // Mock the config/env module with CORS enabled
-vi.mock('../../../config/env.js', () => ({
-  env: {
-    SUPPORT_DOMAIN: 'chat.dellshop.ru',
-    SUPPORT_GROUP_ID: '-1001234567890',
-    BOT_USERNAME: 'test_bot',
-    NODE_ENV: 'production',
-    DATABASE_URL:
-      process.env.DATABASE_URL_TEST ||
-      'postgresql://postgres:postgres@localhost:5433/support_bot_test',
-    REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6380',
-  },
-}));
+vi.mock('../../../config/env.js', async () => {
+  const { getTestDatabaseUrl } = await import('../../../db/__tests__/test-database-url.js');
+
+  return {
+    env: {
+      SUPPORT_DOMAIN: 'chat.dellshop.ru',
+      SUPPORT_GROUP_ID: '-1001234567890',
+      BOT_USERNAME: 'test_bot',
+      NODE_ENV: 'production',
+      DATABASE_URL: getTestDatabaseUrl(),
+      REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6380',
+    },
+  };
+});
 
 // Mock db client to use test prisma
 vi.mock('../../../db/client.js', () => ({
@@ -267,9 +267,7 @@ describe('WebSocket CORS in Development', () => {
         SUPPORT_GROUP_ID: '-1001234567890',
         BOT_USERNAME: 'test_bot',
         NODE_ENV: 'development',
-        DATABASE_URL:
-          process.env.DATABASE_URL_TEST ||
-          'postgresql://postgres:postgres@localhost:5433/support_bot_test',
+        DATABASE_URL: getTestDatabaseUrl(),
         REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6380',
       },
     }));

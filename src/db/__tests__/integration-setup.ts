@@ -2,11 +2,10 @@
  * Integration test setup - runs before each test file
  * Sets environment variables so production modules use test database
  */
+import { getTestDatabaseUrl } from './test-database-url.js';
 
 // Set DATABASE_URL to test database BEFORE any modules are loaded
-process.env.DATABASE_URL =
-  process.env.DATABASE_URL_TEST ||
-  'postgresql://postgres:postgres@localhost:5433/support_bot_test';
+process.env.DATABASE_URL = getTestDatabaseUrl();
 
 // Set other required env variables for tests
 process.env.BOT_TOKEN = 'test-token';
