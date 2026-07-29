@@ -116,6 +116,7 @@ export const MessageMapScalarFieldEnum = {
   channel: 'channel',
   text: 'text',
   mediaFileId: 'mediaFileId',
+  mediaType: 'mediaType',
   mediaDuration: 'mediaDuration',
   createdAt: 'createdAt'
 } as const

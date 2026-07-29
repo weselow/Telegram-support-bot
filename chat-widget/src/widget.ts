@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.9'
+export const WIDGET_VERSION = '0.1.10'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -749,7 +749,11 @@ export class ChatWidget {
 
   private resolveMediaUrls(message: Message): Message {
     // If URLs are already absolute, return as-is
-    if (!message.imageUrl?.startsWith('/') && !message.voiceUrl?.startsWith('/')) {
+    if (
+      !message.imageUrl?.startsWith('/') &&
+      !message.voiceUrl?.startsWith('/') &&
+      !message.fileUrl?.startsWith('/')
+    ) {
       return message
     }
 
@@ -760,6 +764,7 @@ export class ChatWidget {
       ...message,
       ...(message.imageUrl?.startsWith('/') && { imageUrl: baseUrl + message.imageUrl }),
       ...(message.voiceUrl?.startsWith('/') && { voiceUrl: baseUrl + message.voiceUrl }),
+      ...(message.fileUrl?.startsWith('/') && { fileUrl: baseUrl + message.fileUrl }),
     }
   }
 

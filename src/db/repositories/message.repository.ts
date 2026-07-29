@@ -1,4 +1,9 @@
-import type { MessageMap, MessageDirection, MessageChannel } from '../../generated/prisma/client.js';
+import type {
+  MessageMap,
+  MessageDirection,
+  MessageChannel,
+  MediaType,
+} from '../../generated/prisma/client.js';
 import { prisma } from '../client.js';
 
 export interface CreateMessageMapData {
@@ -9,6 +14,7 @@ export interface CreateMessageMapData {
   channel: MessageChannel;
   text: string;
   mediaFileId?: string | undefined;
+  mediaType?: MediaType | undefined;
   mediaDuration?: number | undefined;
 }
 
@@ -19,6 +25,7 @@ export interface CreateWebMessageData {
   channel: MessageChannel;
   text: string;
   mediaFileId?: string | undefined;
+  mediaType?: MediaType | undefined;
   mediaDuration?: number | undefined;
 }
 
@@ -39,6 +46,7 @@ export const messageRepository = {
         channel: data.channel,
         text: data.text,
         mediaFileId: data.mediaFileId ?? null,
+        mediaType: data.mediaType ?? null,
         mediaDuration: data.mediaDuration ?? null,
       },
     });
@@ -76,6 +84,7 @@ export const messageRepository = {
         channel: data.channel,
         text: data.text,
         mediaFileId: data.mediaFileId ?? null,
+        mediaType: data.mediaType ?? null,
         mediaDuration: data.mediaDuration ?? null,
       },
     });

@@ -4,6 +4,7 @@ import type { Message } from 'grammy/types';
 import type { MessageMap } from '../generated/prisma/client.js';
 import { messageRepository } from '../db/repositories/message.repository.js';
 import { logger } from '../utils/logger.js';
+import { extractStoredContent } from '../utils/media.js';
 
 interface TopicSendOptions {
   message_thread_id: number;
@@ -216,68 +217,6 @@ const dmSenders: DmMessageSender[] = [
   sendLocationToDm,
 ];
 
-/**
- * Вложение сообщения: короткая подпись для истории и ссылка на файл Telegram,
- * чтобы веб-чат открывал вложение через /api/media/:fileId.
- */
-interface MediaContent {
-  placeholder: string;
-  mediaFileId?: string | undefined;
-  mediaDuration?: number | undefined;
-}
-
-interface StoredContent {
-  text: string;
-  mediaFileId?: string | undefined;
-  mediaDuration?: number | undefined;
-}
-
-const mediaReaders: ((msg: Message) => MediaContent | null)[] = [
-  (msg) => {
-    const photo = msg.photo;
-    const largest = photo && photo.length > 0 ? photo[photo.length - 1] : undefined;
-    return largest ? { placeholder: '[Изображение]', mediaFileId: largest.file_id } : null;
-  },
-  (msg) =>
-    msg.voice
-      ? {
-          placeholder: '[Голосовое сообщение]',
-          mediaFileId: msg.voice.file_id,
-          mediaDuration: msg.voice.duration,
-        }
-      : null,
-  (msg) => (msg.video ? { placeholder: '[Видео]', mediaFileId: msg.video.file_id } : null),
-  (msg) => (msg.document ? { placeholder: '[Документ]', mediaFileId: msg.document.file_id } : null),
-  (msg) => (msg.audio ? { placeholder: '[Аудиозапись]', mediaFileId: msg.audio.file_id } : null),
-  (msg) =>
-    msg.video_note
-      ? { placeholder: '[Видеосообщение]', mediaFileId: msg.video_note.file_id }
-      : null,
-  (msg) => (msg.sticker ? { placeholder: '[Стикер]', mediaFileId: msg.sticker.file_id } : null),
-  (msg) =>
-    msg.animation ? { placeholder: '[Анимация]', mediaFileId: msg.animation.file_id } : null,
-  (msg) => (msg.contact ? { placeholder: '[Контакт]' } : null),
-  (msg) => (msg.location ? { placeholder: '[Геопозиция]' } : null),
-];
-
-/**
- * Собрать то, что попадёт в историю: текст сообщения либо подпись вложения,
- * а если нет ни того ни другого — короткую заглушку по типу вложения.
- */
-function extractStoredContent(message: Message): StoredContent {
-  let media: MediaContent | null = null;
-  for (const read of mediaReaders) {
-    media = read(message);
-    if (media) break;
-  }
-
-  return {
-    text: message.text ?? message.caption ?? media?.placeholder ?? '',
-    mediaFileId: media?.mediaFileId,
-    mediaDuration: media?.mediaDuration,
-  };
-}
-
 export async function mirrorUserMessage(
   api: Api,
   message: Message,
@@ -313,6 +252,7 @@ export async function mirrorUserMessage(
     channel: 'TELEGRAM',
     text: content.text,
     mediaFileId: content.mediaFileId,
+    mediaType: content.mediaType,
     mediaDuration: content.mediaDuration,
   });
 
@@ -351,6 +291,7 @@ export async function mirrorSupportMessage(
     channel: 'TELEGRAM',
     text: content.text,
     mediaFileId: content.mediaFileId,
+    mediaType: content.mediaType,
     mediaDuration: content.mediaDuration,
   });
 }

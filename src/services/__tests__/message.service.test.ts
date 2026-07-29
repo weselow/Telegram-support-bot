@@ -198,6 +198,120 @@ describe('message.service', () => {
       );
     });
 
+    const mediaTypeCases = [
+      {
+        label: 'photo',
+        mediaType: 'IMAGE',
+        sender: mockApi.sendPhoto,
+        message: {
+          message_id: 20,
+          photo: [{ file_id: 'photo-1', file_unique_id: 'p1', width: 1, height: 1 }],
+        },
+      },
+      {
+        label: 'voice',
+        mediaType: 'VOICE',
+        sender: mockApi.sendVoice,
+        message: {
+          message_id: 21,
+          voice: { file_id: 'voice-1', file_unique_id: 'v1', duration: 3 },
+        },
+      },
+      {
+        label: 'video',
+        mediaType: 'VIDEO',
+        sender: mockApi.sendVideo,
+        message: {
+          message_id: 22,
+          video: { file_id: 'video-1', file_unique_id: 'vd1', width: 1, height: 1, duration: 5 },
+        },
+      },
+      {
+        label: 'document',
+        mediaType: 'DOCUMENT',
+        sender: mockApi.sendDocument,
+        message: { message_id: 23, document: { file_id: 'doc-1', file_unique_id: 'd1' } },
+      },
+      {
+        label: 'audio',
+        mediaType: 'AUDIO',
+        sender: mockApi.sendAudio,
+        message: { message_id: 24, audio: { file_id: 'audio-1', file_unique_id: 'a1', duration: 9 } },
+      },
+      {
+        label: 'video note',
+        mediaType: 'VIDEO_NOTE',
+        sender: mockApi.sendVideoNote,
+        message: {
+          message_id: 25,
+          video_note: { file_id: 'note-1', file_unique_id: 'n1', length: 1, duration: 4 },
+        },
+      },
+      {
+        label: 'sticker',
+        mediaType: 'STICKER',
+        sender: mockApi.sendSticker,
+        message: {
+          message_id: 26,
+          sticker: {
+            file_id: 'sticker-1',
+            file_unique_id: 's1',
+            type: 'regular',
+            width: 1,
+            height: 1,
+            is_animated: false,
+            is_video: false,
+          },
+        },
+      },
+      {
+        label: 'animation',
+        mediaType: 'ANIMATION',
+        sender: mockApi.sendAnimation,
+        message: {
+          message_id: 27,
+          animation: {
+            file_id: 'anim-1',
+            file_unique_id: 'an1',
+            width: 1,
+            height: 1,
+            duration: 2,
+          },
+        },
+      },
+    ];
+
+    for (const mediaCase of mediaTypeCases) {
+      it(`should store ${mediaCase.mediaType} media type for a ${mediaCase.label} message`, async () => {
+        mediaCase.sender.mockResolvedValue({ message_id: 300 });
+        messageRepository.create.mockResolvedValue(createdRecord);
+
+        await mirrorUserMessage(
+          mockApi as any,
+          mediaCase.message as unknown as Message,
+          'user-1',
+          50,
+          -1001234567890
+        );
+
+        expect(messageRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ mediaType: mediaCase.mediaType })
+        );
+      });
+    }
+
+    it('should store no media type for a text message', async () => {
+      const message: Partial<Message> = { message_id: 28, text: 'Просто текст' };
+      mockApi.sendMessage.mockResolvedValue({ message_id: 301 });
+      messageRepository.create.mockResolvedValue(createdRecord);
+
+      await mirrorUserMessage(mockApi as any, message as Message, 'user-1', 50, -1001234567890);
+
+      expect(messageRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ mediaType: undefined })
+      );
+    });
+
     it('should mirror document message to topic', async () => {
       const message: Partial<Message> = {
         message_id: 3,

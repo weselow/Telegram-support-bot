@@ -286,6 +286,34 @@
   opacity: 0.9;
 }
 
+/* Attachment link (document, video, sticker, ...) */
+.chat-message__file {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chat-spacing-xs);
+  margin-bottom: var(--chat-spacing-xs);
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.chat-message__file:hover {
+  opacity: 0.8;
+}
+
+.chat-message__file-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.chat-message__file-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
 /* Voice Message Player */
 .chat-message__voice {
   display: flex;

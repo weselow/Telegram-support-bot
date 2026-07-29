@@ -284,6 +284,11 @@ export class MessagesList {
       bubble.appendChild(voiceContainer)
     }
 
+    // Any other attachment is shown as a link: an img tag would break on it
+    if (message.fileUrl) {
+      bubble.appendChild(this.createFileLink(message.fileUrl))
+    }
+
     // Add text if present
     if (message.text) {
       const textEl = createElement('div', { className: 'chat-message__text' })
@@ -338,6 +343,24 @@ export class MessagesList {
       default:
         return ''
     }
+  }
+
+  private createFileLink(url: string): HTMLElement {
+    const link = createElement('a', {
+      className: 'chat-message__file',
+      href: url,
+      target: '_blank',
+      rel: 'noopener noreferrer'
+    })
+
+    const icon = createElement('span', { className: 'chat-message__file-icon' })
+    icon.innerHTML = icons.document
+    link.appendChild(icon)
+    link.appendChild(
+      createElement('span', { className: 'chat-message__file-label' }, ['Открыть файл'])
+    )
+
+    return link
   }
 
   private createVoicePlayer(url: string, duration?: number): HTMLElement {
