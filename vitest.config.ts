@@ -44,7 +44,9 @@ export default defineConfig({
         'src/http/routes/chat.ts', // Tested via integration tests
         'src/http/ws/**', // Tested via integration tests (TD-023)
         'src/bot/handlers/onboarding.ts',
-        'src/jobs/**',
+        'src/jobs/index.ts',
+        'src/jobs/workers.ts',
+        'src/jobs/*.worker.ts',
       ],
       thresholds: {
         statements: 60,

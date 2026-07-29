@@ -1,8 +1,6 @@
 import { Queue } from 'bullmq';
 import { getRedisConnection } from '../config/redis.js';
 
-const connection = getRedisConnection();
-
 export interface SlaJobData {
   userId: string;
   topicId: number;
@@ -14,35 +12,53 @@ export interface AutocloseJobData {
   topicId: number;
 }
 
-export const slaQueue = new Queue<SlaJobData>('sla', {
-  connection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 1000,
-    },
-    removeOnComplete: true,
-    removeOnFail: 100,
+const DEFAULT_JOB_OPTIONS = {
+  attempts: 3,
+  backoff: {
+    type: 'exponential',
+    delay: 1000,
   },
-});
+  removeOnComplete: true,
+  removeOnFail: 100,
+} as const;
 
-export const autocloseQueue = new Queue<AutocloseJobData>('autoclose', {
-  connection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 1000,
-    },
-    removeOnComplete: true,
-    removeOnFail: 100,
-  },
-});
+/**
+ * Очереди создаются по требованию, а не при импорте модуля.
+ *
+ * BullMQ открывает соединение с Redis прямо в конструкторе Queue. Пока очереди
+ * создавались на уровне модуля, любой импорт из этой цепочки (сервисы SLA и
+ * автозакрытия, а через них — обработчики бота) уводил процесс в сеть. В
+ * юнит-тестах это давало поток ошибок подключения, а на машине разработчика —
+ * обращения к постороннему Redis из переменной REDIS_URL.
+ */
+let slaQueue: Queue<SlaJobData> | null = null;
+let autocloseQueue: Queue<AutocloseJobData> | null = null;
 
+export function getSlaQueue(): Queue<SlaJobData> {
+  slaQueue ??= new Queue<SlaJobData>('sla', {
+    connection: getRedisConnection(),
+    defaultJobOptions: DEFAULT_JOB_OPTIONS,
+  });
+
+  return slaQueue;
+}
+
+export function getAutocloseQueue(): Queue<AutocloseJobData> {
+  autocloseQueue ??= new Queue<AutocloseJobData>('autoclose', {
+    connection: getRedisConnection(),
+    defaultJobOptions: DEFAULT_JOB_OPTIONS,
+  });
+
+  return autocloseQueue;
+}
+
+/** Закрывает только те очереди, которые действительно создавались. */
 export async function closeQueues(): Promise<void> {
-  await slaQueue.close();
-  await autocloseQueue.close();
+  const opened = [slaQueue, autocloseQueue].filter((queue) => queue !== null);
+  slaQueue = null;
+  autocloseQueue = null;
+
+  await Promise.all(opened.map((queue) => queue.close()));
 }
 
 // Utility: schedule SLA job with delay
@@ -50,7 +66,7 @@ export async function scheduleSlaJob(
   data: SlaJobData,
   delayMs: number,
 ): Promise<string> {
-  const job = await slaQueue.add(`sla-${data.userId}-${data.level}`, data, {
+  const job = await getSlaQueue().add(`sla-${data.userId}-${data.level}`, data, {
     delay: delayMs,
     jobId: `sla-${data.userId}-${String(data.topicId)}-${data.level}`,
   });
@@ -62,7 +78,7 @@ export async function scheduleAutocloseJob(
   data: AutocloseJobData,
   delayMs: number,
 ): Promise<string> {
-  const job = await autocloseQueue.add(`autoclose-${data.userId}`, data, {
+  const job = await getAutocloseQueue().add(`autoclose-${data.userId}`, data, {
     delay: delayMs,
     jobId: `autoclose-${data.userId}-${String(data.topicId)}`,
   });
@@ -76,7 +92,7 @@ export async function cancelSlaJob(
   level: SlaJobData['level'],
 ): Promise<void> {
   const jobId = `sla-${userId}-${String(topicId)}-${level}`;
-  const job = await slaQueue.getJob(jobId);
+  const job = await getSlaQueue().getJob(jobId);
   if (job) {
     await job.remove();
   }
@@ -87,7 +103,7 @@ export async function cancelAutocloseJob(
   topicId: number,
 ): Promise<void> {
   const jobId = `autoclose-${userId}-${String(topicId)}`;
-  const job = await autocloseQueue.getJob(jobId);
+  const job = await getAutocloseQueue().getJob(jobId);
   if (job) {
     await job.remove();
   }
