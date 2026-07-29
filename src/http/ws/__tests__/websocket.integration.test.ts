@@ -148,13 +148,26 @@ describe('WebSocket Integration', () => {
   ): Promise<{ ws: WebSocket; connected: ServerMessage }> {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(`${serverAddress}/ws/chat?session=${sessionId}`);
+      const timer = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+
+      // Сервер отклоняет подключение закрытием сокета (например, 4001 —
+      // сессия не найдена). Без этой ветки тест просто ждал бы 5 секунд
+      // и сообщал бессмысленный «Connection timeout» вместо причины.
+      const onClose = (code: number, reason: Buffer): void => {
+        clearTimeout(timer);
+        reject(new Error(`Connection closed before 'connected': ${code} ${reason.toString()}`));
+      };
+
       ws.once('message', (data) => {
-        const message = JSON.parse(data.toString()) as ServerMessage;
-        resolve({ ws, connected: message });
+        clearTimeout(timer);
+        ws.off('close', onClose);
+        resolve({ ws, connected: JSON.parse(data.toString()) as ServerMessage });
       });
-      ws.on('error', reject);
-      // Timeout for connection
-      setTimeout(() => reject(new Error('Connection timeout')), 5000);
+      ws.once('close', onClose);
+      ws.on('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
     });
   }
 
