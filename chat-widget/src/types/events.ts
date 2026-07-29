@@ -17,7 +17,6 @@ export interface WidgetStateData {
   state: WidgetState
   messages: Message[]
   unreadCount: number
-  isTyping: boolean
 }
 
 export interface WidgetEventMap {
@@ -35,10 +34,9 @@ export interface WidgetEventMap {
   'message:sent': Message
   'message:pending': { text: string; tempId: string }
 
-  // Typing events
+  // Typing events (widget -> server only)
   'typing:start': undefined
   'typing:stop': undefined
-  'support:typing': { isTyping: boolean }
 
   // Status events
   'status:change': { status: string }

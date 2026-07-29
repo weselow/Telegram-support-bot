@@ -29,9 +29,6 @@ describe('StateManager', () => {
       expect(stateManager.getState().unreadCount).toBe(0)
     })
 
-    it('should have isTyping false initially', () => {
-      expect(stateManager.getState().isTyping).toBe(false)
-    })
   })
 
   describe('setState', () => {
@@ -155,25 +152,6 @@ describe('StateManager', () => {
     })
   })
 
-  describe('setTyping', () => {
-    it('should set typing status', () => {
-      stateManager.setTyping(true)
-      expect(stateManager.getState().isTyping).toBe(true)
-
-      stateManager.setTyping(false)
-      expect(stateManager.getState().isTyping).toBe(false)
-    })
-
-    it('should emit support:typing event', () => {
-      const handler = vi.fn()
-      stateManager.on('support:typing', handler)
-
-      stateManager.setTyping(true)
-
-      expect(handler).toHaveBeenCalledWith({ isTyping: true })
-    })
-  })
-
   describe('incrementUnread', () => {
     it('should increment unread count', () => {
       stateManager.incrementUnread()
@@ -227,7 +205,6 @@ describe('StateManager', () => {
       // Modify state
       stateManager.setState('connected')
       stateManager.setMessages([createMessage('1', 'Test')])
-      stateManager.setTyping(true)
       stateManager.incrementUnread()
 
       // Reset
@@ -236,7 +213,6 @@ describe('StateManager', () => {
       const state = stateManager.getState()
       expect(state.state).toBe('closed')
       expect(state.messages).toEqual([])
-      expect(state.isTyping).toBe(false)
       expect(state.unreadCount).toBe(0)
     })
   })

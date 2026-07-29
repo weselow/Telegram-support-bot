@@ -19,7 +19,6 @@ export interface ClientMessage<T extends ClientMessageType = ClientMessageType> 
 export type ServerMessageType =
   | 'connected'
   | 'message'
-  | 'typing'
   | 'status'
   | 'channel_linked'
   | 'error'
@@ -38,7 +37,6 @@ export interface ServerMessageData {
     voiceUrl?: string;
     voiceDuration?: number;
   };
-  typing: { isTyping: boolean };
   status: { status: string; assignedTo?: string };
   channel_linked: { telegram: string; historyCopied: boolean };
   error: { code: string; message: string };

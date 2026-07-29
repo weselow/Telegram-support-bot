@@ -9,8 +9,7 @@ import { EventEmitter } from './events'
 const initialState: WidgetStateData = {
   state: 'closed',
   messages: [],
-  unreadCount: 0,
-  isTyping: false
+  unreadCount: 0
 }
 
 export class StateManager extends EventEmitter<WidgetEventMap> {
@@ -58,14 +57,6 @@ export class StateManager extends EventEmitter<WidgetEventMap> {
    */
   prependMessages(messages: Message[]): void {
     this.data.messages = [...messages, ...this.data.messages]
-  }
-
-  /**
-   * Set typing status
-   */
-  setTyping(isTyping: boolean): void {
-    this.data.isTyping = isTyping
-    this.emit('support:typing', { isTyping })
   }
 
   /**

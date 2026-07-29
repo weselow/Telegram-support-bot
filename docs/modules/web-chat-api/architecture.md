@@ -143,12 +143,6 @@ wss://chat.dellshop.ru/ws/chat?session=<sessionId>
   }
 }
 
-// Статус печати
-{
-  type: "typing",
-  data: { isTyping: true }
-}
-
 // Статус тикета изменён
 {
   type: "status",

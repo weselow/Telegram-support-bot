@@ -184,19 +184,6 @@
 }
 
 /* ============================
-   Typing Indicator
-   ============================ */
-.chat-widget[data-theme="chatgpt"] .chat-typing {
-  background: var(--chat-bg-message-agent);
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--chat-border);
-}
-
-.chat-widget[data-theme="chatgpt"] .chat-typing__dot {
-  background: var(--chat-text-muted);
-}
-
-/* ============================
    Date Separator
    ============================ */
 .chat-widget[data-theme="chatgpt"] .chat-date-separator {

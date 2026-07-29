@@ -24,7 +24,7 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.8'
+export const WIDGET_VERSION = '0.1.9'
 
 export class ChatWidget {
   private config: Required<WidgetConfig>
@@ -494,14 +494,6 @@ export class ChatWidget {
         if (!this.container?.isOpened()) {
           this.state.incrementUnread()
           this.button?.setUnreadCount(this.state.getState().unreadCount)
-        }
-      },
-
-      onTyping: (isTyping) => {
-        if (isTyping) {
-          this.messages?.showTyping()
-        } else {
-          this.messages?.hideTyping()
         }
       },
 

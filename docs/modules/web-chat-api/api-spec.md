@@ -260,18 +260,6 @@ wss://chat.dellshop.ru/ws/chat?session=<sessionId>
 }
 ```
 
-#### typing
-Индикатор печати от поддержки.
-
-```json
-{
-  "type": "typing",
-  "data": {
-    "isTyping": true
-  }
-}
-```
-
 #### status
 Изменение статуса тикета.
 

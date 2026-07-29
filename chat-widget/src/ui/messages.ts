@@ -13,7 +13,6 @@ export interface MessagesListOptions {
 
 export class MessagesList {
   private element: HTMLElement
-  private typingIndicator: HTMLElement | null = null
   private emptyState: HTMLElement | null = null
   private loadingState: HTMLElement | null = null
   private lastMessageDate: string = ''
@@ -52,14 +51,7 @@ export class MessagesList {
     }
 
     // Create and add message element
-    const messageEl = this.createMessageElement(message)
-
-    // Insert before typing indicator if present
-    if (this.typingIndicator) {
-      this.element.insertBefore(messageEl, this.typingIndicator)
-    } else {
-      this.element.appendChild(messageEl)
-    }
+    this.element.appendChild(this.createMessageElement(message))
 
     // Memory management: remove old messages if limit exceeded
     this.messageCount++
@@ -128,11 +120,7 @@ export class MessagesList {
       this.element.scrollTop = this.element.scrollHeight - scrollHeight
     } else {
       this.lastMessageDate = currentDate
-      if (this.typingIndicator) {
-        this.element.insertBefore(fragment, this.typingIndicator)
-      } else {
-        this.element.appendChild(fragment)
-      }
+      this.element.appendChild(fragment)
       scrollToBottom(this.element, false)
     }
 
@@ -164,39 +152,6 @@ export class MessagesList {
     const messageEl = this.element.querySelector(`[data-message-id="${messageId}"]`)
     if (messageEl) {
       messageEl.remove()
-    }
-  }
-
-  /**
-   * Show typing indicator
-   */
-  showTyping(): void {
-    if (this.typingIndicator) return
-
-    this.typingIndicator = createElement('div', { className: 'chat-typing' })
-
-    const dots = createElement('div', { className: 'chat-typing__dots' })
-    dots.appendChild(createElement('span', { className: 'chat-typing__dot' }))
-    dots.appendChild(createElement('span', { className: 'chat-typing__dot' }))
-    dots.appendChild(createElement('span', { className: 'chat-typing__dot' }))
-
-    this.typingIndicator.appendChild(dots)
-    this.typingIndicator.appendChild(document.createTextNode('Оператор печатает...'))
-
-    this.element.appendChild(this.typingIndicator)
-
-    if (this.autoScroll) {
-      scrollToBottom(this.element)
-    }
-  }
-
-  /**
-   * Hide typing indicator
-   */
-  hideTyping(): void {
-    if (this.typingIndicator) {
-      this.typingIndicator.remove()
-      this.typingIndicator = null
     }
   }
 
@@ -262,7 +217,6 @@ export class MessagesList {
    */
   clear(): void {
     this.element.innerHTML = ''
-    this.typingIndicator = null
     this.emptyState = null
     this.loadingState = null
     this.lastMessageDate = ''
@@ -368,12 +322,7 @@ export class MessagesList {
   }
 
   private addDateSeparator(dateText: string): void {
-    const separator = this.createDateSeparatorElement(dateText)
-    if (this.typingIndicator) {
-      this.element.insertBefore(separator, this.typingIndicator)
-    } else {
-      this.element.appendChild(separator)
-    }
+    this.element.appendChild(this.createDateSeparatorElement(dateText))
   }
 
   private getStatusIcon(status: MessageStatus): string {
