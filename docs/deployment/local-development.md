@@ -158,6 +158,49 @@ docker compose build --no-cache app
 каталог `/var/lib/postgresql`, а не `/var/lib/postgresql/data`. Благодаря этому
 данные разных версий лежат рядом и возможен переход через `pg_upgrade`.
 
+### `docker compose` запускать только из корня репозитория
+
+Пути томов в `docker-compose.yml` заданы относительно текущего каталога
+(`./.volumes/postgres`), поэтому docker привязывает том к тому месту, откуда
+запущена команда. Если поднять службы из рабочей копии задачи
+(`.worktrees/bd-...`), том будет указывать на её каталог. Копия удаляется после
+слияния задачи — и контейнер перестаёт стартовать:
+
+```
+error while creating mount source path '/run/desktop/mnt/host/m/repos/
+Telegram-support-bot/.worktrees/bd-.../.volumes/postgres':
+mkdir /run/desktop/mnt/host/m/repos/Telegram-support-bot/.worktrees/bd-...: file exists
+```
+
+Контейнер при этом может ещё какое-то время работать — пока его не перезапустили.
+Лечится пересозданием из корня репозитория:
+
+```bash
+docker rm -f support-bot-postgres support-bot-redis
+docker compose up -d postgres redis
+```
+
+Проверить привязку:
+
+```bash
+docker inspect support-bot-postgres --format '{{range .Mounts}}{{.Source}}{{end}}'
+```
+
+Путь должен вести в корень репозитория, а не в `.worktrees/`.
+
+Если контейнер сломан, а интеграционные тесты нужны прямо сейчас, можно поднять
+временную базу на свободном порту и указать её тестам напрямую — переменная
+`DATABASE_URL_TEST`, заданная снаружи, используется как есть, свою базу
+`globalSetup` в этом случае не создаёт:
+
+```bash
+docker run -d --name tsb-tmp-pg -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=tmp_check -p 55433:5432 postgres:18-alpine
+DATABASE_URL_TEST=postgresql://postgres:postgres@localhost:55433/tmp_check \
+  pnpm run test:integration
+docker rm -f tsb-tmp-pg
+```
+
 ---
 
 ## База данных
