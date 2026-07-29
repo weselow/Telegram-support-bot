@@ -5,6 +5,7 @@ import {
   disconnectTestDatabase,
   cleanDatabase,
 } from './test-client.js';
+import { messageRepository } from '../repositories/message.repository.js';
 
 describe('Repositories Integration Tests', () => {
   beforeAll(async () => {
@@ -205,6 +206,51 @@ describe('Repositories Integration Tests', () => {
       expect(found).not.toBeNull();
       expect(found?.dmMessageId).toBe(10);
       expect(found?.direction).toBe('SUPPORT_TO_USER');
+    });
+
+    it('should store text and media of a mirrored Telegram message', async () => {
+      await messageRepository.create({
+        userId: testUserId,
+        dmMessageId: 30,
+        topicMessageId: 300,
+        direction: 'SUPPORT_TO_USER',
+        channel: 'TELEGRAM',
+        text: '[Голосовое сообщение]',
+        mediaFileId: 'voice-file-id',
+        mediaDuration: 12,
+      });
+
+      const history = await messageRepository.getHistory(testUserId);
+
+      expect(history).toHaveLength(1);
+      expect(history[0]?.text).toBe('[Голосовое сообщение]');
+      expect(history[0]?.channel).toBe('TELEGRAM');
+      expect(history[0]?.mediaFileId).toBe('voice-file-id');
+      expect(history[0]?.mediaDuration).toBe(12);
+    });
+
+    it('should reject a second record with the same topicMessageId', async () => {
+      await messageRepository.create({
+        userId: testUserId,
+        dmMessageId: 40,
+        topicMessageId: 400,
+        direction: 'SUPPORT_TO_USER',
+        channel: 'TELEGRAM',
+        text: 'Ответ поддержки',
+      });
+
+      await expect(
+        messageRepository.createWebMessage({
+          userId: testUserId,
+          topicMessageId: 400,
+          direction: 'SUPPORT_TO_USER',
+          channel: 'TELEGRAM',
+          text: 'Ответ поддержки',
+        })
+      ).rejects.toThrow();
+
+      const history = await messageRepository.getHistory(testUserId);
+      expect(history).toHaveLength(1);
     });
 
     it('should cascade delete when user is deleted', async () => {

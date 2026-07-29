@@ -6,6 +6,10 @@ export interface CreateMessageMapData {
   dmMessageId: number;
   topicMessageId: number;
   direction: MessageDirection;
+  channel: MessageChannel;
+  text: string;
+  mediaFileId?: string | undefined;
+  mediaDuration?: number | undefined;
 }
 
 export interface CreateWebMessageData {
@@ -32,6 +36,10 @@ export const messageRepository = {
         dmMessageId: data.dmMessageId,
         topicMessageId: data.topicMessageId,
         direction: data.direction,
+        channel: data.channel,
+        text: data.text,
+        mediaFileId: data.mediaFileId ?? null,
+        mediaDuration: data.mediaDuration ?? null,
       },
     });
   },
