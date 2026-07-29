@@ -146,11 +146,17 @@ docker compose build --no-cache app
 
 ```
 .volumes/
-├── postgres/    # данные БД
-└── redis/       # данные Redis
+├── postgres/
+│   └── 18/docker/    # данные БД (подкаталог по номеру версии PostgreSQL)
+└── redis/            # данные Redis
 ```
 
 Папка добавлена в `.gitignore`.
+
+Начиная с 18-й версии официальный образ PostgreSQL раскладывает данные по
+подкаталогам с номером версии, поэтому в `docker-compose.yml` подключается весь
+каталог `/var/lib/postgresql`, а не `/var/lib/postgresql/data`. Благодаря этому
+данные разных версий лежат рядом и возможен переход через `pg_upgrade`.
 
 ---
 
@@ -189,6 +195,35 @@ Error: listen EADDRINUSE: address already in use :::5433
 1. Проверьте что контейнер запущен: `docker compose ps`
 2. Проверьте логи: `docker compose logs postgres`
 3. Проверьте `DATABASE_URL` в `.env.local`
+
+### Контейнер postgres бесконечно перезапускается
+
+В журнале (`docker compose logs postgres`) видно сообщение вида
+`in 18+, these Docker images are configured to store database data in a format
+which is compatible with "pg_ctlcluster"` — каталог `.volumes/postgres` создан
+образом старой версии (в нём лежит файл `PG_VERSION`, а не подкаталог `18`).
+
+Автоматического перехода нет: `pg_upgrade` требует обе версии сразу. Для местной
+разработки проще пересоздать базу:
+
+```bash
+docker compose down postgres
+rm -rf .volumes/postgres        # локальные данные разработки будут потеряны
+docker compose up -d postgres
+pnpm exec prisma migrate deploy
+```
+
+Если данные нужны — сначала снять выгрузку старым образом:
+
+```bash
+docker run --rm -v "$(pwd)/.volumes/postgres:/var/lib/postgresql/data" \
+  -e POSTGRES_PASSWORD=postgres --name pg-dump-tmp -d postgres:16-alpine
+docker exec pg-dump-tmp pg_dumpall -U postgres > dump.sql
+docker stop pg-dump-tmp
+```
+
+и после запуска новой версии залить её обратно:
+`docker exec -i support-bot-postgres psql -U postgres < dump.sql`
 
 ### Bot not responding
 
