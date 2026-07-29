@@ -1,8 +1,10 @@
 import { InlineKeyboard, Keyboard } from 'grammy';
 import type { Context } from 'grammy';
-import type { InlineKeyboardMarkup, ReplyKeyboardMarkup } from 'grammy/types';
+import type { InlineKeyboardMarkup, Message, ReplyKeyboardMarkup } from 'grammy/types';
+import type { User } from '../../generated/prisma/client.js';
 import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
+import { mirrorUserMessage } from '../../services/message.service.js';
 import { startSlaTimers } from '../../services/sla.service.js';
 import {
   getOnboardingState,
@@ -12,6 +14,7 @@ import {
 } from '../../services/onboarding.service.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
+import { env } from '../../config/env.js';
 import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { captureError } from '../../config/sentry.js';
@@ -83,6 +86,39 @@ async function handlePhoneSkip(ctx: Context, tgUserId: bigint): Promise<void> {
   });
   await clearOnboardingState(tgUserId);
   logger.info({ tgUserId: String(tgUserId) }, 'Phone skipped during onboarding');
+}
+
+/**
+ * Переслать первый вопрос в тему поддержки и записать его в историю.
+ * Сбой пересылки не отменяет уже созданное обращение: пользователю
+ * предлагаем повторить сообщение, а онбординг продолжается.
+ */
+async function mirrorQuestionToTopic(ctx: Context, message: Message, user: User): Promise<void> {
+  if (!user.topicId) {
+    logger.warn({ userId: user.id }, 'Onboarding question not mirrored: user has no topic');
+    return;
+  }
+
+  const options = user.webSessionId ? { channelPrefix: 'TG' as const } : undefined;
+
+  try {
+    const topicMessageId = await mirrorUserMessage(
+      ctx.api,
+      message,
+      user.id,
+      user.topicId,
+      Number(env.SUPPORT_GROUP_ID),
+      options,
+    );
+
+    if (topicMessageId === null) {
+      await ctx.reply(messages.unsupportedMessageType);
+    }
+  } catch (error) {
+    captureError(error, { userId: user.id, action: 'mirrorOnboardingQuestion' });
+    logger.error({ error, userId: user.id }, 'Failed to mirror onboarding question to topic');
+    await ctx.reply(messages.deliveryFailed);
+  }
 }
 
 async function handleAwaitingQuestion(
@@ -168,6 +204,9 @@ async function handleAwaitingQuestion(
 
     // Send confirmation
     await ctx.reply(messages.onboarding.ticketCreated);
+
+    // Сам вопрос тоже должен уйти в тему: карточка его не содержит
+    await mirrorQuestionToTopic(ctx, message, currentUser);
 
     // Ask for phone
     const hasPhone = !!currentUser.phone;

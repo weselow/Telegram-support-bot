@@ -47,7 +47,6 @@ export default defineConfig({
         'src/http/ws/handler.ts',
         'src/http/ws/index.ts',
         'src/http/ws/types.ts',
-        'src/bot/handlers/onboarding.ts',
         'src/jobs/index.ts',
         'src/jobs/workers.ts',
         'src/jobs/*.worker.ts',
