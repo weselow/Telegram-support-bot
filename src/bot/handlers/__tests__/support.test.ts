@@ -50,6 +50,14 @@ type MockContext = {
     caption?: string;
     photo?: MockPhotoSize[];
     voice?: { file_id: string; file_unique_id: string; duration: number };
+    document?: { file_id: string; file_unique_id: string };
+    video?: {
+      file_id: string;
+      file_unique_id: string;
+      width: number;
+      height: number;
+      duration: number;
+    };
   };
   api: {
     sendMessage: Mock;
@@ -288,6 +296,7 @@ describe('supportMessageHandler', () => {
         text: 'Hello user',
         mediaFileId: undefined,
         mediaDuration: undefined,
+        mediaType: undefined,
       });
       expect(sendToUser).toHaveBeenCalledWith('user-1', 'message', {
         id: 'web-1',
@@ -364,6 +373,69 @@ describe('supportMessageHandler', () => {
         'user-1',
         'message',
         expect.objectContaining({ voiceUrl: '/api/media/voice-1', voiceDuration: 12 })
+      );
+    });
+
+    it('should push a document as a file link, not as an image', async () => {
+      findUserByTopicId.mockResolvedValue(webOnlyUser);
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        document: { file_id: 'doc-1', file_unique_id: 'd1' },
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: '[Документ]',
+          mediaFileId: 'doc-1',
+          mediaType: 'DOCUMENT',
+        })
+      );
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({ fileUrl: '/api/media/doc-1' })
+      );
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.not.objectContaining({ imageUrl: expect.anything() })
+      );
+    });
+
+    it('should push a video as a file link for a linked user', async () => {
+      findUserByTopicId.mockResolvedValue(linkedUser);
+      mirrorSupportMessage.mockResolvedValue(mirroredRecord);
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        video: { file_id: 'video-1', file_unique_id: 'vd1', width: 1, height: 1, duration: 5 },
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).not.toHaveBeenCalled();
+      expect(sendToUser).toHaveBeenCalledWith(
+        'user-1',
+        'message',
+        expect.objectContaining({ id: mirroredRecord.id, fileUrl: '/api/media/video-1' })
+      );
+    });
+
+    it('should store image media type for a photo reply', async () => {
+      findUserByTopicId.mockResolvedValue(webOnlyUser);
+      mockCtx.message = {
+        message_id: 1,
+        message_thread_id: 100,
+        photo: [{ file_id: 'large', file_unique_id: 'l1', width: 800, height: 600 }],
+      };
+
+      await supportMessageHandler(mockCtx as unknown as Context);
+
+      expect(createWebMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ mediaFileId: 'large', mediaType: 'IMAGE' })
       );
     });
 

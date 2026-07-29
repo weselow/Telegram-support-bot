@@ -785,6 +785,7 @@ export const MessageMapScalarFieldEnum = {
   channel: 'channel',
   text: 'text',
   mediaFileId: 'mediaFileId',
+  mediaType: 'mediaType',
   mediaDuration: 'mediaDuration',
   createdAt: 'createdAt'
 } as const
@@ -943,6 +944,20 @@ export type EnumMessageChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$P
  * Reference to a field of type 'MessageChannel[]'
  */
 export type ListEnumMessageChannelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MessageChannel[]'>
+    
+
+
+/**
+ * Reference to a field of type 'MediaType'
+ */
+export type EnumMediaTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MediaType'>
+    
+
+
+/**
+ * Reference to a field of type 'MediaType[]'
+ */
+export type ListEnumMediaTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MediaType[]'>
     
 
 

@@ -13,6 +13,7 @@ import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { buildMediaUrls } from '../utils/media.js';
 import type { FileCategory } from '../utils/file-validation.js';
 
 export interface InitSessionResult {
@@ -32,6 +33,7 @@ export interface ChatMessage {
   imageUrl?: string;
   voiceUrl?: string;
   voiceDuration?: number;
+  fileUrl?: string;
 }
 
 export interface HistoryResult {
@@ -65,10 +67,7 @@ export interface FileUploadResult {
 }
 
 function mapMessageToChat(msg: MessageMap): ChatMessage {
-  // Build media URLs from stored file_id
-  const isVoice = msg.mediaDuration !== null;
-  const imageUrl = msg.mediaFileId && !isVoice ? `/api/media/${msg.mediaFileId}` : undefined;
-  const voiceUrl = msg.mediaFileId && isVoice ? `/api/media/${msg.mediaFileId}` : undefined;
+  const media = buildMediaUrls(msg);
 
   return {
     id: msg.id,
@@ -76,9 +75,10 @@ function mapMessageToChat(msg: MessageMap): ChatMessage {
     from: msg.direction === 'USER_TO_SUPPORT' ? 'user' : 'support',
     channel: msg.channel === 'WEB' ? 'web' : 'telegram',
     timestamp: msg.createdAt.toISOString(),
-    ...(imageUrl && { imageUrl }),
-    ...(voiceUrl && { voiceUrl }),
-    ...(msg.mediaDuration !== null && { voiceDuration: msg.mediaDuration }),
+    ...(media.imageUrl && { imageUrl: media.imageUrl }),
+    ...(media.voiceUrl && { voiceUrl: media.voiceUrl }),
+    ...(media.fileUrl && { fileUrl: media.fileUrl }),
+    ...(media.voiceDuration !== undefined && { voiceDuration: media.voiceDuration }),
   };
 }
 
@@ -321,6 +321,7 @@ async function saveFileMessage(
     channel: 'WEB',
     text: category === 'image' ? '' : `📎 ${fileName}`,
     mediaFileId: sent.fileId,
+    mediaType: category === 'image' ? 'IMAGE' : 'DOCUMENT',
   });
 
   logger.info({ userId, messageId: message.id, fileName, category }, 'Web file sent to topic');

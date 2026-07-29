@@ -36,6 +36,7 @@ export interface ServerMessageData {
     imageUrl?: string;
     voiceUrl?: string;
     voiceDuration?: number;
+    fileUrl?: string;
   };
   status: { status: string; assignedTo?: string };
   channel_linked: { telegram: string };

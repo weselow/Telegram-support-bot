@@ -36,6 +36,18 @@ enum MessageChannel {
   WEB
 }
 
+// Тип вложения — по нему веб-чат решает, чем рисовать вложение
+enum MediaType {
+  IMAGE
+  VOICE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  STICKER
+  ANIMATION
+  VIDEO_NOTE
+}
+
 // Пользователь/Тикет (один пользователь = один тикет навсегда)
 model User {
   id            String       @id @default(uuid())
@@ -101,6 +113,7 @@ model MessageMap {
 
   // Медиа (Telegram file_id для проксирования через /api/media/:fileId)
   mediaFileId    String?          @map("media_file_id")
+  mediaType      MediaType?       @map("media_type")
   mediaDuration  Int?             @map("media_duration") // Для голосовых сообщений (секунды)
 
   createdAt      DateTime         @default(now()) @map("created_at")

@@ -44,3 +44,17 @@ export const MessageChannel = {
 } as const
 
 export type MessageChannel = (typeof MessageChannel)[keyof typeof MessageChannel]
+
+
+export const MediaType = {
+  IMAGE: 'IMAGE',
+  VOICE: 'VOICE',
+  VIDEO: 'VIDEO',
+  AUDIO: 'AUDIO',
+  DOCUMENT: 'DOCUMENT',
+  STICKER: 'STICKER',
+  ANIMATION: 'ANIMATION',
+  VIDEO_NOTE: 'VIDEO_NOTE'
+} as const
+
+export type MediaType = (typeof MediaType)[keyof typeof MediaType]

@@ -20,6 +20,8 @@ export interface Message {
   // Optional voice message (from support via Telegram)
   voiceUrl?: string
   voiceDuration?: number
+  // Optional attachment of any other kind (document, video, sticker, ...)
+  fileUrl?: string
   // Client-side only fields
   status?: MessageStatus
   temp_id?: string

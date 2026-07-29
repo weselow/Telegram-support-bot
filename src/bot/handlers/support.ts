@@ -10,6 +10,7 @@ import { sendToUser } from '../../http/ws/connection-manager.js';
 import { messageRepository } from '../../db/repositories/message.repository.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
+import { buildMediaUrls, extractStoredContent } from '../../utils/media.js';
 import { captureError, addBreadcrumb } from '../../config/sentry.js';
 
 function isBotBlockedError(error: unknown): boolean {
@@ -22,45 +23,11 @@ function isBotBlockedError(error: unknown): boolean {
 }
 
 /**
- * Вложение ответа поддержки в том виде, в каком его показывает виджет:
- * ссылки идут на собственный прокси /api/media/:fileId, токен бота наружу не уходит.
- */
-interface WebMedia {
-  imageUrl?: string | undefined;
-  voiceUrl?: string | undefined;
-  voiceDuration?: number | undefined;
-  mediaFileId?: string | undefined;
-  placeholder: string;
-}
-
-function extractWebMedia(message: Message): WebMedia {
-  const voice = message.voice;
-  if (voice) {
-    return {
-      voiceUrl: `/api/media/${voice.file_id}`,
-      voiceDuration: voice.duration,
-      mediaFileId: voice.file_id,
-      placeholder: '[Голосовое сообщение]',
-    };
-  }
-
-  const photo = message.photo;
-  const largestPhoto = photo && photo.length > 0 ? photo[photo.length - 1] : undefined;
-  if (largestPhoto) {
-    return {
-      imageUrl: `/api/media/${largestPhoto.file_id}`,
-      mediaFileId: largestPhoto.file_id,
-      placeholder: '[Изображение]',
-    };
-  }
-
-  return { placeholder: '' };
-}
-
-/**
  * Доставить ответ поддержки в веб-чат.
- * Если сообщение уже записано зеркалированием в Telegram, переиспользуем ту же
- * запись: на пару (user_id, topic_message_id) стоит уникальный указатель,
+ * Вложение разбирается тем же кодом, что и при зеркалировании в Telegram,
+ * ссылки идут на собственный прокси /api/media/:fileId — токен бота наружу не уходит.
+ * Если сообщение уже записано зеркалированием, переиспользуем ту же запись:
+ * на пару (user_id, topic_message_id) стоит уникальный указатель,
  * и вторая вставка была бы отвергнута базой.
  */
 async function deliverToWebChat(
@@ -69,9 +36,10 @@ async function deliverToWebChat(
   mirrored: MessageMap | null
 ): Promise<void> {
   const text = message.text ?? message.caption ?? '';
-  const media = extractWebMedia(message);
+  const content = extractStoredContent(message);
+  const media = buildMediaUrls(content);
 
-  if (!text && !media.imageUrl && !media.voiceUrl) {
+  if (!text && !media.imageUrl && !media.voiceUrl && !media.fileUrl) {
     return;
   }
 
@@ -82,9 +50,10 @@ async function deliverToWebChat(
       topicMessageId: message.message_id,
       direction: 'SUPPORT_TO_USER',
       channel: 'TELEGRAM',
-      text: text || media.placeholder,
-      mediaFileId: media.mediaFileId,
-      mediaDuration: media.voiceDuration,
+      text: content.text,
+      mediaFileId: content.mediaFileId,
+      mediaType: content.mediaType,
+      mediaDuration: content.mediaDuration,
     }));
 
   sendToUser(userId, 'message', {
@@ -95,6 +64,7 @@ async function deliverToWebChat(
     timestamp: savedMessage.createdAt.toISOString(),
     ...(media.imageUrl && { imageUrl: media.imageUrl }),
     ...(media.voiceUrl && { voiceUrl: media.voiceUrl }),
+    ...(media.fileUrl && { fileUrl: media.fileUrl }),
     ...(media.voiceDuration !== undefined && { voiceDuration: media.voiceDuration }),
   });
 }

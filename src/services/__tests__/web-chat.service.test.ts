@@ -305,6 +305,84 @@ describe('web-chat.service', () => {
 
       expect(result.oldestId).toBeUndefined();
     });
+
+    it('should expose an image attachment as imageUrl', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, text: '', mediaFileId: 'photo-1', mediaType: 'IMAGE' },
+      ]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.imageUrl).toBe('/api/media/photo-1');
+      expect(result.messages[0]?.fileUrl).toBeUndefined();
+    });
+
+    it('should expose a voice attachment as voiceUrl with duration', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        {
+          ...mockMessage,
+          text: '[Голосовое сообщение]',
+          mediaFileId: 'voice-1',
+          mediaType: 'VOICE',
+          mediaDuration: 7,
+        },
+      ]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.voiceUrl).toBe('/api/media/voice-1');
+      expect(result.messages[0]?.voiceDuration).toBe(7);
+      expect(result.messages[0]?.imageUrl).toBeUndefined();
+    });
+
+    it('should expose a document attachment as fileUrl instead of imageUrl', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, text: '📎 report.pdf', mediaFileId: 'doc-1', mediaType: 'DOCUMENT' },
+      ]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.fileUrl).toBe('/api/media/doc-1');
+      expect(result.messages[0]?.imageUrl).toBeUndefined();
+    });
+
+    it('should expose a video attachment as fileUrl', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, text: '[Видео]', mediaFileId: 'video-1', mediaType: 'VIDEO' },
+      ]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.fileUrl).toBe('/api/media/video-1');
+      expect(result.messages[0]?.imageUrl).toBeUndefined();
+    });
+
+    it('should expose an attachment without a stored type as fileUrl', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([
+        { ...mockMessage, text: '[Вложение]', mediaFileId: 'legacy-1', mediaType: null },
+      ]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.fileUrl).toBe('/api/media/legacy-1');
+      expect(result.messages[0]?.imageUrl).toBeUndefined();
+    });
+
+    it('should not expose any attachment url for a plain text message', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([mockMessage]);
+
+      const result = await getHistory('session-123');
+
+      expect(result.messages[0]?.imageUrl).toBeUndefined();
+      expect(result.messages[0]?.voiceUrl).toBeUndefined();
+      expect(result.messages[0]?.fileUrl).toBeUndefined();
+    });
   });
 
   describe('getStatus', () => {
@@ -601,6 +679,44 @@ describe('web-chat.service', () => {
           'document'
         )
       ).rejects.toThrow('Session not found');
+    });
+
+    it('should store document media type for an uploaded document', async () => {
+      const userWithTopic = { ...mockUser, topicId: 100 };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
+      bot.api.sendDocument.mockResolvedValue({
+        message_id: 400,
+        document: { file_id: 'file-abc' },
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await sendFile(
+        'session-123',
+        Buffer.from('content'),
+        'report.pdf',
+        'application/pdf',
+        'document'
+      );
+
+      expect(messageRepository.createWebMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ mediaFileId: 'file-abc', mediaType: 'DOCUMENT' })
+      );
+    });
+
+    it('should store image media type for an uploaded image', async () => {
+      const userWithTopic = { ...mockUser, topicId: 100 };
+      userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
+      bot.api.sendPhoto.mockResolvedValue({
+        message_id: 401,
+        photo: [{ file_id: 'small' }, { file_id: 'large' }],
+      });
+      messageRepository.createWebMessage.mockResolvedValue(mockMessage);
+
+      await sendFile('session-123', Buffer.from('content'), 'photo.jpg', 'image/jpeg', 'image');
+
+      expect(messageRepository.createWebMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ mediaFileId: 'large', mediaType: 'IMAGE' })
+      );
     });
   });
 
