@@ -16,7 +16,7 @@ vi.mock('../../db/repositories/message.repository.js', () => ({
   },
 }));
 
-describe('MessageService', () => {
+describe('message.service', () => {
   let messageRepository: {
     create: Mock;
     findByDmMessageId: Mock;

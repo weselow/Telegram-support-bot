@@ -18,7 +18,7 @@ vi.mock('../../config/redis-client.js', () => ({
   getRedisClient: () => mockRedis,
 }));
 
-describe('OnboardingService', () => {
+describe('onboarding.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

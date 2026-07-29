@@ -26,7 +26,7 @@ vi.mock('../../utils/logger.js', () => ({
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-describe('BotInfoService', () => {
+describe('bot-info.service', () => {
   let bot: {
     api: {
       getMe: Mock;
