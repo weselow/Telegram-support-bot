@@ -1,13 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
-
-// Test database URL - uses same PostgreSQL but different database
-const TEST_DATABASE_URL =
-  process.env.DATABASE_URL_TEST ||
-  'postgresql://postgres:postgres@localhost:5433/support_bot_test';
+import { getTestDatabaseUrl } from './test-database-url.js';
 
 const adapter = new PrismaPg({
-  connectionString: TEST_DATABASE_URL,
+  connectionString: getTestDatabaseUrl(),
 });
 
 export const testPrisma = new PrismaClient({ adapter });
@@ -25,7 +21,8 @@ export async function disconnectTestDatabase(): Promise<void> {
  *
  * Затрагивает все строки, а не только созданные вызывающим файлом, поэтому
  * интеграционные файлы обязаны выполняться по очереди
- * (`fileParallelism: false` в vitest.integration.config.ts).
+ * (`fileParallelism: false` в vitest.integration.config.ts), а каждый запуск
+ * тестов получает собственную базу (см. test-database-url.ts).
  */
 export async function cleanDatabase(): Promise<void> {
   // Delete in order respecting foreign keys
