@@ -6,6 +6,10 @@
  */
 
 import { env } from '../config/env.js';
+import { logger } from './logger.js';
+
+/** Entries like 192.168.1.10 have no parent domain to talk about */
+const IPV4_PATTERN = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /**
  * Extract base domain (last 2 parts) from a hostname
@@ -144,4 +148,72 @@ export function isOriginCheckEnabled(): boolean {
  */
 export function isOriginAllowedByConfig(origin: string | undefined): boolean {
   return getAllowedDomains().some((domain) => isOriginAllowed(origin, domain));
+}
+
+/**
+ * Domain one level up from the given one, or null if there is none
+ *
+ * @example
+ * getParentDomain('shop.dellshop.ru') → 'dellshop.ru'
+ * getParentDomain('dellshop.ru') → null
+ * getParentDomain('192.168.1.10') → null
+ */
+function getParentDomain(domain: string): string | null {
+  if (IPV4_PATTERN.test(domain)) {
+    return null;
+  }
+
+  const parts = domain.split('.');
+  if (parts.length <= 2) {
+    return null;
+  }
+  return parts.slice(1).join('.');
+}
+
+/**
+ * Warn about ALLOWED_ORIGINS entries that likely do not do what the operator expected
+ *
+ * SUPPORT_DOMAIN is reduced to its base domain, ALLOWED_ORIGINS entries are not
+ * (see getAllowedDomains). Two settings that look alike but behave differently are
+ * easy to mix up, so both suspicious shapes are reported once at startup:
+ *
+ * 1. the entry repeats the base domain of SUPPORT_DOMAIN — it grants nothing new
+ * 2. the entry is a subdomain and its parent domain is not allowed by anything else
+ *
+ * Warnings only: nothing is blocked and origin resolution stays unchanged.
+ */
+export function warnAboutOriginConfig(): void {
+  const supportBaseDomain = getConfiguredBaseDomain();
+
+  for (const entry of env.ALLOWED_ORIGINS?.split(',') ?? []) {
+    const domain = normalizeDomain(entry);
+    if (!domain) {
+      continue;
+    }
+
+    if (domain === supportBaseDomain) {
+      logger.warn(
+        {
+          entry: domain,
+          supportDomain: env.SUPPORT_DOMAIN,
+          supportBaseDomain,
+          hint: 'SUPPORT_DOMAIN is already reduced to this base domain and allows all of its subdomains, so the entry grants nothing. Remove it, or replace it with the domain you actually need — ALLOWED_ORIGINS entries are used as written and are never reduced.',
+        },
+        'ALLOWED_ORIGINS entry repeats the base domain of SUPPORT_DOMAIN',
+      );
+      continue;
+    }
+
+    const parentDomain = getParentDomain(domain);
+    if (parentDomain && !isOriginAllowedByConfig(`https://${parentDomain}`)) {
+      logger.warn(
+        {
+          entry: domain,
+          parentDomain,
+          hint: 'Unlike SUPPORT_DOMAIN, ALLOWED_ORIGINS entries are used as written: this entry allows only itself and its own subdomains. Add the parent domain to ALLOWED_ORIGINS as a separate entry if the widget is embedded there as well.',
+        },
+        'ALLOWED_ORIGINS entry does not allow its parent domain',
+      );
+    }
+  }
 }

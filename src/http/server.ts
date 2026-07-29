@@ -11,6 +11,7 @@ import { mediaRoutes } from './routes/media.routes.js';
 import { widgetErrorsRoutes } from './routes/widget-errors.js';
 import { securityHeadersHook } from './middleware/security-headers.js';
 import { registerWebSocket } from './ws/websocket.js';
+import { warnAboutOriginConfig } from '../utils/cors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +19,9 @@ const __dirname = dirname(__filename);
 let server: FastifyInstance | null = null;
 
 export async function startHttpServer(): Promise<FastifyInstance> {
+  // Origin config is only used by HTTP and WebSocket, so it is checked here, once per start
+  warnAboutOriginConfig();
+
   server = Fastify({
     logger: false, // We use our own logger
     trustProxy: true, // Trust X-Forwarded-For from the reverse proxy
