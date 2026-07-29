@@ -5,7 +5,9 @@ import type { User } from '../../generated/prisma/client.js';
 import { findUserByTgId, createTicket } from '../../services/ticket.service.js';
 import { createTopic, sendTicketCard } from '../../services/topic.service.js';
 import { mirrorUserMessage } from '../../services/message.service.js';
-import { startSlaTimers } from '../../services/sla.service.js';
+import { autoChangeStatus } from '../../services/status.service.js';
+import { cancelAutocloseTimer } from '../../services/autoclose.service.js';
+import { cancelAllSlaTimers, startSlaTimers } from '../../services/sla.service.js';
 import {
   getOnboardingState,
   setOnboardingState,
@@ -86,6 +88,43 @@ async function handlePhoneSkip(ctx: Context, tgUserId: bigint): Promise<void> {
   });
   await clearOnboardingState(tgUserId);
   logger.info({ tgUserId: String(tgUserId) }, 'Phone skipped during onboarding');
+}
+
+/**
+ * Вернуть обращение вернувшегося клиента в работу: закрытое переоткрыть,
+ * ожидающее ответа снять с автозакрытия. Повторяет обычный путь личных
+ * сообщений (message.ts), но не спрашивает телефон — этот вопрос онбординг
+ * задаёт сам следующим шагом.
+ *
+ * Сбой уведомления в тему не прерывает онбординг: обращение уже переоткрыто,
+ * а о недоступной теме пользователь узнает из пересылки самого вопроса.
+ */
+async function resumeTicketForReturningClient(ctx: Context, user: User): Promise<void> {
+  if (!user.topicId) {
+    return;
+  }
+
+  try {
+    if (user.status === 'CLOSED') {
+      const result = await autoChangeStatus(ctx.api, user, 'CLIENT_REOPEN');
+      if (result.changed) {
+        await ctx.api.sendMessage(Number(env.SUPPORT_GROUP_ID), messages.reopened, {
+          message_thread_id: user.topicId,
+        });
+        await cancelAllSlaTimers(user.id, user.topicId);
+        await startSlaTimers(user.id, user.topicId);
+      }
+      return;
+    }
+
+    if (user.status === 'WAITING_CLIENT') {
+      await cancelAutocloseTimer(user.id, user.topicId);
+      await autoChangeStatus(ctx.api, user, 'CLIENT_REPLY');
+    }
+  } catch (error) {
+    captureError(error, { userId: user.id, action: 'resumeTicketFromOnboarding' });
+    logger.error({ error, userId: user.id }, 'Failed to resume ticket for returning client');
+  }
 }
 
 /**
@@ -187,15 +226,8 @@ async function handleAwaitingQuestion(
         await userRepository.updateSourceUrl(currentUser.id, state.sourceUrl);
       }
 
-      // Log reopening event if needed
-      if (currentUser.status === 'CLOSED') {
-        await eventRepository.create({
-          userId: currentUser.id,
-          eventType: 'REOPENED',
-          question: message.text,
-          sourceUrl: state.sourceUrl,
-        });
-      }
+      // Событие о переоткрытии заводит служба статусов
+      await resumeTicketForReturningClient(ctx, currentUser);
     }
 
     if (!currentUser) {

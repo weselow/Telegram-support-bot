@@ -29,6 +29,15 @@ vi.mock('../../../services/topic.service.js', () => ({
 
 vi.mock('../../../services/sla.service.js', () => ({
   startSlaTimers: vi.fn(),
+  cancelAllSlaTimers: vi.fn(),
+}));
+
+vi.mock('../../../services/status.service.js', () => ({
+  autoChangeStatus: vi.fn(),
+}));
+
+vi.mock('../../../services/autoclose.service.js', () => ({
+  cancelAutocloseTimer: vi.fn(),
 }));
 
 vi.mock('../../../services/message.service.js', () => ({
@@ -77,7 +86,19 @@ describe('onboarding', () => {
   let sendTicketCard: Mock;
   let mirrorUserMessage: Mock;
   let updateSourceUrl: Mock;
+  let autoChangeStatus: Mock;
+  let startSlaTimers: Mock;
+  let cancelAllSlaTimers: Mock;
+  let cancelAutocloseTimer: Mock;
   let mockCtx: MockContext;
+
+  const closedUser = {
+    id: 'user-5',
+    topicId: 342,
+    phone: null,
+    status: 'CLOSED',
+    webSessionId: null,
+  };
 
   const newUser = {
     id: 'user-1',
@@ -108,6 +129,18 @@ describe('onboarding', () => {
     const userRepo = await import('../../../db/repositories/user.repository.js');
     updateSourceUrl = userRepo.userRepository.updateSourceUrl as Mock;
 
+    const statusService = await import('../../../services/status.service.js');
+    autoChangeStatus = statusService.autoChangeStatus as Mock;
+
+    const slaService = await import('../../../services/sla.service.js');
+    startSlaTimers = slaService.startSlaTimers as Mock;
+    cancelAllSlaTimers = slaService.cancelAllSlaTimers as Mock;
+
+    const autocloseService = await import('../../../services/autoclose.service.js');
+    cancelAutocloseTimer = autocloseService.cancelAutocloseTimer as Mock;
+
+    autoChangeStatus.mockResolvedValue({ changed: true, oldStatus: 'CLOSED', newStatus: 'NEW' });
+
     getOnboardingState.mockResolvedValue({ step: 'awaiting_question' });
     findUserByTgId.mockResolvedValue(null);
     createTopic.mockResolvedValue({ message_thread_id: 501 });
@@ -119,7 +152,7 @@ describe('onboarding', () => {
     mockCtx = {
       from: { id: 123456, is_bot: false, first_name: 'TestUser', username: 'testuser' },
       message: { message_id: 42, text: 'просто тестовый вопрос' },
-      api: {},
+      api: { sendMessage: vi.fn<() => Promise<unknown>>().mockResolvedValue({ message_id: 900 }) },
       reply: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
     };
   });
@@ -241,25 +274,99 @@ describe('onboarding', () => {
       expect(mockCtx.reply).toHaveBeenCalledWith(messages.unsupportedMessageType);
     });
 
-    it('should log the reopened event for a closed ticket', async () => {
+    it('should reopen a closed ticket through the status service', async () => {
       const eventRepo = await import('../../../db/repositories/event.repository.js');
+      findUserByTgId.mockResolvedValue(closedUser);
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(autoChangeStatus).toHaveBeenCalledWith(mockCtx.api, closedUser, 'CLIENT_REOPEN');
+      expect(eventRepo.eventRepository.create).not.toHaveBeenCalled();
+      expect(mirrorUserMessage).toHaveBeenCalled();
+    });
+
+    it('should notify the topic and restart SLA timers on reopen', async () => {
+      findUserByTgId.mockResolvedValue(closedUser);
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(mockCtx.api.sendMessage).toHaveBeenCalledWith(SUPPORT_GROUP_ID, messages.reopened, {
+        message_thread_id: 342,
+      });
+      expect(cancelAllSlaTimers).toHaveBeenCalledWith('user-5', 342);
+      expect(startSlaTimers).toHaveBeenCalledWith('user-5', 342);
+    });
+
+    it('should notify the topic about the reopen before the question', async () => {
+      findUserByTgId.mockResolvedValue(closedUser);
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(mockCtx.api.sendMessage).toHaveBeenCalled();
+      const noticeOrder = mockCtx.api.sendMessage?.mock.invocationCallOrder[0] ?? 0;
+      const mirrorOrder = mirrorUserMessage.mock.invocationCallOrder[0] ?? 0;
+      expect(noticeOrder).toBeLessThan(mirrorOrder);
+    });
+
+    it('should not notify the topic when the status did not change', async () => {
+      findUserByTgId.mockResolvedValue(closedUser);
+      autoChangeStatus.mockResolvedValue({
+        changed: false,
+        oldStatus: 'CLOSED',
+        newStatus: 'CLOSED',
+      });
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(mockCtx.api.sendMessage).not.toHaveBeenCalled();
+      expect(startSlaTimers).not.toHaveBeenCalled();
+    });
+
+    it('should cancel the autoclose timer when the client was awaited', async () => {
       findUserByTgId.mockResolvedValue({
-        id: 'user-5',
-        topicId: 342,
+        id: 'user-6',
+        topicId: 343,
         phone: null,
-        status: 'CLOSED',
+        status: 'WAITING_CLIENT',
         webSessionId: null,
       });
 
       await handleOnboarding(mockCtx as unknown as Context);
 
-      expect(eventRepo.eventRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'user-5',
-          eventType: 'REOPENED',
-          question: 'просто тестовый вопрос',
-        }),
+      expect(cancelAutocloseTimer).toHaveBeenCalledWith('user-6', 343);
+      expect(autoChangeStatus).toHaveBeenCalledWith(
+        mockCtx.api,
+        expect.objectContaining({ id: 'user-6' }),
+        'CLIENT_REPLY',
       );
+      expect(mockCtx.api.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should leave timers alone for a ticket already in progress', async () => {
+      findUserByTgId.mockResolvedValue({
+        id: 'user-7',
+        topicId: 344,
+        phone: null,
+        status: 'IN_PROGRESS',
+        webSessionId: null,
+      });
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(startSlaTimers).not.toHaveBeenCalled();
+      expect(cancelAutocloseTimer).not.toHaveBeenCalled();
+      expect(mockCtx.api.sendMessage).not.toHaveBeenCalled();
+      expect(mirrorUserMessage).toHaveBeenCalled();
+    });
+
+    it('should continue the onboarding when the reopen notification fails', async () => {
+      findUserByTgId.mockResolvedValue(closedUser);
+      mockCtx.api.sendMessage?.mockRejectedValue(new Error('Topic deleted'));
+
+      await handleOnboarding(mockCtx as unknown as Context);
+
+      expect(mockCtx.reply).toHaveBeenCalledWith(messages.onboarding.ticketCreated);
+      expect(mockCtx.reply).not.toHaveBeenCalledWith(messages.ticketCreateError);
       expect(mirrorUserMessage).toHaveBeenCalled();
     });
 
