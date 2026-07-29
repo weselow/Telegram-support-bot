@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     exclude: ['src/**/*.integration.test.ts', 'node_modules'],
+    setupFiles: ['vitest.setup.ts'],
     passWithNoTests: true,
     alias: {
       '^(\\.{1,2}/.*)\\.js$': '$1',
