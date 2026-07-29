@@ -8,7 +8,7 @@ import { cancelAllSlaTimers, startSlaTimers } from './sla.service.js';
 import { autoChangeStatus } from './status.service.js';
 import { cancelAutocloseTimer } from './autoclose.service.js';
 import { acquireLock, releaseLock } from './lock.service.js';
-import { connectionManager } from '../http/ws/connection-manager.js';
+import { sendToUser } from '../http/ws/connection-manager.js';
 import { messages } from '../config/messages.js';
 import { bot } from '../bot/bot.js';
 import { env } from '../config/env.js';
@@ -103,7 +103,7 @@ async function sendWebOnboardingMessages(userId: string, topicId: number): Promi
     });
 
     // Send via WebSocket
-    connectionManager.sendToUser(userId, 'message', {
+    sendToUser(userId, 'message', {
       id: savedMessage.id,
       text,
       from: 'support',
@@ -214,314 +214,312 @@ async function applyClientReply(user: User, topicId: number): Promise<void> {
   await autoChangeStatus(bot.api, user, 'CLIENT_REPLY');
 }
 
-export const webChatService = {
-  /**
-   * Initialize or resume a web chat session
-   */
-  async initSession(
-    sessionId: string,
-    sourceUrl?: string,
-    sourceCity?: string,
-    sourceIp?: string
-  ): Promise<InitSessionResult> {
-    let user = await userRepository.findByWebSessionId(sessionId);
-    let isNewSession = false;
+/**
+ * Initialize or resume a web chat session
+ */
+export async function initSession(
+  sessionId: string,
+  sourceUrl?: string,
+  sourceCity?: string,
+  sourceIp?: string
+): Promise<InitSessionResult> {
+  let user = await userRepository.findByWebSessionId(sessionId);
+  let isNewSession = false;
 
-    if (!user) {
-      user = await userRepository.createWebUser({
-        webSessionId: sessionId,
-        sourceUrl,
-        sourceCity,
-        sourceIp,
-      });
-      isNewSession = true;
-      logger.info({ userId: user.id, sessionId }, 'Created new web chat user');
-    }
-
-    const messages = await messageRepository.getHistory(user.id, { limit: 1 });
-    const hasHistory = messages.length > 0;
-
-    return {
-      sessionId,
-      isNewSession,
-      hasHistory,
-      telegramLinked: user.tgUserId !== null,
-      status: user.status,
-    };
-  },
-
-  /**
-   * Get chat history for a user
-   */
-  async getHistory(
-    sessionId: string,
-    options: { limit?: number | undefined; before?: string | undefined; after?: string | undefined } = {}
-  ): Promise<HistoryResult> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
-
-    const limit = Math.min(options.limit ?? 50, 100);
-    const messages = await messageRepository.getHistory(user.id, {
-      limit: limit + 1, // Fetch one extra to check if there are more
-      before: options.before,
-      after: options.after,
+  if (!user) {
+    user = await userRepository.createWebUser({
+      webSessionId: sessionId,
+      sourceUrl,
+      sourceCity,
+      sourceIp,
     });
+    isNewSession = true;
+    logger.info({ userId: user.id, sessionId }, 'Created new web chat user');
+  }
 
-    const hasMore = messages.length > limit;
-    const resultMessages = hasMore ? messages.slice(0, -1) : messages;
+  const history = await messageRepository.getHistory(user.id, { limit: 1 });
+  const hasHistory = history.length > 0;
 
-    // Reverse if fetching new messages (after) to get chronological order
-    if (options.after) {
-      resultMessages.reverse();
+  return {
+    sessionId,
+    isNewSession,
+    hasHistory,
+    telegramLinked: user.tgUserId !== null,
+    status: user.status,
+  };
+}
+
+/**
+ * Get chat history for a user
+ */
+export async function getHistory(
+  sessionId: string,
+  options: { limit?: number | undefined; before?: string | undefined; after?: string | undefined } = {}
+): Promise<HistoryResult> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  const limit = Math.min(options.limit ?? 50, 100);
+  const history = await messageRepository.getHistory(user.id, {
+    limit: limit + 1, // Fetch one extra to check if there are more
+    before: options.before,
+    after: options.after,
+  });
+
+  const hasMore = history.length > limit;
+  const resultMessages = hasMore ? history.slice(0, -1) : history;
+
+  // Reverse if fetching new messages (after) to get chronological order
+  if (options.after) {
+    resultMessages.reverse();
+  }
+
+  // After reverse, first element is oldest; without reverse, last element is oldest
+  const oldestId = resultMessages.length > 0
+    ? (options.after ? resultMessages[0]?.id : resultMessages[resultMessages.length - 1]?.id)
+    : undefined;
+
+  return {
+    messages: resultMessages.map(mapMessageToChat),
+    hasMore,
+    oldestId,
+  };
+}
+
+/**
+ * Get chat status
+ */
+export async function getStatus(sessionId: string): Promise<ChatStatus> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  const history = await messageRepository.getHistory(user.id, { limit: 1 });
+  const lastMessage = history[0];
+
+  return {
+    ticketId: user.id,
+    status: user.status,
+    telegramLinked: user.tgUserId !== null,
+    telegramUsername: user.tgUsername ?? undefined,
+    createdAt: user.createdAt.toISOString(),
+    lastMessageAt: lastMessage?.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Send a message from web chat
+ */
+export async function sendMessage(sessionId: string, text: string, replyTo?: string): Promise<ChatMessage> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  const topicId = await ensureTopic(user, sessionId);
+  await reopenIfClosed(user, topicId);
+
+  // Look up replyTo message to get topic message ID (only if belongs to same user)
+  let replyToMessageId: number | undefined;
+  if (replyTo) {
+    const replyToMessage = await messageRepository.findById(replyTo);
+    if (replyToMessage?.topicMessageId && replyToMessage.userId === user.id) {
+      replyToMessageId = replyToMessage.topicMessageId;
     }
+  }
 
-    // After reverse, first element is oldest; without reverse, last element is oldest
-    const oldestId = resultMessages.length > 0
-      ? (options.after ? resultMessages[0]?.id : resultMessages[resultMessages.length - 1]?.id)
-      : undefined;
+  // Send message to topic
+  const sendOptions: { message_thread_id: number; reply_to_message_id?: number } = {
+    message_thread_id: topicId,
+  };
+  if (replyToMessageId) {
+    sendOptions.reply_to_message_id = replyToMessageId;
+  }
+  const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, sendOptions);
 
-    return {
-      messages: resultMessages.map(mapMessageToChat),
-      hasMore,
-      oldestId,
-    };
-  },
+  // Save to message map
+  const message = await messageRepository.createWebMessage({
+    userId: user.id,
+    topicMessageId: topicMessage.message_id,
+    direction: 'USER_TO_SUPPORT',
+    channel: 'WEB',
+    text,
+  });
 
-  /**
-   * Get chat status
-   */
-  async getStatus(sessionId: string): Promise<ChatStatus> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
+  logger.info({ userId: user.id, messageId: message.id }, 'Web message sent to topic');
 
-    const messages = await messageRepository.getHistory(user.id, { limit: 1 });
-    const lastMessage = messages[0];
+  await applyClientReply(user, topicId);
 
-    return {
-      ticketId: user.id,
-      status: user.status,
-      telegramLinked: user.tgUserId !== null,
-      telegramUsername: user.tgUsername ?? undefined,
-      createdAt: user.createdAt.toISOString(),
-      lastMessageAt: lastMessage?.createdAt.toISOString(),
-    };
-  },
+  return mapMessageToChat(message);
+}
 
-  /**
-   * Send a message from web chat
-   */
-  async sendMessage(sessionId: string, text: string, replyTo?: string): Promise<ChatMessage> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
+/**
+ * Generate link for migrating to Telegram
+ */
+export async function linkTelegram(sessionId: string): Promise<LinkTelegramResult> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
 
-    const topicId = await ensureTopic(user, sessionId);
-    await reopenIfClosed(user, topicId);
+  const linkToken = await webLinkTokenRepository.create(user.id);
+  const botUsername = env.BOT_USERNAME;
+  const telegramUrl = `https://t.me/${botUsername}?start=${linkToken.token}`;
 
-    // Look up replyTo message to get topic message ID (only if belongs to same user)
-    let replyToMessageId: number | undefined;
-    if (replyTo) {
-      const replyToMessage = await messageRepository.findById(replyTo);
-      if (replyToMessage?.topicMessageId && replyToMessage.userId === user.id) {
-        replyToMessageId = replyToMessage.topicMessageId;
-      }
-    }
+  logger.info({ userId: user.id, token: linkToken.token }, 'Created Telegram link token');
 
-    // Send message to topic
-    const sendOptions: { message_thread_id: number; reply_to_message_id?: number } = {
+  return {
+    token: linkToken.token,
+    telegramUrl,
+    expiresAt: linkToken.expiresAt.toISOString(),
+  };
+}
+
+/**
+ * Close ticket from web chat
+ */
+export async function closeTicket(
+  sessionId: string,
+  resolved: boolean,
+  feedback?: string
+): Promise<{ ticketId: string; status: string; closedAt: string }> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  if (user.status === 'CLOSED') {
+    throw new Error('Ticket already closed');
+  }
+
+  const result = await autoChangeStatus(bot.api, user, 'CLIENT_RESOLVED');
+  if (!result.changed) {
+    throw new Error('Failed to close ticket');
+  }
+
+  // Notify in topic
+  if (user.topicId) {
+    const supportGroupId = Number(env.SUPPORT_GROUP_ID);
+    const message = resolved
+      ? `[WEB] ✅ Клиент закрыл тикет: "${feedback ?? 'Вопрос решён'}"`
+      : `[WEB] ❌ Клиент закрыл тикет без решения`;
+
+    await bot.api.sendMessage(supportGroupId, message, {
+      message_thread_id: user.topicId,
+    });
+  }
+
+  logger.info({ userId: user.id, resolved, feedback }, 'Web ticket closed');
+
+  return {
+    ticketId: user.id,
+    status: 'CLOSED',
+    closedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Process link token from Telegram /start command
+ */
+export async function processLinkToken(
+  token: string,
+  tgUserId: bigint,
+  tgUsername: string | null,
+  tgFirstName: string
+): Promise<User | null> {
+  const linkToken = await webLinkTokenRepository.findValidByToken(token);
+  if (!linkToken) {
+    return null;
+  }
+
+  // Mark token as used
+  await webLinkTokenRepository.markUsed(linkToken.id);
+
+  // Link Telegram account to web user
+  const user = await userRepository.linkTelegramAccount(
+    linkToken.userId,
+    tgUserId,
+    tgUsername,
+    tgFirstName
+  );
+
+  logger.info(
+    { userId: user.id, tgUserId: String(tgUserId), token },
+    'Telegram account linked to web session'
+  );
+
+  return user;
+}
+
+/**
+ * Send a file from web chat
+ */
+export async function sendFile(
+  sessionId: string,
+  fileBuffer: Buffer,
+  fileName: string,
+  mimeType: string,
+  category: FileCategory
+): Promise<FileUploadResult> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  const topicId = await ensureTopic(user, sessionId);
+  await reopenIfClosed(user, topicId);
+
+  const inputFile = new InputFile(fileBuffer, fileName);
+  let topicMessageId: number;
+  let fileId: string;
+
+  if (category === 'image') {
+    const result = await bot.api.sendPhoto(env.SUPPORT_GROUP_ID, inputFile, {
       message_thread_id: topicId,
-    };
-    if (replyToMessageId) {
-      sendOptions.reply_to_message_id = replyToMessageId;
-    }
-    const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, sendOptions);
-
-    // Save to message map
-    const message = await messageRepository.createWebMessage({
-      userId: user.id,
-      topicMessageId: topicMessage.message_id,
-      direction: 'USER_TO_SUPPORT',
-      channel: 'WEB',
-      text,
+      caption: `[WEB] 📎 ${fileName}`,
     });
-
-    logger.info({ userId: user.id, messageId: message.id }, 'Web message sent to topic');
-
-    await applyClientReply(user, topicId);
-
-    return mapMessageToChat(message);
-  },
-
-  /**
-   * Generate link for migrating to Telegram
-   */
-  async linkTelegram(sessionId: string): Promise<LinkTelegramResult> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
-
-    const linkToken = await webLinkTokenRepository.create(user.id);
-    const botUsername = env.BOT_USERNAME;
-    const telegramUrl = `https://t.me/${botUsername}?start=${linkToken.token}`;
-
-    logger.info({ userId: user.id, token: linkToken.token }, 'Created Telegram link token');
-
-    return {
-      token: linkToken.token,
-      telegramUrl,
-      expiresAt: linkToken.expiresAt.toISOString(),
-    };
-  },
-
-  /**
-   * Close ticket from web chat
-   */
-  async closeTicket(
-    sessionId: string,
-    resolved: boolean,
-    feedback?: string
-  ): Promise<{ ticketId: string; status: string; closedAt: string }> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
-
-    if (user.status === 'CLOSED') {
-      throw new Error('Ticket already closed');
-    }
-
-    const result = await autoChangeStatus(bot.api, user, 'CLIENT_RESOLVED');
-    if (!result.changed) {
-      throw new Error('Failed to close ticket');
-    }
-
-    // Notify in topic
-    if (user.topicId) {
-      const supportGroupId = Number(env.SUPPORT_GROUP_ID);
-      const message = resolved
-        ? `[WEB] ✅ Клиент закрыл тикет: "${feedback ?? 'Вопрос решён'}"`
-        : `[WEB] ❌ Клиент закрыл тикет без решения`;
-
-      await bot.api.sendMessage(supportGroupId, message, {
-        message_thread_id: user.topicId,
-      });
-    }
-
-    logger.info({ userId: user.id, resolved, feedback }, 'Web ticket closed');
-
-    return {
-      ticketId: user.id,
-      status: 'CLOSED',
-      closedAt: new Date().toISOString(),
-    };
-  },
-
-  /**
-   * Process link token from Telegram /start command
-   */
-  async processLinkToken(
-    token: string,
-    tgUserId: bigint,
-    tgUsername: string | null,
-    tgFirstName: string
-  ): Promise<User | null> {
-    const linkToken = await webLinkTokenRepository.findValidByToken(token);
-    if (!linkToken) {
-      return null;
-    }
-
-    // Mark token as used
-    await webLinkTokenRepository.markUsed(linkToken.id);
-
-    // Link Telegram account to web user
-    const user = await userRepository.linkTelegramAccount(
-      linkToken.userId,
-      tgUserId,
-      tgUsername,
-      tgFirstName
-    );
-
-    logger.info(
-      { userId: user.id, tgUserId: String(tgUserId), token },
-      'Telegram account linked to web session'
-    );
-
-    return user;
-  },
-
-  /**
-   * Send a file from web chat
-   */
-  async sendFile(
-    sessionId: string,
-    fileBuffer: Buffer,
-    fileName: string,
-    mimeType: string,
-    category: FileCategory
-  ): Promise<FileUploadResult> {
-    const user = await userRepository.findByWebSessionId(sessionId);
-    if (!user) {
-      throw new Error('Session not found');
-    }
-
-    const topicId = await ensureTopic(user, sessionId);
-    await reopenIfClosed(user, topicId);
-
-    const inputFile = new InputFile(fileBuffer, fileName);
-    let topicMessageId: number;
-    let fileId: string;
-
-    if (category === 'image') {
-      const result = await bot.api.sendPhoto(env.SUPPORT_GROUP_ID, inputFile, {
-        message_thread_id: topicId,
-        caption: `[WEB] 📎 ${fileName}`,
-      });
-      topicMessageId = result.message_id;
-      // Get file_id from the largest photo size
-      const photo = result.photo;
-      fileId = photo[photo.length - 1]?.file_id ?? '';
-    } else {
-      const result = await bot.api.sendDocument(env.SUPPORT_GROUP_ID, inputFile, {
-        message_thread_id: topicId,
-        caption: `[WEB] 📎 ${fileName}`,
-      });
-      topicMessageId = result.message_id;
-      fileId = result.document.file_id;
-    }
-
-    // Save to message map with media info
-    // For images, don't show filename (image speaks for itself)
-    // For documents, show filename with icon
-    const messageText = category === 'image' ? '' : `📎 ${fileName}`;
-    const message = await messageRepository.createWebMessage({
-      userId: user.id,
-      topicMessageId,
-      direction: 'USER_TO_SUPPORT',
-      channel: 'WEB',
-      text: messageText,
-      mediaFileId: fileId,
+    topicMessageId = result.message_id;
+    // Get file_id from the largest photo size
+    const photo = result.photo;
+    fileId = photo[photo.length - 1]?.file_id ?? '';
+  } else {
+    const result = await bot.api.sendDocument(env.SUPPORT_GROUP_ID, inputFile, {
+      message_thread_id: topicId,
+      caption: `[WEB] 📎 ${fileName}`,
     });
+    topicMessageId = result.message_id;
+    fileId = result.document.file_id;
+  }
 
-    logger.info(
-      { userId: user.id, messageId: message.id, fileName, category },
-      'Web file sent to topic'
-    );
+  // Save to message map with media info
+  // For images, don't show filename (image speaks for itself)
+  // For documents, show filename with icon
+  const messageText = category === 'image' ? '' : `📎 ${fileName}`;
+  const message = await messageRepository.createWebMessage({
+    userId: user.id,
+    topicMessageId,
+    direction: 'USER_TO_SUPPORT',
+    channel: 'WEB',
+    text: messageText,
+    mediaFileId: fileId,
+  });
 
-    await applyClientReply(user, topicId);
+  logger.info(
+    { userId: user.id, messageId: message.id, fileName, category },
+    'Web file sent to topic'
+  );
 
-    return {
-      messageId: message.id,
-      type: category,
-      fileName,
-      fileSize: fileBuffer.length,
-      mimeType,
-      timestamp: message.createdAt.toISOString(),
-    };
-  },
-};
+  await applyClientReply(user, topicId);
+
+  return {
+    messageId: message.id,
+    type: category,
+    fileName,
+    fileSize: fileBuffer.length,
+    mimeType,
+    timestamp: message.createdAt.toISOString(),
+  };
+}

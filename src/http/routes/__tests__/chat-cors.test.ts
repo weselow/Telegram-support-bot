@@ -26,15 +26,17 @@ vi.mock('../../../services/geoip.service.js', () => ({
 }));
 
 vi.mock('../../../services/web-chat.service.js', () => ({
-  webChatService: {
-    initSession: vi.fn().mockResolvedValue({
-      sessionId: 'test-session',
-      ticketStatus: 'NEW',
-      unreadCount: 0,
-    }),
-    getHistory: vi.fn().mockResolvedValue({ messages: [], hasMore: false }),
-    getStatus: vi.fn().mockResolvedValue({ status: 'NEW' }),
-  },
+  initSession: vi.fn().mockResolvedValue({
+    sessionId: 'test-session',
+    ticketStatus: 'NEW',
+    unreadCount: 0,
+  }),
+  getHistory: vi.fn().mockResolvedValue({ messages: [], hasMore: false }),
+  getStatus: vi.fn().mockResolvedValue({ status: 'NEW' }),
+  sendMessage: vi.fn(),
+  sendFile: vi.fn(),
+  linkTelegram: vi.fn(),
+  closeTicket: vi.fn(),
 }));
 
 vi.mock('../../../services/bot-info.service.js', () => ({
@@ -257,13 +259,17 @@ describe('Chat Routes CORS in Development', () => {
     }));
 
     vi.doMock('../../../services/web-chat.service.js', () => ({
-      webChatService: {
-        initSession: vi.fn().mockResolvedValue({
-          sessionId: 'test-session',
-          ticketStatus: 'NEW',
-          unreadCount: 0,
-        }),
-      },
+      initSession: vi.fn().mockResolvedValue({
+        sessionId: 'test-session',
+        ticketStatus: 'NEW',
+        unreadCount: 0,
+      }),
+      getHistory: vi.fn(),
+      getStatus: vi.fn(),
+      sendMessage: vi.fn(),
+      sendFile: vi.fn(),
+      linkTelegram: vi.fn(),
+      closeTicket: vi.fn(),
     }));
 
     vi.doMock('../../../services/bot-info.service.js', () => ({

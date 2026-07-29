@@ -92,7 +92,7 @@ config/settings.json          сроки SLA и автозакрытия (про
 
 **Экспорты:**
 - Репозитории — объект: `export const userRepository = { async findById(...) {...} }`. Один объект = одна таблица
-- Сервисы — **отдельные функции**: `export async function createTicket(...)`. Не заворачивать сервис в объект: классов на бэкенде нет, объект-обёртка создаёт видимость сущности с состоянием там, где её нет, и мешает точечному импорту. Устаревшие исключения — `webChatService` и `connectionManager`; при существенной правке приводить к общему виду
+- Сервисы — **отдельные функции**: `export async function createTicket(...)`. Не заворачивать сервис в объект: классов на бэкенде нет, объект-обёртка создаёт видимость сущности с состоянием там, где её нет, и мешает точечному импорту. Исключений в коде нет
 - Обработчики — `export async function startHandler(ctx: Context): Promise<void>`
 - Маршруты — `export function askSupportRoute(fastify: FastifyInstance)` / `export async function chatRoutes(...)`
 - Классов на бэкенде **нет ни одного**. В виджете, наоборот, всё классы
@@ -111,7 +111,7 @@ config/settings.json          сроки SLA и автозакрытия (про
 - **Расположение:** тесты лежат рядом с кодом в `src/**/__tests__/`. Корневые папки `tests/unit/` и `tests/integration/` содержат только `.gitkeep` — не использовать
 - **Проверки:** встроенный `expect` (`toEqual`, `toBe`, `toBeNull`, `rejects.toThrow`)
 - **Заглушки:** `vi.mock('../путь.js', () => ({...}))` на уровне файла + `vi.fn()`; `vi.clearAllMocks()` в `beforeEach`; доступ к заглушкам через `await import(...)` внутри `beforeEach`. Папка `src/db/repositories/__mocks__/` пуста — механизм автозаглушек Vitest не используется
-- **Именование:** внешний `describe` — **имя проверяемого модуля без расширения**: `describe('ticket.service')`, `describe('file-validation')`, `describe('ask-support')`. Не писать `describe('TicketService')` — класса с таким именем не существует, заголовок вводит в заблуждение и не находится поиском по репозиторию. Вложенный `describe('имяФункции')`, случаи — `it('should ...')`. В виджете классы настоящие, там внешний `describe` — имя класса (`describe('StateManager')`). Часть старых файлов бэкенда ещё называет несуществующие классы — переименовывать при правке
+- **Именование:** внешний `describe` — **имя проверяемого модуля без расширения**: `describe('ticket.service')`, `describe('file-validation')`, `describe('ask-support')`. Не писать `describe('TicketService')` — класса с таким именем не существует, заголовок вводит в заблуждение и не находится поиском по репозиторию. Вложенный `describe('имяФункции')`, случаи — `it('should ...')`. В виджете классы настоящие, там внешний `describe` — имя класса (`describe('StateManager')`)
 - **Структура:** Arrange-Act-Assert без комментариев-заголовков; тестовые данные — объектные литералы прямо в тесте, построителей и фабрик нет
 - **Интеграционные тесты:** отдельный `vitest.integration.config.ts`, **настоящая** PostgreSQL в Docker на порту 5433 (`support_bot_test`), миграции накатываются в `globalSetup.ts`, переменные окружения задаются в `integration-setup.ts`. Запуск: `pnpm run test:integration` (нужен `docker compose up -d postgres redis`)
 - **Покрытие:** порог 60% по всем метрикам; большой список исключений в `vitest.config.ts` — при добавлении тестов на файл из списка убрать его оттуда

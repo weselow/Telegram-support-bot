@@ -374,7 +374,7 @@ Support Topic                 Web Widget
 ```typescript
 ws.on('close', async () => {
   // 1. Remove from active connections
-  connectionManager.remove(sessionId)
+  removeConnection(sessionId)
 
   // 2. Messages will be stored in DB
   // 3. User can fetch on reconnect via /api/chat/history

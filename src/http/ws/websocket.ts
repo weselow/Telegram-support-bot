@@ -2,7 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import websocket from '@fastify/websocket';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { messageRepository } from '../../db/repositories/message.repository.js';
-import { connectionManager } from './connection-manager.js';
+import {
+  addConnection,
+  cleanupInactiveConnections,
+  getAllConnections,
+  removeConnection,
+  sendToSession,
+} from './connection-manager.js';
 import { handleWebSocketMessage } from './handler.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
@@ -22,13 +28,13 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
   // Start ping/cleanup intervals
   const pingInterval = setInterval(() => {
     const timestamp = Date.now();
-    for (const conn of connectionManager.getAll()) {
-      connectionManager.send(conn.sessionId, 'ping', { timestamp });
+    for (const conn of getAllConnections()) {
+      sendToSession(conn.sessionId, 'ping', { timestamp });
     }
   }, PING_INTERVAL);
 
   const cleanupInterval = setInterval(() => {
-    connectionManager.cleanup(5 * 60 * 1000); // 5 minutes inactive
+    cleanupInactiveConnections(5 * 60 * 1000); // 5 minutes inactive
   }, CLEANUP_INTERVAL);
 
   fastify.addHook('onClose', () => {
@@ -65,14 +71,14 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
     }
 
     // Register connection
-    connectionManager.add(sessionId, user.id, socket);
+    addConnection(sessionId, user.id, socket);
 
     // Check if user has any message history
     const history = await messageRepository.getHistory(user.id, { limit: 1 });
     const hasHistory = history.length > 0;
 
     // Send connected event
-    connectionManager.send(sessionId, 'connected', {
+    sendToSession(sessionId, 'connected', {
       sessionId,
       ticketStatus: user.status,
       unreadCount: 0,
@@ -88,7 +94,7 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
         text: messages.webOnboarding.welcome,
       });
 
-      connectionManager.send(sessionId, 'message', {
+      sendToSession(sessionId, 'message', {
         id: welcomeMessage.id,
         text: messages.webOnboarding.welcome,
         from: 'support',
@@ -119,14 +125,14 @@ export async function registerWebSocket(fastify: FastifyInstance): Promise<void>
 
     // Handle close
     socket.on('close', (code: number, reason: Buffer) => {
-      connectionManager.remove(sessionId);
+      removeConnection(sessionId);
       logger.info({ sessionId, code, reason: reason.toString() }, 'WebSocket client disconnected');
     });
 
     // Handle errors
     socket.on('error', (error: Error) => {
       logger.error({ error, sessionId }, 'WebSocket error');
-      connectionManager.remove(sessionId);
+      removeConnection(sessionId);
     });
   });
 }

@@ -1,7 +1,7 @@
 import type { WebSocket } from 'ws';
 import type { ClientMessage } from './types.js';
-import { connectionManager } from './connection-manager.js';
-import { webChatService } from '../../services/web-chat.service.js';
+import { sendToSession, updateConnectionActivity } from './connection-manager.js';
+import { closeTicket, sendMessage } from '../../services/web-chat.service.js';
 import { checkKeyRateLimit } from '../../services/rate-limit.service.js';
 import { userRepository } from '../../db/repositories/user.repository.js';
 import { bot } from '../../bot/bot.js';
@@ -43,7 +43,7 @@ export async function handleWebSocketMessage(
   }
 
   const { type, data } = parsed;
-  connectionManager.updateActivity(session.sessionId);
+  updateConnectionActivity(session.sessionId);
 
   switch (type) {
     case 'message':
@@ -93,10 +93,10 @@ async function handleMessage(
   }
 
   try {
-    const message = await webChatService.sendMessage(session.sessionId, text, data.replyTo);
+    const message = await sendMessage(session.sessionId, text, data.replyTo);
 
     // Confirm message to sender
-    connectionManager.send(session.sessionId, 'message', {
+    sendToSession(session.sessionId, 'message', {
       id: message.id,
       text: message.text,
       from: 'user',
@@ -143,13 +143,13 @@ async function handleClose(
   session: SessionInfo
 ): Promise<void> {
   try {
-    const result = await webChatService.closeTicket(
+    const result = await closeTicket(
       session.sessionId,
       data.resolved,
       data.feedback
     );
 
-    connectionManager.send(session.sessionId, 'status', {
+    sendToSession(session.sessionId, 'status', {
       status: result.status,
     });
   } catch (error) {

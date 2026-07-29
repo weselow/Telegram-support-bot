@@ -4,7 +4,7 @@ import { userRepository } from '../../db/repositories/user.repository.js';
 import { eventRepository } from '../../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from '../../services/topic.service.js';
 import { startAutocloseTimer, cancelAutocloseTimer } from '../../services/autoclose.service.js';
-import { connectionManager } from '../../http/ws/connection-manager.js';
+import { sendToUser } from '../../http/ws/connection-manager.js';
 import { messages, formatMessage } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
 import { captureError } from '../../config/sentry.js';
@@ -66,7 +66,7 @@ export async function callbackHandler(ctx: Context): Promise<void> {
 
     // Notify web client about status change
     if (user.webSessionId) {
-      const sent = connectionManager.sendToUser(userId, 'status', { status });
+      const sent = sendToUser(userId, 'status', { status });
       if (!sent) {
         logger.warn({ userId, webSessionId: user.webSessionId }, 'Failed to send status update to web client');
       }

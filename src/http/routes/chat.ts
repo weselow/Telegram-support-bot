@@ -1,7 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import multipart from '@fastify/multipart';
 import { randomUUID } from 'crypto';
-import { webChatService } from '../../services/web-chat.service.js';
+import {
+  closeTicket,
+  getHistory,
+  getStatus,
+  initSession,
+  linkTelegram,
+  sendFile,
+  sendMessage,
+} from '../../services/web-chat.service.js';
 import { getLocationByIp } from '../../services/geoip.service.js';
 import { checkIpRateLimit } from '../../services/rate-limit.service.js';
 import { getBotInfo, getBotAvatar } from '../../services/bot-info.service.js';
@@ -175,7 +183,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     const referer = request.headers.referer ?? request.headers.referrer ?? undefined;
 
     try {
-      const result = await webChatService.initSession(
+      const result = await initSession(
         sessionId,
         referer as string | undefined,
         geoResult.city ?? undefined,
@@ -216,7 +224,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     const { limit, before, after } = request.query;
 
     try {
-      const result = await webChatService.getHistory(sessionId, {
+      const result = await getHistory(sessionId, {
         limit: limit ? parseInt(limit, 10) : undefined,
         before,
         after,
@@ -256,7 +264,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     try {
-      const result = await webChatService.getStatus(sessionId);
+      const result = await getStatus(sessionId);
       return await reply.send({
         success: true,
         data: result,
@@ -319,7 +327,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     const { replyTo } = request.body;
 
     try {
-      const message = await webChatService.sendMessage(sessionId, text, replyTo);
+      const message = await sendMessage(sessionId, text, replyTo);
       return await reply.status(201).send({
         success: true,
         data: {
@@ -391,7 +399,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
 
       const sanitizedFilename = sanitizeFilename(originalFilename);
 
-      const result = await webChatService.sendFile(
+      const result = await sendFile(
         sessionId,
         fileBuffer,
         sanitizedFilename,
@@ -433,7 +441,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     try {
-      const result = await webChatService.linkTelegram(sessionId);
+      const result = await linkTelegram(sessionId);
       return await reply.send({
         success: true,
         data: result,
@@ -471,7 +479,7 @@ export async function chatRoutes(fastify: FastifyInstance): Promise<void> {
     const resolvedValue = resolved ?? true;
 
     try {
-      const result = await webChatService.closeTicket(sessionId, resolvedValue, feedback);
+      const result = await closeTicket(sessionId, resolvedValue, feedback);
       return await reply.send({
         success: true,
         data: result,
