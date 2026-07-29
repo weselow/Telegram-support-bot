@@ -83,6 +83,18 @@ function mapMessageToChat(msg: MessageMap): ChatMessage {
 }
 
 /**
+ * Load the web user behind a session, failing when the session is unknown.
+ */
+async function requireWebUser(sessionId: string): Promise<User> {
+  const user = await userRepository.findByWebSessionId(sessionId);
+  if (!user) {
+    throw new Error('Session not found');
+  }
+
+  return user;
+}
+
+/**
  * Send onboarding messages to a web user after their first message.
  * Messages are saved to database and sent via WebSocket.
  */
@@ -215,6 +227,125 @@ async function applyClientReply(user: User, topicId: number): Promise<void> {
 }
 
 /**
+ * Resolve the topic message a reply points at.
+ * Returns undefined when the reference is unknown or belongs to another user.
+ */
+async function findReplyTargetId(
+  replyTo: string | undefined,
+  userId: string
+): Promise<number | undefined> {
+  if (!replyTo) {
+    return undefined;
+  }
+
+  const replyToMessage = await messageRepository.findById(replyTo);
+  if (replyToMessage?.topicMessageId && replyToMessage.userId === userId) {
+    return replyToMessage.topicMessageId;
+  }
+
+  return undefined;
+}
+
+/**
+ * Mirror a web message into the support topic, returning its topic message id.
+ */
+async function sendTextToTopic(
+  topicId: number,
+  text: string,
+  replyToMessageId?: number
+): Promise<number> {
+  const options: { message_thread_id: number; reply_to_message_id?: number } = {
+    message_thread_id: topicId,
+  };
+  if (replyToMessageId) {
+    options.reply_to_message_id = replyToMessageId;
+  }
+
+  const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, options);
+
+  return topicMessage.message_id;
+}
+
+interface SentFile {
+  topicMessageId: number;
+  fileId: string;
+}
+
+/**
+ * Upload a web file into the support topic as a photo or a document,
+ * returning the topic message id and the Telegram file_id of the upload.
+ */
+async function sendFileToTopic(
+  topicId: number,
+  fileBuffer: Buffer,
+  fileName: string,
+  category: FileCategory
+): Promise<SentFile> {
+  const inputFile = new InputFile(fileBuffer, fileName);
+  const options = {
+    message_thread_id: topicId,
+    caption: `[WEB] 📎 ${fileName}`,
+  };
+
+  if (category === 'image') {
+    const result = await bot.api.sendPhoto(env.SUPPORT_GROUP_ID, inputFile, options);
+    // Get file_id from the largest photo size
+    const photo = result.photo;
+
+    return {
+      topicMessageId: result.message_id,
+      fileId: photo[photo.length - 1]?.file_id ?? '',
+    };
+  }
+
+  const result = await bot.api.sendDocument(env.SUPPORT_GROUP_ID, inputFile, options);
+
+  return { topicMessageId: result.message_id, fileId: result.document.file_id };
+}
+
+/**
+ * Save an uploaded file to the message map with its media info.
+ * For images the filename is omitted (the image speaks for itself),
+ * for documents it is shown with an icon.
+ */
+async function saveFileMessage(
+  userId: string,
+  fileName: string,
+  category: FileCategory,
+  sent: SentFile
+): Promise<MessageMap> {
+  const message = await messageRepository.createWebMessage({
+    userId,
+    topicMessageId: sent.topicMessageId,
+    direction: 'USER_TO_SUPPORT',
+    channel: 'WEB',
+    text: category === 'image' ? '' : `📎 ${fileName}`,
+    mediaFileId: sent.fileId,
+  });
+
+  logger.info({ userId, messageId: message.id, fileName, category }, 'Web file sent to topic');
+
+  return message;
+}
+
+/**
+ * Tell support in the topic that the client has closed the ticket.
+ */
+async function notifyTopicAboutClose(
+  topicId: number,
+  resolved: boolean,
+  feedback?: string
+): Promise<void> {
+  const message = resolved
+    ? `[WEB] ✅ Клиент закрыл тикет: "${feedback ?? 'Вопрос решён'}"`
+    : `[WEB] ❌ Клиент закрыл тикет без решения`;
+
+  await bot.api.sendMessage(Number(env.SUPPORT_GROUP_ID), message, {
+    message_thread_id: topicId,
+  });
+}
+
+/**
  * Initialize or resume a web chat session
  */
 export async function initSession(
@@ -256,10 +387,7 @@ export async function getHistory(
   sessionId: string,
   options: { limit?: number | undefined; before?: string | undefined; after?: string | undefined } = {}
 ): Promise<HistoryResult> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   const limit = Math.min(options.limit ?? 50, 100);
   const history = await messageRepository.getHistory(user.id, {
@@ -292,10 +420,7 @@ export async function getHistory(
  * Get chat status
  */
 export async function getStatus(sessionId: string): Promise<ChatStatus> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   const history = await messageRepository.getHistory(user.id, { limit: 1 });
   const lastMessage = history[0];
@@ -314,36 +439,17 @@ export async function getStatus(sessionId: string): Promise<ChatStatus> {
  * Send a message from web chat
  */
 export async function sendMessage(sessionId: string, text: string, replyTo?: string): Promise<ChatMessage> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   const topicId = await ensureTopic(user, sessionId);
   await reopenIfClosed(user, topicId);
 
-  // Look up replyTo message to get topic message ID (only if belongs to same user)
-  let replyToMessageId: number | undefined;
-  if (replyTo) {
-    const replyToMessage = await messageRepository.findById(replyTo);
-    if (replyToMessage?.topicMessageId && replyToMessage.userId === user.id) {
-      replyToMessageId = replyToMessage.topicMessageId;
-    }
-  }
+  const replyToMessageId = await findReplyTargetId(replyTo, user.id);
+  const topicMessageId = await sendTextToTopic(topicId, text, replyToMessageId);
 
-  // Send message to topic
-  const sendOptions: { message_thread_id: number; reply_to_message_id?: number } = {
-    message_thread_id: topicId,
-  };
-  if (replyToMessageId) {
-    sendOptions.reply_to_message_id = replyToMessageId;
-  }
-  const topicMessage = await bot.api.sendMessage(env.SUPPORT_GROUP_ID, `[WEB] ${text}`, sendOptions);
-
-  // Save to message map
   const message = await messageRepository.createWebMessage({
     userId: user.id,
-    topicMessageId: topicMessage.message_id,
+    topicMessageId,
     direction: 'USER_TO_SUPPORT',
     channel: 'WEB',
     text,
@@ -360,10 +466,7 @@ export async function sendMessage(sessionId: string, text: string, replyTo?: str
  * Generate link for migrating to Telegram
  */
 export async function linkTelegram(sessionId: string): Promise<LinkTelegramResult> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   const linkToken = await webLinkTokenRepository.create(user.id);
   const botUsername = env.BOT_USERNAME;
@@ -386,10 +489,7 @@ export async function closeTicket(
   resolved: boolean,
   feedback?: string
 ): Promise<{ ticketId: string; status: string; closedAt: string }> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   if (user.status === 'CLOSED') {
     throw new Error('Ticket already closed');
@@ -400,16 +500,8 @@ export async function closeTicket(
     throw new Error('Failed to close ticket');
   }
 
-  // Notify in topic
   if (user.topicId) {
-    const supportGroupId = Number(env.SUPPORT_GROUP_ID);
-    const message = resolved
-      ? `[WEB] ✅ Клиент закрыл тикет: "${feedback ?? 'Вопрос решён'}"`
-      : `[WEB] ❌ Клиент закрыл тикет без решения`;
-
-    await bot.api.sendMessage(supportGroupId, message, {
-      message_thread_id: user.topicId,
-    });
+    await notifyTopicAboutClose(user.topicId, resolved, feedback);
   }
 
   logger.info({ userId: user.id, resolved, feedback }, 'Web ticket closed');
@@ -464,53 +556,13 @@ export async function sendFile(
   mimeType: string,
   category: FileCategory
 ): Promise<FileUploadResult> {
-  const user = await userRepository.findByWebSessionId(sessionId);
-  if (!user) {
-    throw new Error('Session not found');
-  }
+  const user = await requireWebUser(sessionId);
 
   const topicId = await ensureTopic(user, sessionId);
   await reopenIfClosed(user, topicId);
 
-  const inputFile = new InputFile(fileBuffer, fileName);
-  let topicMessageId: number;
-  let fileId: string;
-
-  if (category === 'image') {
-    const result = await bot.api.sendPhoto(env.SUPPORT_GROUP_ID, inputFile, {
-      message_thread_id: topicId,
-      caption: `[WEB] 📎 ${fileName}`,
-    });
-    topicMessageId = result.message_id;
-    // Get file_id from the largest photo size
-    const photo = result.photo;
-    fileId = photo[photo.length - 1]?.file_id ?? '';
-  } else {
-    const result = await bot.api.sendDocument(env.SUPPORT_GROUP_ID, inputFile, {
-      message_thread_id: topicId,
-      caption: `[WEB] 📎 ${fileName}`,
-    });
-    topicMessageId = result.message_id;
-    fileId = result.document.file_id;
-  }
-
-  // Save to message map with media info
-  // For images, don't show filename (image speaks for itself)
-  // For documents, show filename with icon
-  const messageText = category === 'image' ? '' : `📎 ${fileName}`;
-  const message = await messageRepository.createWebMessage({
-    userId: user.id,
-    topicMessageId,
-    direction: 'USER_TO_SUPPORT',
-    channel: 'WEB',
-    text: messageText,
-    mediaFileId: fileId,
-  });
-
-  logger.info(
-    { userId: user.id, messageId: message.id, fileName, category },
-    'Web file sent to topic'
-  );
+  const sent = await sendFileToTopic(topicId, fileBuffer, fileName, category);
+  const message = await saveFileMessage(user.id, fileName, category, sent);
 
   await applyClientReply(user, topicId);
 
