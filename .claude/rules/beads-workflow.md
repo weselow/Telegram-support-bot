@@ -57,9 +57,14 @@ Don't try to fix it now (unless trivial). Create the bead so it's not forgotten.
    cd .worktrees/bd-{BEAD_ID}
    ```
    This creates `.beads/redirect` pointing to the main `.beads/` — all bd commands use the single dolt server from the main repo. Raw `git worktree add` would create a shadow `.beads/` copy with its own dolt server, causing process leaks and data loss.
-3. Mark in progress: `bd update {BEAD_ID} --status in_progress`
-4. If this is a child of an epic — check epic status. If epic is still `open`, mark it too: `bd update {EPIC_ID} --status in_progress`
-5. Read bead context: `bd show {BEAD_ID}` and `bd comments {BEAD_ID}`
+3. Install dependencies — a fresh worktree has no `node_modules`:
+   ```bash
+   pnpm install --frozen-lockfile
+   ```
+   Do NOT copy `.env` from the main repo. Unit tests supply their own stub values via `vitest.setup.ts` for whatever the `.env` would have provided, so `pnpm test` works in a bare worktree. Integration tests need a real database and are run separately, on request.
+4. Mark in progress: `bd update {BEAD_ID} --status in_progress`
+5. If this is a child of an epic — check epic status. If epic is still `open`, mark it too: `bd update {EPIC_ID} --status in_progress`
+6. Read bead context: `bd show {BEAD_ID}` and `bd comments {BEAD_ID}`
 
 ## During Implementation
 
