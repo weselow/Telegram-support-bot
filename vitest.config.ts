@@ -40,7 +40,6 @@ export default defineConfig({
         'src/config/redis.ts',
         'src/config/redis-client.ts',
         'src/http/server.ts',
-        'src/http/routes/health.ts',
         'src/http/routes/chat.ts', // Tested via integration tests
         'src/http/ws/**', // Tested via integration tests (TD-023)
         'src/bot/handlers/onboarding.ts',
