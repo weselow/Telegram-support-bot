@@ -143,12 +143,6 @@ wss://chat.dellshop.ru/ws/chat?session=<sessionId>
   }
 }
 
-// Статус печати
-{
-  type: "typing",
-  data: { isTyping: true }
-}
-
 // Статус тикета изменён
 {
   type: "status",
@@ -192,9 +186,11 @@ wss://chat.dellshop.ru/ws/chat?session=<sessionId>
 2. **API:** `POST /api/chat/link-telegram` → возвращает `{ token, telegramUrl }`
 3. **Redirect:** `https://t.me/dellshop_support_bot?start=link_<token>`
 4. **Bot:** Получает `/start link_<token>`
-5. **Bot:** Находит User по token, добавляет `tgUserId`
-6. **Bot:** Копирует историю веб-чата в топик (опционально)
-7. **WebSocket:** Отправляет `channel_linked` event
+5. **Bot:** Находит User по token, добавляет `tgUserId` в ту же запись `users`
+6. **WebSocket:** Отправляет `channel_linked` event
+
+История никуда не копируется: запись пользователя одна, тема у неё уже есть,
+вся переписка изначально лежит в этой теме.
 
 ### После связывания
 

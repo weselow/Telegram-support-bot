@@ -128,17 +128,6 @@ interface MessageEvent {
 }
 ```
 
-#### `typing` - индикатор печати
-
-```typescript
-interface TypingEvent {
-  type: 'typing'
-  data: {
-    isTyping: boolean
-  }
-}
-```
-
 #### `status` - статус тикета
 
 ```typescript
@@ -255,9 +244,6 @@ export class ChatTransport extends EventEmitter {
         break
       case 'message':
         this.emit('message', msg.data)
-        break
-      case 'typing':
-        this.emit('typing', msg.data)
         break
       case 'status':
         this.emit('status', msg.data)
@@ -449,7 +435,6 @@ export interface ConnectedData {
 export type ServerMessage =
   | { type: 'connected'; data: ConnectedData }
   | { type: 'message'; data: Message }
-  | { type: 'typing'; data: { isTyping: boolean } }
   | { type: 'status'; data: { status: string } }
   | { type: 'channel_linked'; data: { telegram: string } }
   | { type: 'ping'; data: { timestamp: number } }

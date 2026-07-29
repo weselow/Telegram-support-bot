@@ -140,14 +140,6 @@ const ws = new WebSocket('wss://chat.dellshop.ru/ws/chat')
 }
 ```
 
-#### `typing` — поддержка печатает
-```json
-{
-  "type": "typing",
-  "data": { "isTyping": true }
-}
-```
-
 #### `status` — статус тикета изменён
 ```json
 {

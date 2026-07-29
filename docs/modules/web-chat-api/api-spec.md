@@ -260,18 +260,6 @@ wss://chat.dellshop.ru/ws/chat?session=<sessionId>
 }
 ```
 
-#### typing
-Индикатор печати от поддержки.
-
-```json
-{
-  "type": "typing",
-  "data": {
-    "isTyping": true
-  }
-}
-```
-
 #### status
 Изменение статуса тикета.
 
@@ -292,8 +280,7 @@ Telegram аккаунт успешно привязан.
 {
   "type": "channel_linked",
   "data": {
-    "telegram": "@ivan_petrov",
-    "historyCopied": true
+    "telegram": "@ivan_petrov"
   }
 }
 ```

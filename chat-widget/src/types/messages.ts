@@ -95,13 +95,6 @@ export interface ServerMessageEvent {
   data: Message
 }
 
-export interface ServerTypingEvent {
-  type: 'typing'
-  data: {
-    isTyping: boolean
-  }
-}
-
 export interface ServerStatusEvent {
   type: 'status'
   data: {
@@ -134,7 +127,6 @@ export interface ServerErrorEvent {
 export type ServerEvent =
   | ServerConnectedEvent
   | ServerMessageEvent
-  | ServerTypingEvent
   | ServerStatusEvent
   | ServerChannelLinkedEvent
   | ServerPingEvent

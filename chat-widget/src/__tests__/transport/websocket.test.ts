@@ -90,7 +90,6 @@ describe('WebSocketClient', () => {
       onConnected: vi.fn(),
       onDisconnected: vi.fn(),
       onMessage: vi.fn(),
-      onTyping: vi.fn(),
       onStatus: vi.fn(),
       onChannelLinked: vi.fn(),
       onError: vi.fn(),
@@ -291,12 +290,6 @@ describe('WebSocketClient', () => {
       mockWsInstance?.simulateMessage({ type: 'message', data: message })
 
       expect(handlers.onMessage).toHaveBeenCalledWith(message)
-    })
-
-    it('should handle typing event', () => {
-      mockWsInstance?.simulateMessage({ type: 'typing', data: { isTyping: true } })
-
-      expect(handlers.onTyping).toHaveBeenCalledWith(true)
     })
 
     it('should handle status event', () => {

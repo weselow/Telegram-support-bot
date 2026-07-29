@@ -90,7 +90,6 @@ async function handleLinkToken(ctx: Context, token: string): Promise<void> {
   if (user.webSessionId) {
     sendToUser(user.id, 'channel_linked', {
       telegram: tgUsername ? `@${tgUsername}` : tgFirstName,
-      historyCopied: true,
     });
   }
 

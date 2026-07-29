@@ -23,7 +23,6 @@ export interface WebSocketEventHandlers {
   onConnected?: (sessionId: string) => void
   onDisconnected?: () => void
   onMessage?: (message: Message) => void
-  onTyping?: (isTyping: boolean) => void
   onStatus?: (status: string) => void
   onChannelLinked?: (channel: string, username: string) => void
   onError?: (error: Error) => void
@@ -219,10 +218,6 @@ export class WebSocketClient {
 
       case 'message':
         this.handlers.onMessage?.(event.data)
-        break
-
-      case 'typing':
-        this.handlers.onTyping?.(event.data.isTyping)
         break
 
       case 'status':
