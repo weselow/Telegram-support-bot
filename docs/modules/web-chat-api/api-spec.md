@@ -67,24 +67,27 @@ Cookie: webchat_session=<sessionId>
 | after | string | - | ID сообщения (для новых после reconnect) |
 
 **Response:**
+
+Сообщения идут от новых к старым. Поле `oldestId` — идентификатор последнего элемента массива, то есть самого старого из отданных; его передают в `before` для следующей страницы.
+
 ```json
 {
   "success": true,
   "data": {
     "messages": [
       {
-        "id": "msg-uuid-1",
-        "text": "Здравствуйте, нужна помощь",
-        "from": "user",
-        "channel": "web",
-        "timestamp": "2025-12-28T18:00:00Z"
-      },
-      {
         "id": "msg-uuid-2",
         "text": "Добрый день! Чем могу помочь?",
         "from": "support",
         "channel": "telegram",
         "timestamp": "2025-12-28T18:01:00Z"
+      },
+      {
+        "id": "msg-uuid-1",
+        "text": "Здравствуйте, нужна помощь",
+        "from": "user",
+        "channel": "web",
+        "timestamp": "2025-12-28T18:00:00Z"
       }
     ],
     "hasMore": true,
