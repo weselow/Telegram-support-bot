@@ -3,9 +3,12 @@
 ## Обзор
 
 Документ описывает потоки сообщений между тремя точками:
-1. **Web Widget** — виджет на сайте (WebSocket)
+1. **Chat Widget** — виджет на сайте (WebSocket)
 2. **Telegram DM** — личные сообщения боту
-3. **Support Topic** — топик в группе поддержки
+3. **Тема поддержки** — тема (топик) в группе поддержки
+
+Все имена функций и файлов в схемах ниже взяты из `src/` — если код меняется,
+схему нужно поправить вместе с ним.
 
 ---
 
@@ -14,50 +17,53 @@
 ### Сценарий: Пользователь пишет через веб-виджет
 
 ```
-┌─────────────────┐
-│   Web Widget    │
-│   (Browser)     │
-└────────┬────────┘
-         │ WebSocket: {type: "message", data: {text: "Привет"}}
-         ▼
-┌─────────────────┐
-│  WebSocket      │
-│  Handler        │
-└────────┬────────┘
-         │ 1. Validate session
-         │ 2. Parse message
-         ▼
-┌─────────────────┐
-│  WebChatService │
-│  .sendMessage() │
-└────────┬────────┘
-         │ 3. Find/create user by webSessionId
-         │ 4. Find/create topic
-         ▼
-┌─────────────────┐
-│  Telegram Bot   │
-│  .sendMessage() │
-└────────┬────────┘
-         │ bot.api.sendMessage(topicId, "[WEB] Привет")
-         ▼
-┌─────────────────┐
-│  Support Topic  │
-│  (Telegram)     │
-└────────┬────────┘
-         │ 5. Message delivered
-         ▼
-┌─────────────────┐
-│  MessageMap     │
-│  .create()      │
-└─────────────────┘
-         │ 6. Save mapping:
-         │    - userId
-         │    - text
-         │    - channel: WEB
-         │    - topicMessageId
+┌────────────────────────────┐
+│  Chat Widget (браузер)     │
+└──────────────┬─────────────┘
+               │ WebSocket: {"type":"message","data":{"text":"Привет"}}
+               ▼
+┌────────────────────────────┐
+│ http/ws/handler.ts         │
+│ handleWebSocketMessage()   │
+└──────────────┬─────────────┘
+               │ 1. Проверить формат, длину (до 4000) и частоту
+               ▼
+┌────────────────────────────┐
+│ services/web-chat.service  │
+│ sendMessage()              │
+└──────────────┬─────────────┘
+               │ 2. Найти пользователя по webSessionId
+               │ 3. Найти или создать тему (ensureTopic)
+               ▼
+┌────────────────────────────┐
+│ bot.api.sendMessage()      │
+│ (grammy)                   │
+└──────────────┬─────────────┘
+               │ 4. Текст с префиксом [WEB] в тему группы
+               ▼
+┌────────────────────────────┐
+│  Тема поддержки (Telegram) │
+└──────────────┬─────────────┘
+               │
+               ▼
+┌────────────────────────────┐
+│ messageRepository          │
+│ .createWebMessage()        │
+└────────────────────────────┘
+               │ 5. Запись в messages_map:
+               │    userId, topicMessageId,
+               │    direction: USER_TO_SUPPORT,
+               │    channel: WEB, text
 ```
 
-### Формат сообщения в топике
+После записи в базу обработчик подтверждает отправку самому виджету:
+`sendToSession(sessionId, 'message', ...)` из `http/ws/connection-manager.ts`.
+
+Тот же `sendMessage()` вызывается из HTTP-маршрута `POST /api/chat/message`
+(`http/routes/chat.ts`) — это запасной путь, когда WebSocket недоступен.
+Файлы идут через `POST /api/chat/upload` → `sendFile()` в том же сервисе.
+
+### Формат сообщения в теме
 
 ```
 [WEB] Привет, нужна помощь с заказом
@@ -81,11 +87,11 @@
 
 | Статус до сообщения | Что происходит |
 |---------------------|----------------|
-| `CLOSED` | Обращение переоткрывается (`CLIENT_REOPEN` → `NEW`), в топик уходит уведомление, старые SLA-таймеры снимаются и заводятся заново |
+| `CLOSED` | Обращение переоткрывается (`CLIENT_REOPEN` → `NEW`), в тему уходит уведомление, старые SLA-таймеры снимаются и заводятся заново |
 | `WAITING_CLIENT` | Снимается таймер автозакрытия, статус меняется на `IN_PROGRESS` (`CLIENT_REPLY`) |
 | `NEW`, `IN_PROGRESS` | Статус не меняется |
 
-Переоткрытие выполняется **до** отправки сообщения в топик, смена на `IN_PROGRESS` —
+Переоткрытие выполняется **до** отправки сообщения в тему, смена на `IN_PROGRESS` —
 **после** успешной отправки. Web-клиент узнаёт о новом статусе через WebSocket-событие
 `status`.
 
@@ -97,102 +103,146 @@
 
 ## 2. Telegram User → Support
 
-### Сценарий: Пользователь пишет в Telegram DM (существующий flow)
+### Сценарий: Пользователь пишет в Telegram DM
 
 ```
-┌─────────────────┐
-│  Telegram DM    │
-│  (User)         │
-└────────┬────────┘
-         │ grammY: message event
-         ▼
-┌─────────────────┐
-│  privateMessage │
-│  Handler        │
-└────────┬────────┘
-         │ 1. Find/create user
-         │ 2. Find/create topic
-         ▼
-┌─────────────────┐
-│  mirrorUser     │
-│  Message()      │
-└────────┬────────┘
-         │ Copy message to topic
-         ▼
-┌─────────────────┐
-│  Support Topic  │
-│  (Telegram)     │
-└────────┬────────┘
-         │ 3. Save to MessageMap
-         │    - channel: TELEGRAM
+┌────────────────────────────┐
+│  Telegram DM               │
+│  (пользователь)            │
+└──────────────┬─────────────┘
+               │ grammy: on('message') + фильтр по типу чата
+               ▼
+┌────────────────────────────┐
+│ bot/handlers/message.ts    │
+│ privateMessageHandler()    │
+└──────────────┬─────────────┘
+               │ 1. Проверить частоту (checkRateLimit)
+               │ 2. Отдать сообщение онбордингу, если он идёт
+               │ 3. findUserByTgId(tgUserId);
+               │    нет пользователя или темы → онбординг
+               ▼
+┌────────────────────────────┐
+│ services/message.service   │
+│ mirrorUserMessage()        │
+└──────────────┬─────────────┘
+               │ 4. Копия сообщения в тему группы
+               ▼
+┌────────────────────────────┐
+│  Тема поддержки (Telegram) │
+└──────────────┬─────────────┘
+               │
+               ▼
+┌────────────────────────────┐
+│ messageRepository.create() │
+└────────────────────────────┘
+               │ 5. Запись в messages_map:
+               │    userId, dmMessageId, topicMessageId,
+               │    direction: USER_TO_SUPPORT,
+               │    channel: TELEGRAM (значение по умолчанию)
 ```
 
-### Формат сообщения в топике
+`messageRepository.create()` сохраняет только связку идентификаторов сообщений —
+текст в эту запись не пишется, он остаётся в самом Telegram.
+
+### Формат сообщения в теме
 
 ```
 Привет, нужна помощь с заказом
 ```
 
-Без префикса (или с `[TG]` если оба канала связаны).
+Без префикса. Если у пользователя связаны оба канала (`user.webSessionId` заполнен),
+`privateMessageHandler` передаёт `mirrorUserMessage` признак `channelPrefix: 'TG'`,
+и текстовое сообщение уходит в тему как `[TG] Привет, нужна помощь с заказом`.
 
 ---
 
 ## 3. Support → User (оба канала)
 
-### Сценарий: Сотрудник отвечает в топике
+### Сценарий: Сотрудник отвечает в теме
+
+Промежуточного маршрутизатора нет: `supportMessageHandler` сам определяет,
+какие каналы есть у пользователя, и вызывает нужные функции.
 
 ```
-┌─────────────────┐
-│  Support Topic  │
-│  (Staff Reply)  │
-└────────┬────────┘
-         │ grammY: message event (supportMessageHandler)
-         ▼
-┌─────────────────┐
-│  MessageRouter  │
-│  .route()       │
-└────────┬────────┘
-         │ 1. Get user by topicId
-         │ 2. Check channels
-         │
-         ├─────────────────────────────────────┐
-         │ tgUserId exists?                    │ webSessionId exists?
-         ▼                                     ▼
-┌─────────────────┐                   ┌─────────────────┐
-│  mirrorSupport  │                   │  WebSocketMgr   │
-│  Message()      │                   │  .broadcast()   │
-└────────┬────────┘                   └────────┬────────┘
-         │                                     │
-         ▼                                     ▼
-┌─────────────────┐                   ┌─────────────────┐
-│  Telegram DM    │                   │  Web Widget     │
-│  (User)         │                   │  (Browser)      │
-└─────────────────┘                   └─────────────────┘
+┌────────────────────────────┐
+│  Тема поддержки            │
+│  (ответ сотрудника)        │
+└──────────────┬─────────────┘
+               │ grammy: on('message') + фильтр по SUPPORT_GROUP_ID
+               ▼
+┌────────────────────────────┐
+│ bot/handlers/support.ts    │
+│ supportMessageHandler()    │
+└──────────────┬─────────────┘
+               │ 1. Пропустить внутренние (// и #internal)
+               │ 2. findUserByTopicId(topicId)
+               │ 3. Проверить каналы пользователя
+               │
+       ┌───────┴────────────────┐
+       │                        │
+ user.tgUserId есть?      user.webSessionId есть?
+       ▼                        ▼
+┌───────────────────┐   ┌────────────────────────┐
+│ services/         │   │ messageRepository      │
+│ message.service   │   │ .createWebMessage()    │
+│ mirrorSupport     │   │           ↓            │
+│ Message()         │   │ http/ws/               │
+│                   │   │ connection-manager     │
+│                   │   │ sendToUser()           │
+└─────────┬─────────┘   └───────────┬────────────┘
+          ▼                         ▼
+┌───────────────────┐   ┌────────────────────────┐
+│ Telegram DM       │   │ Chat Widget            │
+│ (пользователь)    │   │ (браузер)              │
+└───────────────────┘   └────────────────────────┘
 ```
 
-### Важно: Доставка в оба канала
+После доставки в оба канала обработчик снимает SLA-таймеры
+(`cancelAllSlaTimers`) и меняет статус: `autoChangeStatus(api, user, 'SUPPORT_REPLY')`.
 
-Если пользователь связал Web + Telegram, ответ поддержки доставляется в **оба** канала одновременно:
+### Важно: доставка в оба канала
+
+Если у пользователя связаны Web и Telegram, ответ поддержки уходит в оба канала —
+последовательно, в одном блоке `try`:
 
 ```typescript
-async routeSupportMessage(topicId: number, message: Message) {
-  const user = await userRepository.findByTopicId(topicId)
+// src/bot/handlers/support.ts, supportMessageHandler
+if (user.tgUserId) {
+  await mirrorSupportMessage(ctx.api, ctx.message, user.id, user.tgUserId);
+}
 
-  const promises: Promise<void>[] = []
+if (user.webSessionId) {
+  const savedMessage = await messageRepository.createWebMessage({
+    userId: user.id,
+    topicMessageId: ctx.message.message_id,
+    direction: 'SUPPORT_TO_USER',
+    channel: 'TELEGRAM',
+    text: msgText || placeholderText,
+    mediaFileId,
+    mediaDuration: voiceDuration,
+  });
 
-  // Telegram DM (если есть)
-  if (user.tgUserId) {
-    promises.push(this.sendToTelegram(user.tgUserId, message))
-  }
-
-  // Web Widget (если есть активное соединение)
-  if (user.webSessionId) {
-    promises.push(this.sendToWebSocket(user.webSessionId, message))
-  }
-
-  await Promise.all(promises)
+  sendToUser(user.id, 'message', {
+    id: savedMessage.id,
+    text: msgText,
+    from: 'support',
+    channel: 'telegram',
+    timestamp: savedMessage.createdAt.toISOString(),
+  });
 }
 ```
+
+Что важно понимать из этого фрагмента:
+
+- ветка веб-чата **сначала пишет сообщение в историю**, и только потом отдаёт его
+  в соединение. `sendToUser` возвращает `false`, если живого соединения нет, —
+  сообщение при этом уже сохранено и будет получено при переподключении
+  (см. раздел 6);
+- вложения превращаются в ссылки на собственный прокси `/api/media/{file_id}` —
+  токен бота наружу не отдаётся;
+- для пользователя со связанными каналами один ответ поддержки даёт **две** записи
+  в `messages_map`: связку идентификаторов из `mirrorSupportMessage` (без текста) и
+  запись с текстом из `createWebMessage`.
 
 ---
 
@@ -201,63 +251,68 @@ async routeSupportMessage(topicId: number, message: Message) {
 ### Сценарий: Пользователь нажимает "Продолжить в Telegram"
 
 ```
-┌─────────────────┐
-│  Web Widget     │
-│  [Telegram btn] │
-└────────┬────────┘
-         │ Click "Продолжить в Telegram"
-         ▼
-┌─────────────────┐
-│  POST /api/chat │
-│  /link-telegram │
-└────────┬────────┘
-         │ 1. Generate token
-         │ 2. Save to web_link_tokens
-         │ 3. Return deep link
-         ▼
-┌─────────────────┐
-│  Response:      │
-│  {telegramUrl}  │
-└────────┬────────┘
-         │ User clicks link
-         ▼
-┌─────────────────┐
-│  t.me/bot?start │
-│  =link_<token>  │
-└────────┬────────┘
-         │ Opens Telegram
-         ▼
-┌─────────────────┐
-│  Bot receives   │
-│  /start link_X  │
-└────────┬────────┘
-         │ 1. Validate token
-         │ 2. Find User by token
-         │ 3. Add tgUserId to User
-         │ 4. Mark token used
-         ▼
-┌─────────────────┐
-│  Copy History   │
-│  (optional)     │
-└────────┬────────┘
-         │ Copy web messages to topic
-         ▼
-┌─────────────────┐
-│  WebSocket:     │
-│  channel_linked │
-└─────────────────┘
-         │ Notify web widget
+┌────────────────────────────┐
+│  Chat Widget (браузер)     │
+│  [кнопка Telegram]         │
+└──────────────┬─────────────┘
+               │ Нажатие "Продолжить в Telegram"
+               ▼
+┌────────────────────────────┐
+│ POST /api/chat/            │
+│      link-telegram         │
+└──────────────┬─────────────┘
+               │ services/web-chat.service → linkTelegram()
+               ▼
+┌────────────────────────────┐
+│ webLinkTokenRepository     │
+│ .create(userId)            │
+└──────────────┬─────────────┘
+               │ 1. Токен вида link_<32 hex>, срок жизни 1 час
+               │ 2. Запись в web_link_tokens
+               │ 3. Ответ: {token, telegramUrl, expiresAt}
+               ▼
+┌────────────────────────────┐
+│ https://t.me/<BOT_USERNAME>│
+│ ?start=link_<32 hex>       │
+└──────────────┬─────────────┘
+               │ Пользователь открывает ссылку
+               ▼
+┌────────────────────────────┐
+│ bot/handlers/start.ts      │
+│ startHandler()             │
+│ → handleLinkToken()        │
+└──────────────┬─────────────┘
+               │ services/web-chat.service → processLinkToken()
+               │ 1. findValidByToken — не истёк и не использован
+               │ 2. markUsed
+               │ 3. linkTelegramAccount: tgUserId в ту же запись users
+               ▼
+┌────────────────────────────┐
+│ connection-manager         │
+│ sendToUser(..., 'channel_  │
+│ linked', ...)              │
+└────────────────────────────┘
+               │ 4. Виджет узнаёт о связывании
+               │ 5. В Telegram уходят приветствие и запрос телефона
 ```
+
+История в тему **не копируется**: Telegram-идентификатор дописывается в ту же запись
+`users`, у которой уже есть `topicId`, поэтому переписка изначально лежит в одной теме.
+Поле `historyCopied` в событии `channel_linked` сейчас всегда `true`.
+
+Имя темы после связывания не меняется. Тема, созданная из виджета, называется
+`Web: <первые 8 символов сессии>` (`web-chat.service.ts`), тема, созданная из Telegram, —
+`<Имя> (<tgUserId>)` (`topic.service.ts`, `formatTopicName`).
 
 ### После связывания
 
 ```typescript
-// User record теперь содержит оба идентификатора
+// Запись users теперь содержит оба идентификатора
 {
   id: "user-uuid",
   webSessionId: "abc123-def456",  // Web
   tgUserId: 307865745n,           // Telegram
-  topicId: 42                     // Единый топик
+  topicId: 42                     // Единая тема
 }
 ```
 
@@ -268,37 +323,37 @@ async routeSupportMessage(topicId: number, message: Message) {
 ### Сценарий: Пользователь пишет то в Web, то в Telegram
 
 ```
-Timeline:
+Хронология:
 ─────────────────────────────────────────────────────────────►
 
 [WEB] 10:00  "Здравствуйте"
         │
-        └──► Topic: "[WEB] Здравствуйте"
+        └──► Тема: "[WEB] Здравствуйте"
 
 [TG]  10:01  "Продолжаю с телефона"
         │
-        └──► Topic: "Продолжаю с телефона"
+        └──► Тема: "[TG] Продолжаю с телефона"
 
 [SUPP] 10:02 "Добрый день!"
         │
         ├──► Telegram DM: "Добрый день!"
-        └──► Web Widget:  "Добрый день!"
+        └──► Chat Widget: "Добрый день!"
 
 [WEB] 10:03  "Как оформить возврат?"
         │
-        └──► Topic: "[WEB] Как оформить возврат?"
+        └──► Тема: "[WEB] Как оформить возврат?"
 ```
 
-### Вид топика в группе поддержки
+### Вид темы в группе поддержки
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Topic: "Иван (web:abc123 / tg:307865745)"          │
+│  Тема: "Web: abc12345"                              │
 ├─────────────────────────────────────────────────────┤
-│  [WEB] Иван: Здравствуйте                           │
-│  Иван: Продолжаю с телефона                         │
+│  [WEB] Здравствуйте                                 │
+│  [TG] Продолжаю с телефона                          │
 │  Поддержка: Добрый день!                            │
-│  [WEB] Иван: Как оформить возврат?                  │
+│  [WEB] Как оформить возврат?                        │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -309,91 +364,110 @@ Timeline:
 ### Сценарий: Web-пользователь offline, поддержка отвечает
 
 ```
-┌─────────────────┐
-│  Support Topic  │
-│  (Staff Reply)  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  MessageRouter  │
-└────────┬────────┘
-         │ Check WebSocket connection
-         │
-         ├── Connected? ──► Send immediately
-         │
-         └── Disconnected? ──► Save to MessageMap
-                              (will be fetched on reconnect)
+┌────────────────────────────┐
+│  Тема поддержки            │
+│  (ответ сотрудника)        │
+└──────────────┬─────────────┘
+               │
+               ▼
+┌────────────────────────────┐
+│ bot/handlers/support.ts    │
+│ supportMessageHandler()    │
+└──────────────┬─────────────┘
+               │ 1. messageRepository.createWebMessage() —
+               │    сообщение попадает в messages_map всегда
+               │ 2. sendToUser(...)
+               │
+               ├── соединение есть ──► отдаётся сразу, вернёт true
+               │
+               └── соединения нет ──► вернёт false, сообщение
+                                       остаётся только в базе
 
 ┌─────────────────────────────────────────────────────┐
-│  On Reconnect:                                       │
+│  При переподключении:                                │
 │                                                      │
-│  1. WebSocket connected                              │
-│  2. GET /api/chat/history?after=<lastMessageId>     │
-│  3. Return all messages since disconnect             │
-│  4. Widget displays missed messages                  │
+│  1. Виджет открывает /ws/chat                        │
+│  2. GET /api/chat/history?after=<lastMessageId>      │
+│  3. Возвращаются сообщения, пришедшие после разрыва  │
+│  4. Виджет показывает пропущенное                    │
 └─────────────────────────────────────────────────────┘
 ```
+
+Соединения, молчавшие дольше 5 минут, закрываются по расписанию
+(`cleanupInactiveConnections` в `connection-manager.ts`), поэтому длинный простой
+всегда заканчивается переподключением и дозагрузкой истории.
 
 ---
 
 ## 7. Typing Indicators
 
-### Web → Support Topic
+### Web → Тема поддержки
 
 ```
-Web Widget                    Support Topic
+Chat Widget                   Тема поддержки
     │                              │
-    │ typing: true                 │
-    │─────────────────────────────►│ [WEB] Иван печатает...
-    │                              │
-    │ typing: false                │
-    │─────────────────────────────►│ (indicator removed)
+    │ {"type":"typing",            │
+    │  "data":{"isTyping":true}}   │
+    │─────────────────────────────►│ бот показывает "печатает"
     │                              │
 ```
 
-### Support → Web Widget
+`handleTyping` в `http/ws/handler.ts` пересылает признак только при
+`isTyping: true` и вызывает `bot.api.sendChatAction(SUPPORT_GROUP_ID, 'typing',
+{ message_thread_id })`. Telegram сам гасит индикатор через несколько секунд,
+отдельного сообщения о прекращении печати нет.
 
-```
-Support Topic                 Web Widget
-    │                              │
-    │ (staff typing detected)      │
-    │─────────────────────────────►│ "Поддержка печатает..."
-    │                              │
-```
+### Support → Chat Widget
 
-**Note:** Telegram не предоставляет typing events от пользователей в группах,
-поэтому индикатор печати поддержки реализуется через отслеживание активности.
+Не реализовано. Тип сообщения `typing` объявлен в `http/ws/types.ts` и виджет
+умеет его принимать, но сервер такое сообщение никуда не отправляет —
+поиск `sendToUser(..., 'typing'` по `src/` ничего не находит. Telegram не отдаёт
+события печати сотрудников в группах, поэтому источника данных для индикатора нет.
 
 ---
 
 ## Error Handling
 
-### WebSocket Disconnect
+### Разрыв WebSocket
+
+`http/ws/websocket.ts` снимает соединение с учёта и при штатном закрытии, и при
+ошибке:
 
 ```typescript
-ws.on('close', async () => {
-  // 1. Remove from active connections
-  removeConnection(sessionId)
+socket.on('close', (code: number, reason: Buffer) => {
+  removeConnection(sessionId);
+  logger.info({ sessionId, code, reason: reason.toString() }, 'WebSocket client disconnected');
+});
 
-  // 2. Messages will be stored in DB
-  // 3. User can fetch on reconnect via /api/chat/history
-})
+socket.on('error', (error: Error) => {
+  logger.error({ error, sessionId }, 'WebSocket error');
+  removeConnection(sessionId);
+});
 ```
 
-### Message Delivery Failure
+Сообщения при этом остаются в `messages_map` и подтягиваются при переподключении
+через `GET /api/chat/history`.
+
+### Сбой доставки ответа поддержки
+
+Весь блок доставки в `supportMessageHandler` обёрнут в один `try/catch`. В `catch`
+ошибка уходит в Sentry через `captureError`, а сотруднику отвечают прямо в теме:
 
 ```typescript
-async sendToTelegram(tgUserId: bigint, message: Message) {
-  try {
-    await bot.api.sendMessage(tgUserId, message.text)
-  } catch (error) {
-    if (error.code === 403) {
-      // User blocked the bot
-      await userRepository.markTelegramBlocked(tgUserId)
-    }
-    // Log error but don't fail the whole operation
-    logger.error('Failed to send to Telegram', { tgUserId, error })
+// src/bot/handlers/support.ts
+catch (error) {
+  captureError(error, { topicId, userId: user.id, action: 'mirrorSupportMessage' });
+
+  if (isBotBlockedError(error)) {
+    // GrammyError, код 403, описание содержит 'blocked by the user'
+    logger.warn({ topicId, userId: user.id }, 'Bot blocked by user');
+    await ctx.reply(messages.support.botBlocked, { message_thread_id: topicId });
+  } else {
+    logger.error({ error, topicId, userId: user.id }, 'Failed to mirror support message');
+    await ctx.reply(messages.support.deliveryFailed, { message_thread_id: topicId });
   }
 }
 ```
+
+Отдельной пометки «бот заблокирован» в базе нет — сотрудник узнаёт об этом только
+из сообщения в теме.
