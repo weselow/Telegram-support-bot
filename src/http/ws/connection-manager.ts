@@ -24,10 +24,26 @@ export function addConnection(sessionId: string, userId: string, ws: WebSocket):
   logger.info({ sessionId, userId }, 'WebSocket connection added');
 }
 
-export function removeConnection(sessionId: string): void {
+/**
+ * Убрать запись, только если она принадлежит именно этому сокету.
+ *
+ * Событие close приходит асинхронно и может застать реестр уже с новой
+ * записью: клиент успел переподключиться с тем же идентификатором сессии.
+ * Удаление «по одному лишь sessionId» в этот момент стёрло бы живое
+ * соединение — сообщения поддержки перестали бы доходить.
+ */
+function deleteIfOwnedBy(sessionId: string, ws: WebSocket): WebSocketConnection | null {
   const conn = connections.get(sessionId);
+  if (conn?.ws !== ws) {
+    return null;
+  }
+  connections.delete(sessionId);
+  return conn;
+}
+
+export function removeConnection(sessionId: string, ws: WebSocket): void {
+  const conn = deleteIfOwnedBy(sessionId, ws);
   if (conn) {
-    connections.delete(sessionId);
     logger.info({ sessionId, userId: conn.userId }, 'WebSocket connection removed');
   }
 }
@@ -88,12 +104,14 @@ export function cleanupInactiveConnections(maxInactiveMs: number = 5 * 60 * 1000
   const now = Date.now();
   for (const [sessionId, conn] of connections.entries()) {
     if (now - conn.lastActivity > maxInactiveMs) {
+      // Сначала убираем запись, потом закрываем: пришедшее позже событие close
+      // уже не найдёт своей записи и не тронет чужую
+      deleteIfOwnedBy(sessionId, conn.ws);
       try {
         conn.ws.close(1000, 'Inactive');
       } catch (error) {
         logger.debug({ error, sessionId }, 'Failed to close inactive connection');
       }
-      connections.delete(sessionId);
       logger.info({ sessionId }, 'Cleaned up inactive WebSocket connection');
     }
   }

@@ -120,16 +120,18 @@ function subscribe(socket: WebSocket, queue: FrameQueue, sessionId: string): voi
     queue.push(decodeFrame(data));
   });
 
+  // Свой сокет передаётся явно: к моменту закрытия за тем же идентификатором
+  // сессии может уже стоять другое, живое соединение — трогать его нельзя
   socket.on('close', (code: number, reason: Buffer) => {
     queue.clear();
-    removeConnection(sessionId);
+    removeConnection(sessionId, socket);
     logger.info({ sessionId, code, reason: reason.toString() }, 'WebSocket client disconnected');
   });
 
   socket.on('error', (error: Error) => {
     queue.clear();
     logger.error({ error, sessionId }, 'WebSocket error');
-    removeConnection(sessionId);
+    removeConnection(sessionId, socket);
   });
 }
 
