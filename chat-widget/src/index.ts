@@ -4,10 +4,14 @@
  * Embeddable chat widget for customer support with WebSocket communication
  * and Telegram integration.
  *
+ * The widget is self-configuring: API, WebSocket and CSS are taken from the host
+ * that served this script, so moving to another domain is a one-line change in
+ * the embedding page. The domain baked in at build time is only the fallback.
+ *
  * Usage:
  *
  * 1. Via script tag with auto-init:
- * <script src="https://chat.dellshop.ru/widget.js"
+ * <script src="https://chat.dellshop.ru/chat-widget/chat-widget.js"
  *         data-variant="modal"
  *         data-auto-open="false">
  * </script>
@@ -22,6 +26,8 @@
  */
 
 import { ChatWidget } from './widget'
+import { findWidgetScript } from './utils/script-origin'
+import { parseScriptConfig } from './utils/script-config'
 import type { WidgetConfig, WidgetVariant } from './types/config'
 import type { Message } from './types/messages'
 import type { WidgetEventMap, WidgetState } from './types/events'
@@ -31,6 +37,11 @@ export type { WidgetConfig, WidgetVariant, Message, WidgetEventMap, WidgetState 
 
 // Export Widget class
 export { ChatWidget as Widget }
+
+// Capture our own script tag while document.currentScript is still meaningful.
+// It is only set during synchronous evaluation of the script; by the time config
+// is parsed (DOMContentLoaded or a later retry) it is always null.
+const CURRENT_SCRIPT = document.currentScript as HTMLScriptElement | null
 
 // Expose Widget class immediately for programmatic use
 ;(window as any).DellShopChat = {
@@ -50,65 +61,6 @@ export { ChatWidget as Widget }
   ) => (window as any).DellShopChat.instance?.on(event, handler)
 }
 
-// Parse config from script tag data attributes and URL parameters
-function parseScriptConfig(): Partial<WidgetConfig> {
-  const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
-  const config: Partial<WidgetConfig> = { ...windowConfig }
-
-  const scripts = document.querySelectorAll('script[src*="widget"], script[src*="chat"]')
-  const currentScript = scripts[scripts.length - 1] as HTMLScriptElement | null
-
-  if (currentScript) {
-    // Parse URL query parameters from script src
-    // e.g., chat-widget.js?theme=chatgpt&variant=drawer
-    try {
-      const scriptUrl = new URL(currentScript.src)
-      const urlParams = scriptUrl.searchParams
-
-      const urlTheme = urlParams.get('theme')
-      if (urlTheme === 'default' || urlTheme === 'chatgpt') {
-        config.themePreset = urlTheme
-      }
-
-      const urlVariant = urlParams.get('variant')
-      if (urlVariant === 'modal' || urlVariant === 'drawer' || urlVariant === 'auto') {
-        config.variant = urlVariant
-      }
-
-      if (urlParams.get('autoOpen') === 'true') config.autoOpen = true
-      if (urlParams.get('sound') === 'false') config.sound = false
-
-      const urlPosition = urlParams.get('position')
-      if (urlPosition === 'left' || urlPosition === 'right') {
-        config.position = urlPosition
-      }
-    } catch {
-      // Ignore URL parsing errors
-    }
-
-    // Data attributes override URL parameters
-    const variant = currentScript.dataset.variant as WidgetVariant
-    if (variant === 'modal' || variant === 'drawer' || variant === 'auto') {
-      config.variant = variant
-    }
-    if (currentScript.dataset.autoOpen === 'true') config.autoOpen = true
-    else if (currentScript.dataset.autoOpen === 'false') config.autoOpen = false
-    if (currentScript.dataset.sound === 'false') config.sound = false
-    else if (currentScript.dataset.sound === 'true') config.sound = true
-    if (currentScript.dataset.position === 'left' || currentScript.dataset.position === 'right') {
-      config.position = currentScript.dataset.position
-    }
-    if (currentScript.dataset.apiUrl) config.apiUrl = currentScript.dataset.apiUrl
-    if (currentScript.dataset.wsUrl) config.wsUrl = currentScript.dataset.wsUrl
-    if (currentScript.dataset.baseUrl) config.baseUrl = currentScript.dataset.baseUrl
-    if (currentScript.dataset.theme === 'default' || currentScript.dataset.theme === 'chatgpt') {
-      config.themePreset = currentScript.dataset.theme
-    }
-  }
-
-  return config
-}
-
 // Auto-initialization with retry mechanism
 function autoInit(): boolean {
   try {
@@ -116,7 +68,8 @@ function autoInit(): boolean {
       return true
     }
 
-    const config = parseScriptConfig()
+    const windowConfig = (window as any).DellShopChatConfig as Partial<WidgetConfig> | undefined
+    const config = parseScriptConfig(findWidgetScript(CURRENT_SCRIPT), windowConfig)
     const widget = new ChatWidget(config)
     ;(window as any).DellShopChat.instance = widget
     widget.init()
