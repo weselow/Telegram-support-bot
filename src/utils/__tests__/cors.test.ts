@@ -8,9 +8,17 @@ vi.mock('../../config/env.js', () => ({
   },
 }));
 
+vi.mock('../../utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 import { getBaseDomain, isOriginAllowed, getConfiguredBaseDomain, isOriginAllowedByConfig } from '../cors.js';
 
-describe('CORS utilities', () => {
+describe('cors', () => {
   describe('getBaseDomain', () => {
     it('should extract base domain from subdomain', () => {
       expect(getBaseDomain('chat.dellshop.ru')).toBe('dellshop.ru');
@@ -274,6 +282,146 @@ describe('CORS utilities', () => {
       });
 
       expect(isOriginCheckEnabled()).toBe(false);
+    });
+  });
+
+  describe('warnAboutOriginConfig', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.resetModules();
+    });
+
+    async function loadWith(envOverrides: Record<string, string | undefined>) {
+      vi.doMock('../../config/env.js', () => ({
+        env: { NODE_ENV: 'production', ...envOverrides },
+      }));
+      const { warnAboutOriginConfig } = await import('../cors.js');
+      const { logger } = await import('../../utils/logger.js');
+      return { warnAboutOriginConfig, logger };
+    }
+
+    it('should warn when an entry repeats the base domain of SUPPORT_DOMAIN', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entry: 'dellshop.ru',
+          supportDomain: 'chat.dellshop.ru',
+          supportBaseDomain: 'dellshop.ru',
+          hint: expect.stringContaining('SUPPORT_DOMAIN'),
+        }),
+        'ALLOWED_ORIGINS entry repeats the base domain of SUPPORT_DOMAIN',
+      );
+    });
+
+    it('should warn when a listed subdomain does not cover its parent domain', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'shop.dellshop.ru',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entry: 'shop.dellshop.ru',
+          parentDomain: 'dellshop.ru',
+          hint: expect.stringContaining('ALLOWED_ORIGINS'),
+        }),
+        'ALLOWED_ORIGINS entry does not allow its parent domain',
+      );
+    });
+
+    it('should not warn when the parent domain is listed as well', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'shop.dellshop.ru,dellshop.ru',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn when the parent domain is covered by SUPPORT_DOMAIN', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: 'shop.example.dellshop.ru',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn about plain second-level domains', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'dellshop.ru,example.com',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn when ALLOWED_ORIGINS is not set', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: undefined,
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn about localhost or an IP address', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'localhost:3000,192.168.1.10',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should skip empty entries and normalize full origins before checking', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: ' , https://shop.dellshop.ru/ ',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ entry: 'shop.dellshop.ru' }),
+        'ALLOWED_ORIGINS entry does not allow its parent domain',
+      );
+    });
+
+    it('should warn once per problematic entry', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru,shop.example.com',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(2);
     });
   });
 });
