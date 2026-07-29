@@ -180,6 +180,39 @@ describe('WebSocket Integration', () => {
     });
   }
 
+  // Собирает подряд несколько сообщений сервера. Нужна там, где интересен не
+  // первый ответ, а весь поток: 'connected' приходит первым, а проверяемое
+  // сообщение — следом.
+  function collectMessages(
+    ws: WebSocket,
+    count: number,
+    timeout = 2000
+  ): Promise<ServerMessage[]> {
+    return new Promise((resolve, reject) => {
+      const received: ServerMessage[] = [];
+      const timer = setTimeout(() => {
+        reject(
+          new Error(
+            `Timeout waiting for messages: got ${String(received.length)} of ${String(count)}`
+          )
+        );
+      }, timeout);
+
+      ws.on('message', (data) => {
+        received.push(JSON.parse(data.toString()) as ServerMessage);
+        if (received.length >= count) {
+          clearTimeout(timer);
+          resolve(received);
+        }
+      });
+
+      ws.on('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
+
   function waitForClose(ws: WebSocket, timeout = 2000): Promise<{ code: number; reason: string }> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Timeout waiting for close')), timeout);
@@ -270,6 +303,39 @@ describe('WebSocket Integration', () => {
         expect(message.type).toBe('message');
         expect(message.data).toMatchObject({
           text: 'Hello support',
+          from: 'user',
+          channel: 'web',
+        });
+
+        await closeClient(ws);
+      } finally {
+        await prisma.messageMap.deleteMany({ where: { userId: testUser.id } });
+        await prisma.user.delete({ where: { id: testUser.id } }).catch(() => {});
+      }
+    });
+
+    it('should process message sent immediately on open, before connected event', async () => {
+      const testUser = await createUserWithHistory({
+        webSessionId: '550e8400-e29b-41d4-a716-446655440023',
+        status: 'NEW',
+        topicId: 123,
+      });
+
+      try {
+        const ws = new WebSocket(`${serverAddress}/ws/chat?session=${testUser.webSessionId!}`);
+        const received = collectMessages(ws, 2);
+
+        ws.on('open', () => {
+          ws.send(JSON.stringify({ type: 'message', data: { text: 'Immediate hello' } }));
+        });
+
+        const messages = await received;
+        const confirmation = messages.find((m) => m.type === 'message');
+
+        expect(messages[0]?.type).toBe('connected');
+        expect(confirmation).toBeDefined();
+        expect(confirmation?.data).toMatchObject({
+          text: 'Immediate hello',
           from: 'user',
           channel: 'web',
         });
