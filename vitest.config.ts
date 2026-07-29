@@ -23,7 +23,6 @@ export default defineConfig({
         'src/bot/bot.ts',
         'src/utils/logger.ts',
         'src/services/autoclose.service.ts',
-        'src/services/topic.service.ts',
         'src/services/group.service.ts',
         'src/bot/handlers/callback.ts',
         'src/bot/handlers/edit.ts',

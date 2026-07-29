@@ -19,6 +19,7 @@ vi.mock('../../db/repositories/user.repository.js', () => ({
     createWebUser: vi.fn(),
     updateTopicId: vi.fn(),
     updateStatus: vi.fn(),
+    updateSourceUrl: vi.fn(),
     linkTelegramAccount: vi.fn(),
   },
 }));
@@ -95,6 +96,7 @@ describe('web-chat.service', () => {
     createWebUser: Mock;
     updateTopicId: Mock;
     updateStatus: Mock;
+    updateSourceUrl: Mock;
     linkTelegramAccount: Mock;
   };
   let messageRepository: {
@@ -219,6 +221,49 @@ describe('web-chat.service', () => {
       const result = await initSession('session-123');
 
       expect(result.telegramLinked).toBe(true);
+    });
+
+    it('should update source url of an existing user while the topic is not created yet', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      userRepository.updateSourceUrl.mockResolvedValue({
+        ...mockUser,
+        sourceUrl: 'https://example.com/catalog/item-42',
+      });
+      messageRepository.getHistory.mockResolvedValue([]);
+
+      await initSession('session-123', 'https://example.com/catalog/item-42', 'Moscow');
+
+      expect(userRepository.updateSourceUrl).toHaveBeenCalledWith(
+        'user-1',
+        'https://example.com/catalog/item-42'
+      );
+    });
+
+    it('should keep source url once the topic is created', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue({ ...mockUser, topicId: 42 });
+      messageRepository.getHistory.mockResolvedValue([]);
+
+      await initSession('session-123', 'https://example.com/catalog/item-42', 'Moscow');
+
+      expect(userRepository.updateSourceUrl).not.toHaveBeenCalled();
+    });
+
+    it('should not update source url when the page is the same', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([]);
+
+      await initSession('session-123', 'https://example.com', 'Moscow');
+
+      expect(userRepository.updateSourceUrl).not.toHaveBeenCalled();
+    });
+
+    it('should not update source url when the page is unknown', async () => {
+      userRepository.findByWebSessionId.mockResolvedValue(mockUser);
+      messageRepository.getHistory.mockResolvedValue([]);
+
+      await initSession('session-123');
+
+      expect(userRepository.updateSourceUrl).not.toHaveBeenCalled();
     });
   });
 

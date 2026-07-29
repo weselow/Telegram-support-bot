@@ -324,6 +324,14 @@ async function notifyTopicAboutClose(
 }
 
 /**
+ * Whether the page a returning visitor is on should replace the stored one:
+ * only before the topic exists and only when it is a different page.
+ */
+function shouldUpdateSourceUrl(user: User, sourceUrl: string | undefined): sourceUrl is string {
+  return !!sourceUrl && user.topicId === null && user.sourceUrl !== sourceUrl;
+}
+
+/**
  * Initialize or resume a web chat session
  */
 export async function initSession(
@@ -343,6 +351,12 @@ export async function initSession(
       sourceIp,
     });
     logger.info({ userId: user.id, sessionId }, 'Created new web chat user');
+  } else if (shouldUpdateSourceUrl(user, sourceUrl)) {
+    // The session is created on the first page load, the ticket card only on the
+    // first message. Until the topic exists the card should show the page the
+    // visitor is on right now, not the page they entered the site from.
+    await userRepository.updateSourceUrl(user.id, sourceUrl);
+    logger.info({ userId: user.id, sessionId, sourceUrl }, 'Updated web chat source url');
   }
 
   const history = await messageRepository.getHistory(user.id, { limit: 1 });
