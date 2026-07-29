@@ -23,24 +23,47 @@
 
 ```html
 <!-- В конце <body> -->
-<script src="https://cdn.dellshop.ru/chat-widget.js" async></script>
+<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js" async></script>
 ```
+
+Адреса сервера виджет определяет сам — по тому адресу, откуда загружен его скрипт.
+Из ссылки выше получаются:
+
+| Настройка | Значение |
+|-----------|----------|
+| `apiUrl` | `https://chat.dellshop.ru` |
+| `wsUrl` | `wss://chat.dellshop.ru/ws/chat` |
+| `baseUrl` (стили) | `https://chat.dellshop.ru/chat-widget` |
+
+Поэтому переезд на другой домен — это правка одной строки на сайте, пересобирать
+виджет не нужно. Домен, вшитый при сборке (`SUPPORT_DOMAIN`), остаётся запасным
+значением на случай, когда тег скрипта найти не удалось.
+
+Порядок приоритетов, от низшего к высшему:
+адрес скрипта → `window.DellShopChatConfig` → параметры ссылки → `data`-атрибуты.
 
 ### С настройками
 
 ```html
 <script
-  src="https://cdn.dellshop.ru/chat-widget.js"
+  src="https://chat.dellshop.ru/chat-widget/chat-widget.js"
   data-variant="drawer"
   data-position="bottom-right"
   async
 ></script>
 ```
 
+Если в разметку сайта нельзя добавить `data`-атрибуты (например, админка хранит
+только адрес), те же настройки задаются параметрами ссылки:
+
+```html
+<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js?variant=drawer&theme=chatgpt" async></script>
+```
+
 ### Программная инициализация
 
 ```html
-<script src="https://cdn.dellshop.ru/chat-widget.js" async></script>
+<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js" async></script>
 <script>
   window.DellShopChatConfig = {
     variant: 'auto',           // 'modal' | 'drawer' | 'auto'
