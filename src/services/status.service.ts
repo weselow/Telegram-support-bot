@@ -3,7 +3,10 @@ import type { User, TicketStatus } from '../generated/prisma/client.js';
 import { userRepository } from '../db/repositories/user.repository.js';
 import { eventRepository } from '../db/repositories/event.repository.js';
 import { updateTicketCard, type TicketCardData } from './topic.service.js';
+import { cancelAllSlaTimers, startSlaTimers } from './sla.service.js';
 import { sendToUser } from '../http/ws/connection-manager.js';
+import { messages } from '../config/messages.js';
+import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
 export type StatusTrigger = 'SUPPORT_REPLY' | 'CLIENT_REPLY' | 'CLIENT_RESOLVED' | 'CLIENT_REOPEN';
@@ -91,4 +94,31 @@ export async function autoChangeStatus(
     logger.error({ error, userId: user.id, trigger }, 'Failed to auto change status');
     return { changed: false, oldStatus, newStatus: oldStatus };
   }
+}
+
+/**
+ * Вернуть закрытое обращение в работу: перевести статус, сообщить об этом
+ * в тему поддержки и завести отсчёт SLA заново, сняв прежние таймеры.
+ *
+ * Единственный порядок переоткрытия для всех каналов — личных сообщений,
+ * онбординга и веб-чата. Возвращает true, если обращение действительно
+ * переоткрыто; для незакрытого обращения не делает ничего.
+ *
+ * Ошибки наружу не глушатся: каждый вызывающий обрабатывает их по-своему.
+ */
+export async function reopenTicket(api: Api, user: User, topicId: number): Promise<boolean> {
+  const result = await autoChangeStatus(api, user, 'CLIENT_REOPEN');
+
+  if (!result.changed) {
+    return false;
+  }
+
+  await api.sendMessage(Number(env.SUPPORT_GROUP_ID), messages.reopened, {
+    message_thread_id: topicId,
+  });
+
+  await cancelAllSlaTimers(user.id, topicId);
+  await startSlaTimers(user.id, topicId);
+
+  return true;
 }
