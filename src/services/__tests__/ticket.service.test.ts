@@ -16,7 +16,7 @@ vi.mock('../../db/repositories/event.repository.js', () => ({
   },
 }));
 
-describe('TicketService', () => {
+describe('ticket.service', () => {
   let userRepository: {
     findByTgUserId: Mock;
     findByTopicId: Mock;

@@ -1,5 +1,17 @@
 export { registerWebSocket } from './websocket.js';
-export { connectionManager } from './connection-manager.js';
+export {
+  addConnection,
+  removeConnection,
+  getConnection,
+  getConnectionByUserId,
+  updateConnectionActivity,
+  sendToSession,
+  sendToUser,
+  broadcast,
+  getConnectionCount,
+  getAllConnections,
+  cleanupInactiveConnections,
+} from './connection-manager.js';
 export type {
   ClientMessage,
   ClientMessageType,

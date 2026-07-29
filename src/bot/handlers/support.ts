@@ -4,7 +4,7 @@ import { findUserByTopicId } from '../../services/ticket.service.js';
 import { mirrorSupportMessage } from '../../services/message.service.js';
 import { autoChangeStatus } from '../../services/status.service.js';
 import { cancelAllSlaTimers } from '../../services/sla.service.js';
-import { connectionManager } from '../../http/ws/connection-manager.js';
+import { sendToUser } from '../../http/ws/connection-manager.js';
 import { messageRepository } from '../../db/repositories/message.repository.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
@@ -101,7 +101,7 @@ export async function supportMessageHandler(ctx: Context): Promise<void> {
         });
 
         // Send via WebSocket
-        connectionManager.sendToUser(user.id, 'message', {
+        sendToUser(user.id, 'message', {
           id: savedMessage.id,
           text: msgText,
           from: 'support',

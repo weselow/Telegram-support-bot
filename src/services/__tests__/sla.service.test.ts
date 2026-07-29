@@ -16,7 +16,7 @@ vi.mock('../../config/settings.js', () => ({
   },
 }));
 
-describe('SlaService', () => {
+describe('sla.service', () => {
   let scheduleSlaJob: Mock;
   let cancelSlaJob: Mock;
 

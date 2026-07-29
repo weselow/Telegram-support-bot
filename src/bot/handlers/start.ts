@@ -2,8 +2,8 @@ import type { Context } from 'grammy';
 import { messages } from '../../config/messages.js';
 import { getRedirectData } from '../../http/routes/ask-support.js';
 import { setOnboardingState, type OnboardingState } from '../../services/onboarding.service.js';
-import { webChatService } from '../../services/web-chat.service.js';
-import { connectionManager } from '../../http/ws/connection-manager.js';
+import { processLinkToken } from '../../services/web-chat.service.js';
+import { sendToUser } from '../../http/ws/connection-manager.js';
 import { logger } from '../../utils/logger.js';
 
 const SHORT_ID_PATTERN = /^[0-9a-f]{8}$/i;
@@ -73,7 +73,7 @@ async function handleLinkToken(ctx: Context, token: string): Promise<void> {
 
   logger.info({ tgUserId, token }, 'Processing Telegram link token');
 
-  const user = await webChatService.processLinkToken(
+  const user = await processLinkToken(
     token,
     BigInt(tgUserId),
     tgUsername,
@@ -88,7 +88,7 @@ async function handleLinkToken(ctx: Context, token: string): Promise<void> {
 
   // Notify web client about successful linking
   if (user.webSessionId) {
-    connectionManager.sendToUser(user.id, 'channel_linked', {
+    sendToUser(user.id, 'channel_linked', {
       telegram: tgUsername ? `@${tgUsername}` : tgFirstName,
       historyCopied: true,
     });

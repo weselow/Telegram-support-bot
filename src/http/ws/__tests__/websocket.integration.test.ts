@@ -64,7 +64,7 @@ vi.mock('../../../services/rate-limit.service.js', () => ({
 
 // Import after mocks
 import { registerWebSocket } from '../websocket.js';
-import { connectionManager } from '../connection-manager.js';
+import { sendToUser } from '../connection-manager.js';
 import { bot } from '../../../bot/bot.js';
 import { checkKeyRateLimit } from '../../../services/rate-limit.service.js';
 
@@ -568,7 +568,7 @@ describe('WebSocket Integration', () => {
   });
 
   describe('Receiving Messages from Support', () => {
-    it('should receive message from support via connectionManager', async () => {
+    it('should receive message from support via sendToUser', async () => {
       const testUser = await createUserWithHistory({
         webSessionId: '550e8400-e29b-41d4-a716-446655440021',
         status: 'NEW',
@@ -579,8 +579,8 @@ describe('WebSocket Integration', () => {
         const ws = await createClient(testUser.webSessionId!);
         await waitForMessage(ws); // connected
 
-        // Simulate support sending a message via connectionManager
-        const sent = connectionManager.sendToUser(testUser.id, 'message', {
+        // Simulate support sending a message via sendToUser
+        const sent = sendToUser(testUser.id, 'message', {
           id: 'support-msg-1',
           text: 'Hello from support!',
           from: 'support' as const,
@@ -617,7 +617,7 @@ describe('WebSocket Integration', () => {
         await waitForMessage(ws); // connected
 
         // Simulate status change notification
-        const sent = connectionManager.sendToUser(testUser.id, 'status', {
+        const sent = sendToUser(testUser.id, 'status', {
           status: 'IN_PROGRESS',
         });
 

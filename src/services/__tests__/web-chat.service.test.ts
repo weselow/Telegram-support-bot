@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { webChatService } from '../web-chat.service.js';
+import {
+  closeTicket,
+  getHistory,
+  getStatus,
+  initSession,
+  linkTelegram,
+  processLinkToken,
+  sendFile,
+  sendMessage,
+} from '../web-chat.service.js';
 import { messages } from '../../config/messages.js';
 
 // Mock dependencies
@@ -167,7 +176,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(mockUser);
       messageRepository.getHistory.mockResolvedValue([mockMessage]);
 
-      const result = await webChatService.initSession('session-123');
+      const result = await initSession('session-123');
 
       expect(result).toEqual({
         sessionId: 'session-123',
@@ -184,7 +193,7 @@ describe('web-chat.service', () => {
       userRepository.createWebUser.mockResolvedValue(mockUser);
       messageRepository.getHistory.mockResolvedValue([]);
 
-      const result = await webChatService.initSession('session-123', 'https://example.com', 'Moscow');
+      const result = await initSession('session-123', 'https://example.com', 'Moscow');
 
       expect(result).toEqual({
         sessionId: 'session-123',
@@ -205,7 +214,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(linkedUser);
       messageRepository.getHistory.mockResolvedValue([]);
 
-      const result = await webChatService.initSession('session-123');
+      const result = await initSession('session-123');
 
       expect(result.telegramLinked).toBe(true);
     });
@@ -216,7 +225,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(mockUser);
       messageRepository.getHistory.mockResolvedValue([mockMessage]);
 
-      const result = await webChatService.getHistory('session-123', { limit: 50 });
+      const result = await getHistory('session-123', { limit: 50 });
 
       expect(result.messages).toHaveLength(1);
       expect(result.messages[0]).toEqual({
@@ -232,7 +241,7 @@ describe('web-chat.service', () => {
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
-      await expect(webChatService.getHistory('invalid-session')).rejects.toThrow('Session not found');
+      await expect(getHistory('invalid-session')).rejects.toThrow('Session not found');
     });
 
     it('should indicate hasMore when more messages exist', async () => {
@@ -243,7 +252,7 @@ describe('web-chat.service', () => {
       }));
       messageRepository.getHistory.mockResolvedValue(messages);
 
-      const result = await webChatService.getHistory('session-123', { limit: 50 });
+      const result = await getHistory('session-123', { limit: 50 });
 
       expect(result.messages).toHaveLength(50);
       expect(result.hasMore).toBe(true);
@@ -253,7 +262,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(mockUser);
       messageRepository.getHistory.mockResolvedValue([]);
 
-      await webChatService.getHistory('session-123', { limit: 200 });
+      await getHistory('session-123', { limit: 200 });
 
       expect(messageRepository.getHistory).toHaveBeenCalledWith(
         'user-1',
@@ -267,7 +276,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(mockUser);
       messageRepository.getHistory.mockResolvedValue([mockMessage]);
 
-      const result = await webChatService.getStatus('session-123');
+      const result = await getStatus('session-123');
 
       expect(result).toEqual({
         ticketId: 'user-1',
@@ -282,7 +291,7 @@ describe('web-chat.service', () => {
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
-      await expect(webChatService.getStatus('invalid-session')).rejects.toThrow('Session not found');
+      await expect(getStatus('invalid-session')).rejects.toThrow('Session not found');
     });
 
     it('should include telegram username when linked', async () => {
@@ -290,7 +299,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(linkedUser);
       messageRepository.getHistory.mockResolvedValue([]);
 
-      const result = await webChatService.getStatus('session-123');
+      const result = await getStatus('session-123');
 
       expect(result.telegramLinked).toBe(true);
       expect(result.telegramUsername).toBe('johndoe');
@@ -305,7 +314,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      const result = await webChatService.sendMessage('session-123', 'Hello support');
+      const result = await sendMessage('session-123', 'Hello support');
 
       expect(bot.api.createForumTopic).toHaveBeenCalledWith('-1001234567890', 'Web: session-');
       expect(userRepository.updateTopicId).toHaveBeenCalledWith('user-1', 200);
@@ -324,7 +333,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello support');
+      await sendMessage('session-123', 'Hello support');
 
       expect(startSlaTimers).toHaveBeenCalledWith('user-1', 200);
     });
@@ -335,7 +344,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(startSlaTimers).not.toHaveBeenCalled();
       expect(bot.api.createForumTopic).not.toHaveBeenCalled();
@@ -349,7 +358,7 @@ describe('web-chat.service', () => {
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
-      await expect(webChatService.sendMessage('invalid-session', 'Hello')).rejects.toThrow('Session not found');
+      await expect(sendMessage('invalid-session', 'Hello')).rejects.toThrow('Session not found');
     });
 
     it('should include replyTo when valid message found', async () => {
@@ -359,7 +368,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Reply text', 'msg-1');
+      await sendMessage('session-123', 'Reply text', 'msg-1');
 
       expect(bot.api.sendMessage).toHaveBeenCalledWith(
         '-1001234567890',
@@ -374,7 +383,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, waitingUser, 'CLIENT_REPLY');
     });
@@ -385,7 +394,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(cancelAutocloseTimer).toHaveBeenCalledWith('user-1', 100);
     });
@@ -396,7 +405,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(cancelAutocloseTimer).not.toHaveBeenCalled();
     });
@@ -408,7 +417,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello again');
+      await sendMessage('session-123', 'Hello again');
 
       expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, closedUser, 'CLIENT_REOPEN');
       expect(bot.api.sendMessage).toHaveBeenNthCalledWith(1, '-1001234567890', messages.reopened, {
@@ -426,7 +435,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello again');
+      await sendMessage('session-123', 'Hello again');
 
       expect(cancelAllSlaTimers).toHaveBeenCalledWith('user-1', 100);
       expect(startSlaTimers).toHaveBeenCalledWith('user-1', 100);
@@ -443,7 +452,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello again');
+      await sendMessage('session-123', 'Hello again');
 
       expect(bot.api.sendMessage).toHaveBeenCalledTimes(1);
       expect(bot.api.sendMessage).toHaveBeenCalledWith('-1001234567890', '[WEB] Hello again', {
@@ -464,7 +473,7 @@ describe('web-chat.service', () => {
       });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendFile(
+      await sendFile(
         'session-123',
         Buffer.from('content'),
         'report.pdf',
@@ -485,7 +494,7 @@ describe('web-chat.service', () => {
       });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendFile(
+      await sendFile(
         'session-123',
         Buffer.from('content'),
         'report.pdf',
@@ -506,7 +515,7 @@ describe('web-chat.service', () => {
       });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendFile(
+      await sendFile(
         'session-123',
         Buffer.from('content'),
         'report.pdf',
@@ -529,7 +538,7 @@ describe('web-chat.service', () => {
       });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendFile(
+      await sendFile(
         'session-123',
         Buffer.from('content'),
         'report.pdf',
@@ -548,7 +557,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
       await expect(
-        webChatService.sendFile(
+        sendFile(
           'invalid-session',
           Buffer.from('content'),
           'report.pdf',
@@ -567,7 +576,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(bot.api.createForumTopic).not.toHaveBeenCalled();
       expect(userRepository.updateTopicId).not.toHaveBeenCalled();
@@ -584,7 +593,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(acquireLock).toHaveBeenCalledWith('topic:user-1');
       expect(releaseLock).toHaveBeenCalledWith('topic:user-1', 'lock-token');
@@ -598,7 +607,7 @@ describe('web-chat.service', () => {
       bot.api.sendMessage.mockResolvedValue({ message_id: 300 });
       messageRepository.createWebMessage.mockResolvedValue(mockMessage);
 
-      await webChatService.sendMessage('session-123', 'Hello');
+      await sendMessage('session-123', 'Hello');
 
       expect(bot.api.createForumTopic).toHaveBeenCalled();
       expect(releaseLock).not.toHaveBeenCalled();
@@ -609,7 +618,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
       bot.api.createForumTopic.mockRejectedValue(new Error('Telegram down'));
 
-      await expect(webChatService.sendMessage('session-123', 'Hello')).rejects.toThrow(
+      await expect(sendMessage('session-123', 'Hello')).rejects.toThrow(
         'Telegram down'
       );
       expect(releaseLock).toHaveBeenCalledWith('topic:user-1', 'lock-token');
@@ -626,7 +635,7 @@ describe('web-chat.service', () => {
       };
       webLinkTokenRepository.create.mockResolvedValue(mockToken);
 
-      const result = await webChatService.linkTelegram('session-123');
+      const result = await linkTelegram('session-123');
 
       expect(result.token).toBe('abc123');
       expect(result.telegramUrl).toBe('https://t.me/test_bot?start=abc123');
@@ -636,7 +645,7 @@ describe('web-chat.service', () => {
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
-      await expect(webChatService.linkTelegram('invalid-session')).rejects.toThrow('Session not found');
+      await expect(linkTelegram('invalid-session')).rejects.toThrow('Session not found');
     });
   });
 
@@ -651,7 +660,7 @@ describe('web-chat.service', () => {
       });
       bot.api.sendMessage.mockResolvedValue({});
 
-      const result = await webChatService.closeTicket('session-123', true, 'Great support!');
+      const result = await closeTicket('session-123', true, 'Great support!');
 
       expect(autoChangeStatus).toHaveBeenCalledWith(bot.api, userWithTopic, 'CLIENT_RESOLVED');
       expect(bot.api.sendMessage).toHaveBeenCalledWith(
@@ -671,7 +680,7 @@ describe('web-chat.service', () => {
         newStatus: 'IN_PROGRESS',
       });
 
-      await expect(webChatService.closeTicket('session-123', true)).rejects.toThrow(
+      await expect(closeTicket('session-123', true)).rejects.toThrow(
         'Failed to close ticket'
       );
       expect(bot.api.sendMessage).not.toHaveBeenCalled();
@@ -682,7 +691,7 @@ describe('web-chat.service', () => {
       userRepository.findByWebSessionId.mockResolvedValue(userWithTopic);
       bot.api.sendMessage.mockResolvedValue({});
 
-      await webChatService.closeTicket('session-123', false);
+      await closeTicket('session-123', false);
 
       expect(bot.api.sendMessage).toHaveBeenCalledWith(
         -1001234567890,
@@ -694,21 +703,21 @@ describe('web-chat.service', () => {
     it('should throw error when session not found', async () => {
       userRepository.findByWebSessionId.mockResolvedValue(null);
 
-      await expect(webChatService.closeTicket('invalid-session', true)).rejects.toThrow('Session not found');
+      await expect(closeTicket('invalid-session', true)).rejects.toThrow('Session not found');
     });
 
     it('should throw error when ticket already closed', async () => {
       const closedUser = { ...mockUser, status: 'CLOSED' };
       userRepository.findByWebSessionId.mockResolvedValue(closedUser);
 
-      await expect(webChatService.closeTicket('session-123', true)).rejects.toThrow('Ticket already closed');
+      await expect(closeTicket('session-123', true)).rejects.toThrow('Ticket already closed');
     });
 
     it('should not send message when no topic exists', async () => {
       const userWithoutTopic = { ...mockUser, topicId: null, status: 'IN_PROGRESS' };
       userRepository.findByWebSessionId.mockResolvedValue(userWithoutTopic);
 
-      await webChatService.closeTicket('session-123', true);
+      await closeTicket('session-123', true);
 
       expect(bot.api.sendMessage).not.toHaveBeenCalled();
     });
@@ -721,7 +730,7 @@ describe('web-chat.service', () => {
       webLinkTokenRepository.findValidByToken.mockResolvedValue(mockToken);
       userRepository.linkTelegramAccount.mockResolvedValue(linkedUser);
 
-      const result = await webChatService.processLinkToken('abc123', BigInt(123456), 'johndoe', 'John');
+      const result = await processLinkToken('abc123', BigInt(123456), 'johndoe', 'John');
 
       expect(webLinkTokenRepository.markUsed).toHaveBeenCalledWith('token-1');
       expect(userRepository.linkTelegramAccount).toHaveBeenCalledWith(
@@ -736,7 +745,7 @@ describe('web-chat.service', () => {
     it('should return null when token not found', async () => {
       webLinkTokenRepository.findValidByToken.mockResolvedValue(null);
 
-      const result = await webChatService.processLinkToken('invalid', BigInt(123456), null, 'John');
+      const result = await processLinkToken('invalid', BigInt(123456), null, 'John');
 
       expect(result).toBeNull();
       expect(webLinkTokenRepository.markUsed).not.toHaveBeenCalled();
