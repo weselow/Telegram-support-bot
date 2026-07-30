@@ -5,6 +5,9 @@ import { sendTicketCard, updateTicketCard, type TicketCardData } from '../topic.
 vi.mock('../../config/env.js', () => ({
   env: {
     SUPPORT_GROUP_ID: '-1001234567890',
+    // Без зоны Intl взял бы системную, и тест проходил бы или падал в
+    // зависимости от того, где его запускают
+    DISPLAY_TIMEZONE: 'Europe/Saratov',
   },
 }));
 
