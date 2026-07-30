@@ -52,6 +52,7 @@ Push в main → Тесты → Сборка образа → Публикаци
 | `HTTP_PORT` | нет (3000) | `3000` |
 | `SUPPORT_DOMAIN` | нет | `beforetheygo.web.codecitadel.ru`. Сводится к домену второго уровня, поэтому разрешает весь `codecitadel.ru` и его поддомены |
 | `ALLOWED_ORIGINS` | нет | Домены сайтов с виджетом через запятую, например `dellshop.ru,example.com`. Запись разрешает сама себя и свои поддомены, но не родительский домен: `shop.dellshop.ru` не открывает `dellshop.ru` и `www.dellshop.ru` — впишите родительский домен отдельной записью |
+| `DISPLAY_TIMEZONE` | нет (`Europe/Saratov`) | Зона, в которой время печатается сотрудникам поддержки — в карточке тикета и в истории. Имя зоны из базы IANA, например `Europe/Moscow`. Неизвестное имя останавливает запуск |
 | `NODE_ENV` | нет (development) | `production` |
 | `LOG_LEVEL` | нет (info) | `info` |
 | `SENTRY_DSN` | нет | Адрес проекта в Sentry |

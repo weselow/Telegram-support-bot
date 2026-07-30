@@ -116,5 +116,19 @@ describe('topic.service', () => {
       expect(options).toMatchObject({ parse_mode: 'HTML' });
       expect(text).toContain('🔗 Источник: https://shop.example.com/catalog/dell_poweredge_r740');
     });
+
+    it('should print creation time in the display timezone with zone label', async () => {
+      const cardData: TicketCardData = {
+        tgUserId: 0,
+        firstName: 'Web User',
+        status: 'NEW',
+        createdAt: new Date('2026-07-30T12:39:41Z'),
+      };
+
+      await updateTicketCard(api as unknown as Api, 500, 'user-1', cardData);
+
+      const [, , text] = api.editMessageText.mock.calls[0] as [string, number, string];
+      expect(text).toContain('📅 Создан: 30.07.2026, 16:39:41 (UTC+4)');
+    });
   });
 });

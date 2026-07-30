@@ -3,6 +3,20 @@ import { z } from 'zod';
 
 config();
 
+/**
+ * Ошибку в имени зоны надо поймать при запуске: Intl на неизвестном имени
+ * бросает исключение только в момент форматирования, а это уже середина
+ * создания тикета — сломался бы сам тикет, а не настройка.
+ */
+function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const envSchema = z.object({
   BOT_TOKEN: z.string().min(1, 'BOT_TOKEN is required'),
   BOT_USERNAME: z.string().min(1, 'BOT_USERNAME is required'),
@@ -12,6 +26,15 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  // Зона, в которой время печатается сотрудникам поддержки (карточка тикета,
+  // история). Сервер работает в UTC, поэтому без неё время не совпадало бы с
+  // часами на телефоне. Значение — имя зоны из базы IANA.
+  DISPLAY_TIMEZONE: z
+    .string()
+    .min(1)
+    .refine(isValidTimeZone, 'DISPLAY_TIMEZONE must be an IANA time zone name, e.g. Europe/Saratov')
+    .default('Europe/Saratov'),
 
   // Хеш коммита, из которого собран образ. Приезжает build-аргументом при сборке
   // (см. Dockerfile и .github/workflows/deploy.yml) и отдаётся в ответе /health,
