@@ -5,6 +5,7 @@ import { eventRepository } from '../../db/repositories/event.repository.js';
 import { STATUS_LABELS } from '../../constants/status.js';
 import { messages } from '../../config/messages.js';
 import { logger } from '../../utils/logger.js';
+import { formatDateShort, getTimezoneLabel } from '../../utils/datetime.js';
 
 const EVENT_LABELS: Record<EventType, string> = {
   OPENED: '📩 Открыт',
@@ -14,15 +15,6 @@ const EVENT_LABELS: Record<EventType, string> = {
   PHONE_UPDATED: '📱 Телефон',
 };
 
-function formatDate(date: Date): string {
-  return date.toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function formatEvent(event: {
   eventType: EventType;
   createdAt: Date;
@@ -30,7 +22,7 @@ function formatEvent(event: {
   newValue: string | null;
   question: string | null;
 }): string {
-  const date = formatDate(event.createdAt);
+  const date = formatDateShort(event.createdAt);
   const label = EVENT_LABELS[event.eventType];
 
   switch (event.eventType) {
@@ -96,9 +88,12 @@ export async function historyHandler(ctx: Context): Promise<void> {
     const chronological = limited.slice().reverse();
     const formatted = chronological.map(formatEvent).join('\n');
 
-    const header = events.length > MAX_EVENTS
-      ? `📋 История тикета (последние ${String(MAX_EVENTS)} из ${String(events.length)}):\n\n`
-      : '📋 История тикета:\n\n';
+    // Зона указана один раз в заголовке, чтобы не повторять её в каждой строке
+    const zone = `время ${getTimezoneLabel()}`;
+    const scope = events.length > MAX_EVENTS
+      ? `последние ${String(MAX_EVENTS)} из ${String(events.length)}, ${zone}`
+      : zone;
+    const header = `📋 История тикета (${scope}):\n\n`;
 
     await ctx.reply(header + formatted, {
       message_thread_id: topicId,
