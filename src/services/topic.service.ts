@@ -5,6 +5,7 @@ import type { TicketStatus } from '../generated/prisma/client.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { formatDateTime } from '../utils/datetime.js';
+import { toDisplayUrl } from '../utils/display-url.js';
 import { STATUS_LABELS_WITH_EMOJI } from '../constants/status.js';
 
 function buildStatusKeyboard(userId: string, currentStatus: TicketStatus): InlineKeyboard {
@@ -54,7 +55,11 @@ function escapeHtml(text: string): string {
 function formatCardText(data: TicketCardData): string {
   const usernameLine = data.username ? `\n👤 Username: @${escapeHtml(data.username)}` : '';
   const phoneLine = data.phone ? `\n📱 Телефон: ${escapeHtml(data.phone)}` : '';
-  const sourceLine = data.sourceUrl ? `\n🔗 Источник: ${escapeHtml(data.sourceUrl)}` : '';
+  // The browser reports the page address in ascii, so a cyrillic domain and a
+  // cyrillic path would reach the card as gibberish — see toDisplayUrl
+  const sourceLine = data.sourceUrl
+    ? `\n🔗 Источник: ${escapeHtml(toDisplayUrl(data.sourceUrl))}`
+    : '';
 
   // Combine IP and city: "🌐 IP: 95.67.12.34 (Саратов)" or just IP if no city
   let ipLine = '';

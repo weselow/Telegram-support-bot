@@ -5,11 +5,27 @@
  * against the base domain and its subdomains.
  */
 
+import { domainToASCII } from 'url';
 import { env } from '../config/env.js';
 import { logger } from './logger.js';
 
 /** Entries like 192.168.1.10 have no parent domain to talk about */
 const IPV4_PATTERN = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+/**
+ * Host in the form a browser sends it: ascii and lower case
+ *
+ * A browser never sends a domain in cyrillic — сервер-для-1с.рф arrives in the
+ * Origin header as xn----1-eddldb4czbcgk3p.xn--p1ai. Settings are compared with
+ * that header as plain strings, so a domain written in cyrillic would never
+ * match anything. Both ways of writing it are brought to the same form here.
+ *
+ * Anything that is not a domain at all (an IP address, a broken entry) is kept
+ * as written: it either matches a host as is or does not match at all.
+ */
+function toAsciiHost(host: string): string {
+  return domainToASCII(host) || host.toLowerCase();
+}
 
 /**
  * Extract base domain (last 2 parts) from a hostname
@@ -81,7 +97,7 @@ export function getConfiguredBaseDomain(): string {
   if (!env.SUPPORT_DOMAIN) {
     return '';
   }
-  return getBaseDomain(env.SUPPORT_DOMAIN);
+  return toAsciiHost(getBaseDomain(env.SUPPORT_DOMAIN));
 }
 
 /**
@@ -90,6 +106,7 @@ export function getConfiguredBaseDomain(): string {
  * @example
  * normalizeDomain(' https://example.com/ ') → 'example.com'
  * normalizeDomain('dellshop.ru') → 'dellshop.ru'
+ * normalizeDomain('сервер-для-1с.рф') → 'xn----1-eddldb4czbcgk3p.xn--p1ai'
  */
 function normalizeDomain(entry: string): string {
   const trimmed = entry.trim();
@@ -99,7 +116,7 @@ function normalizeDomain(entry: string): string {
 
   const withoutScheme = trimmed.replace(/^[a-z]+:\/\//i, '');
   const host = withoutScheme.split('/')[0] ?? '';
-  return host.split(':')[0] ?? '';
+  return toAsciiHost(host.split(':')[0] ?? '');
 }
 
 /**

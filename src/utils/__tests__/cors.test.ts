@@ -285,6 +285,84 @@ describe('cors', () => {
     });
   });
 
+  describe('isOriginAllowedByConfig with a cyrillic domain', () => {
+    beforeEach(() => {
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.resetModules();
+    });
+
+    // A browser always sends Origin in its ascii form, so both ways of writing
+    // the domain in the settings have to lead to the same result
+    const ASCII_ORIGIN = 'https://xn----1-eddldb4czbcgk3p.xn--p1ai';
+
+    async function loadWith(envOverrides: Record<string, string | undefined>) {
+      vi.doMock('../../config/env.js', () => ({
+        env: { NODE_ENV: 'production', ...envOverrides },
+      }));
+      return import('../cors.js');
+    }
+
+    it('should allow the ascii origin for an entry written in cyrillic', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'сервер-для-1с.рф',
+      });
+
+      expect(check(ASCII_ORIGIN)).toBe(true);
+      expect(check(`https://www.xn----1-eddldb4czbcgk3p.xn--p1ai`)).toBe(true);
+      expect(check('https://evil.com')).toBe(false);
+    });
+
+    it('should allow the ascii origin for an entry written in ascii', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'xn----1-eddldb4czbcgk3p.xn--p1ai',
+      });
+
+      expect(check(ASCII_ORIGIN)).toBe(true);
+    });
+
+    it('should accept a full origin written in cyrillic', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: ' https://сервер-для-1с.рф/ ',
+      });
+
+      expect(check(ASCII_ORIGIN)).toBe(true);
+    });
+
+    it('should allow a cyrillic SUPPORT_DOMAIN', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'чат.сервер-для-1с.рф',
+        ALLOWED_ORIGINS: undefined,
+      });
+
+      expect(check(ASCII_ORIGIN)).toBe(true);
+    });
+
+    it('should ignore letter case in entries', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'DellShop.RU',
+      });
+
+      expect(check('https://dellshop.ru')).toBe(true);
+    });
+
+    it('should keep an entry that is not a domain at all', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'localhost:3000,192.168.1.10',
+      });
+
+      expect(check('http://192.168.1.10')).toBe(true);
+      expect(check('https://evil.com')).toBe(false);
+    });
+  });
+
   describe('warnAboutOriginConfig', () => {
     beforeEach(() => {
       vi.clearAllMocks();
@@ -369,6 +447,17 @@ describe('cors', () => {
       const { warnAboutOriginConfig, logger } = await loadWith({
         SUPPORT_DOMAIN: undefined,
         ALLOWED_ORIGINS: 'dellshop.ru,example.com',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should not warn about a cyrillic second-level domain', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: 'сервер-для-1с.рф',
       });
 
       warnAboutOriginConfig();
