@@ -60,6 +60,21 @@ describe('topic.service', () => {
       );
     });
 
+    it('should show a cyrillic source domain instead of its ascii form', async () => {
+      await sendTicketCard(
+        api as unknown as Api,
+        10,
+        'user-1',
+        { tgUserId: 0, firstName: 'Web User' },
+        {
+          sourceUrl:
+            'https://xn----1-eddldb4czbcgk3p.xn--p1ai/%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8/',
+        }
+      );
+
+      expect(sentCardText()).toContain('🔗 Источник: https://сервер-для-1с.рф/услуги/');
+    });
+
     it('should escape html special characters in the source url', async () => {
       await sendTicketCard(
         api as unknown as Api,
