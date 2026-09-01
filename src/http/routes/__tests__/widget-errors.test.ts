@@ -4,7 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 // Mock dependencies
 vi.mock('../../../config/env.js', () => ({
   env: {
-    SUPPORT_DOMAIN: 'chat.dellshop.ru',
+    SUPPORT_DOMAIN: 'chat.clientsite.test',
     NODE_ENV: 'production',
   },
 }));
@@ -54,12 +54,12 @@ describe('Widget Errors Route', () => {
         method: 'OPTIONS',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
         },
       });
 
       expect(response.statusCode).toBe(204);
-      expect(response.headers['access-control-allow-origin']).toBe('https://dellshop.ru');
+      expect(response.headers['access-control-allow-origin']).toBe('https://clientsite.test');
       expect(response.headers['access-control-allow-methods']).toBe('POST, OPTIONS');
     });
 
@@ -86,7 +86,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -96,7 +96,7 @@ describe('Widget Errors Route', () => {
               message: 'Test error',
               context: {
                 userAgent: 'TestBrowser/1.0',
-                url: 'https://dellshop.ru/shop',
+                url: 'https://clientsite.test/shop',
                 timestamp: '2025-12-30T12:00:00Z',
               },
             },
@@ -115,7 +115,7 @@ describe('Widget Errors Route', () => {
         'error',
         expect.objectContaining({
           userAgent: 'TestBrowser/1.0',
-          pageUrl: 'https://dellshop.ru/shop',
+          pageUrl: 'https://clientsite.test/shop',
         }),
         { source: 'widget' }
       );
@@ -126,7 +126,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -136,7 +136,7 @@ describe('Widget Errors Route', () => {
               message: 'Test warning',
               context: {
                 userAgent: 'TestBrowser/1.0',
-                url: 'https://dellshop.ru/shop',
+                url: 'https://clientsite.test/shop',
                 timestamp: '2025-12-30T12:00:00Z',
               },
             },
@@ -158,7 +158,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -169,7 +169,7 @@ describe('Widget Errors Route', () => {
               context: {
                 sessionId: 'test-session-123',
                 userAgent: 'TestBrowser/1.0',
-                url: 'https://dellshop.ru/shop',
+                url: 'https://clientsite.test/shop',
                 timestamp: '2025-12-30T12:00:00Z',
               },
             },
@@ -192,7 +192,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -202,7 +202,7 @@ describe('Widget Errors Route', () => {
               message: 'Test error',
               context: {
                 userAgent: 'TestBrowser/1.0',
-                url: 'https://dellshop.ru/shop',
+                url: 'https://clientsite.test/shop',
                 timestamp: '2025-12-30T12:00:00Z',
               },
               stack: 'Error: Test error\n    at test.js:1:1',
@@ -226,7 +226,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -258,7 +258,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -278,7 +278,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -312,7 +312,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: { errors },
@@ -332,7 +332,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -361,7 +361,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -413,7 +413,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -438,7 +438,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {
@@ -453,7 +453,7 @@ describe('Widget Errors Route', () => {
       });
 
       expect(mockCheckKeyRateLimit).toHaveBeenCalledWith(
-        'widget-errors:https://dellshop.ru',
+        'widget-errors:https://clientsite.test',
         { maxRequests: 20, windowSeconds: 60 }
       );
     });
@@ -465,7 +465,7 @@ describe('Widget Errors Route', () => {
         method: 'POST',
         url: '/api/widget/errors',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {

@@ -3,7 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 vi.mock('../../../config/env.js', () => ({
   env: {
-    SUPPORT_DOMAIN: 'chat.dellshop.ru',
+    SUPPORT_DOMAIN: 'chat.clientsite.test',
     NODE_ENV: 'production',
   },
 }));
@@ -77,17 +77,17 @@ describe('chat-init', () => {
       method: 'POST',
       url: '/api/chat/init',
       headers: {
-        origin: 'https://dellshop.ru',
-        referer: 'https://dellshop.ru/',
+        origin: 'https://clientsite.test',
+        referer: 'https://clientsite.test/',
         'content-type': 'application/json',
       },
-      payload: { pageUrl: 'https://dellshop.ru/catalog/server-r740' },
+      payload: { pageUrl: 'https://clientsite.test/catalog/product-42' },
     });
 
     expect(response.statusCode).toBe(200);
     expect(initSession).toHaveBeenCalledWith(
       expect.any(String),
-      'https://dellshop.ru/catalog/server-r740',
+      'https://clientsite.test/catalog/product-42',
       'Saratov',
       expect.any(String)
     );
@@ -98,8 +98,8 @@ describe('chat-init', () => {
       method: 'POST',
       url: '/api/chat/init',
       headers: {
-        origin: 'https://dellshop.ru',
-        referer: 'https://dellshop.ru/',
+        origin: 'https://clientsite.test',
+        referer: 'https://clientsite.test/',
         'content-type': 'application/json',
       },
       payload: {},
@@ -108,7 +108,7 @@ describe('chat-init', () => {
     expect(response.statusCode).toBe(200);
     expect(initSession).toHaveBeenCalledWith(
       expect.any(String),
-      'https://dellshop.ru/',
+      'https://clientsite.test/',
       'Saratov',
       expect.any(String)
     );
@@ -119,8 +119,8 @@ describe('chat-init', () => {
       method: 'POST',
       url: '/api/chat/init',
       headers: {
-        origin: 'https://dellshop.ru',
-        referer: 'https://dellshop.ru/',
+        origin: 'https://clientsite.test',
+        referer: 'https://clientsite.test/',
         'content-type': 'application/json',
       },
       payload: 'null',
@@ -129,7 +129,7 @@ describe('chat-init', () => {
     expect(response.statusCode).toBe(200);
     expect(initSession).toHaveBeenCalledWith(
       expect.any(String),
-      'https://dellshop.ru/',
+      'https://clientsite.test/',
       'Saratov',
       expect.any(String)
     );
@@ -140,8 +140,8 @@ describe('chat-init', () => {
       method: 'POST',
       url: '/api/chat/init',
       headers: {
-        origin: 'https://dellshop.ru',
-        referer: 'https://dellshop.ru/',
+        origin: 'https://clientsite.test',
+        referer: 'https://clientsite.test/',
         'content-type': 'application/json',
       },
       payload: { pageUrl: 'https://evil.com/fake' },
@@ -150,7 +150,7 @@ describe('chat-init', () => {
     expect(response.statusCode).toBe(200);
     expect(initSession).toHaveBeenCalledWith(
       expect.any(String),
-      'https://dellshop.ru/',
+      'https://clientsite.test/',
       'Saratov',
       expect.any(String)
     );
