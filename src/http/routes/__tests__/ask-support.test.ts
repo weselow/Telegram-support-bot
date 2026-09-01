@@ -305,6 +305,77 @@ describe('ask-support', () => {
       );
     });
 
+    it('should store the exact page from the pageUrl parameter', async () => {
+      const mockRedis = {
+        getdel: vi.fn(),
+        setex: vi.fn().mockResolvedValue('OK'),
+      };
+      vi.mocked(getRedisClient).mockReturnValue(mockRedis as never);
+      vi.mocked(checkIpRateLimit).mockResolvedValue({ allowed: true, remaining: 9, resetInSeconds: 60 });
+
+      await fastify.inject({
+        method: 'GET',
+        url: `/ask-support?pageUrl=${encodeURIComponent('https://example.com/catalog/item-42?utm=ya')}`,
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+          // Браузер укорачивает Referer до домена при переходе на чужой сайт —
+          // ровно из-за этого адрес страницы и приходится передавать отдельно
+          referer: 'https://example.com/',
+        },
+      });
+
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        expect.any(String),
+        3600,
+        expect.stringContaining('"sourceUrl":"https://example.com/catalog/item-42?utm=ya"'),
+      );
+    });
+
+    it('should ignore a pageUrl pointing at another site', async () => {
+      const mockRedis = {
+        getdel: vi.fn(),
+        setex: vi.fn().mockResolvedValue('OK'),
+      };
+      vi.mocked(getRedisClient).mockReturnValue(mockRedis as never);
+      vi.mocked(checkIpRateLimit).mockResolvedValue({ allowed: true, remaining: 9, resetInSeconds: 60 });
+
+      await fastify.inject({
+        method: 'GET',
+        url: `/ask-support?pageUrl=${encodeURIComponent('https://evil.test/looks-like-a-bank')}`,
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+          referer: 'https://example.com/',
+        },
+      });
+
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        expect.any(String),
+        3600,
+        expect.stringContaining('"sourceUrl":"https://example.com/"'),
+      );
+    });
+
+    it('should ignore a pageUrl when the request carries no referer', async () => {
+      const mockRedis = {
+        getdel: vi.fn(),
+        setex: vi.fn().mockResolvedValue('OK'),
+      };
+      vi.mocked(getRedisClient).mockReturnValue(mockRedis as never);
+      vi.mocked(checkIpRateLimit).mockResolvedValue({ allowed: true, remaining: 9, resetInSeconds: 60 });
+
+      await fastify.inject({
+        method: 'GET',
+        url: `/ask-support?pageUrl=${encodeURIComponent('https://evil.test/looks-like-a-bank')}`,
+        headers: { 'user-agent': 'Mozilla/5.0' },
+      });
+
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        expect.any(String),
+        3600,
+        expect.stringContaining('"sourceUrl":null'),
+      );
+    });
+
     it('should call botFilterHook', async () => {
       vi.mocked(checkIpRateLimit).mockResolvedValue({ allowed: true, remaining: 9, resetInSeconds: 60 });
 

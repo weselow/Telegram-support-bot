@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolvePageUrl } from '../page-url.js';
+import { resolvePageUrl, resolveClickedPageUrl } from '../page-url.js';
 
 describe('page-url', () => {
   describe('resolvePageUrl', () => {
@@ -73,6 +73,78 @@ describe('page-url', () => {
       const result = resolvePageUrl(undefined, undefined, undefined);
 
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('resolveClickedPageUrl', () => {
+    it('should return the page url when its origin matches the truncated referer', () => {
+      const result = resolveClickedPageUrl(
+        'https://shop.example.com/catalog/item-42?utm=ya',
+        'https://shop.example.com/'
+      );
+
+      expect(result).toBe('https://shop.example.com/catalog/item-42?utm=ya');
+    });
+
+    it('should fall back to referer when the page url points at another site', () => {
+      // Единственная защита здесь: чужую ссылку в поле «Источник» не подложить
+      const result = resolveClickedPageUrl(
+        'https://evil.test/looks-like-a-bank',
+        'https://shop.example.com/'
+      );
+
+      expect(result).toBe('https://shop.example.com/');
+    });
+
+    it('should fall back to referer when the parameter is missing', () => {
+      const result = resolveClickedPageUrl(undefined, 'https://shop.example.com/');
+
+      expect(result).toBe('https://shop.example.com/');
+    });
+
+    it('should accept a page url matching a full same-site referer', () => {
+      // Ссылка стоит на самом домене поддержки — браузер Referer не укорачивает
+      const result = resolveClickedPageUrl(
+        'https://support.example.com/help/faq',
+        'https://support.example.com/help/faq'
+      );
+
+      expect(result).toBe('https://support.example.com/help/faq');
+    });
+
+    it('should drop the page url when there is no referer to compare with', () => {
+      const result = resolveClickedPageUrl('https://shop.example.com/catalog/item-42', undefined);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should reject a page url with a non-http scheme', () => {
+      const result = resolveClickedPageUrl('javascript:alert(1)', 'https://shop.example.com/');
+
+      expect(result).toBe('https://shop.example.com/');
+    });
+
+    it('should reject a page url longer than the limit', () => {
+      const longUrl = `https://shop.example.com/${'a'.repeat(2000)}`;
+
+      const result = resolveClickedPageUrl(longUrl, 'https://shop.example.com/');
+
+      expect(result).toBe('https://shop.example.com/');
+    });
+
+    it('should ignore a repeated parameter arriving as an array', () => {
+      const result = resolveClickedPageUrl(
+        ['https://shop.example.com/a', 'https://shop.example.com/b'] as unknown as string,
+        'https://shop.example.com/'
+      );
+
+      expect(result).toBe('https://shop.example.com/');
+    });
+
+    it('should ignore a broken referer', () => {
+      const result = resolveClickedPageUrl('https://shop.example.com/catalog', 'not a url');
+
+      expect(result).toBe('not a url');
     });
   });
 });
