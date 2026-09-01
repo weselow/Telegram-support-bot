@@ -4,7 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 // Mock dependencies
 vi.mock('../../../config/env.js', () => ({
   env: {
-    SUPPORT_DOMAIN: 'chat.dellshop.ru',
+    SUPPORT_DOMAIN: 'chat.clientsite.test',
     NODE_ENV: 'production',
   },
 }));
@@ -68,12 +68,12 @@ describe('Chat Routes CORS Integration', () => {
         method: 'OPTIONS',
         url: '/api/chat/init',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
         },
       });
 
       expect(response.statusCode).toBe(204);
-      expect(response.headers['access-control-allow-origin']).toBe('https://dellshop.ru');
+      expect(response.headers['access-control-allow-origin']).toBe('https://clientsite.test');
       expect(response.headers['access-control-allow-credentials']).toBe('true');
       expect(response.headers['access-control-allow-methods']).toBe('GET, POST, OPTIONS');
     });
@@ -83,12 +83,12 @@ describe('Chat Routes CORS Integration', () => {
         method: 'OPTIONS',
         url: '/api/chat/init',
         headers: {
-          origin: 'https://www.dellshop.ru',
+          origin: 'https://www.clientsite.test',
         },
       });
 
       expect(response.statusCode).toBe(204);
-      expect(response.headers['access-control-allow-origin']).toBe('https://www.dellshop.ru');
+      expect(response.headers['access-control-allow-origin']).toBe('https://www.clientsite.test');
     });
 
     it('should allow preflight from chat subdomain', async () => {
@@ -96,12 +96,12 @@ describe('Chat Routes CORS Integration', () => {
         method: 'OPTIONS',
         url: '/api/chat/init',
         headers: {
-          origin: 'https://chat.dellshop.ru',
+          origin: 'https://chat.clientsite.test',
         },
       });
 
       expect(response.statusCode).toBe(204);
-      expect(response.headers['access-control-allow-origin']).toBe('https://chat.dellshop.ru');
+      expect(response.headers['access-control-allow-origin']).toBe('https://chat.clientsite.test');
     });
 
     it('should reject preflight from invalid origin', async () => {
@@ -126,7 +126,7 @@ describe('Chat Routes CORS Integration', () => {
         method: 'OPTIONS',
         url: '/api/chat/init',
         headers: {
-          origin: 'https://evildellshop.ru',
+          origin: 'https://evilclientsite.test',
         },
       });
 
@@ -149,14 +149,14 @@ describe('Chat Routes CORS Integration', () => {
         method: 'POST',
         url: '/api/chat/init',
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
           'content-type': 'application/json',
         },
         payload: {},
       });
 
       expect(response.statusCode).toBe(200);
-      expect(response.headers['access-control-allow-origin']).toBe('https://dellshop.ru');
+      expect(response.headers['access-control-allow-origin']).toBe('https://clientsite.test');
       expect(response.headers['access-control-allow-credentials']).toBe('true');
     });
 
@@ -237,7 +237,7 @@ describe('Chat Routes CORS in Development', () => {
 
     vi.doMock('../../../config/env.js', () => ({
       env: {
-        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        SUPPORT_DOMAIN: 'chat.clientsite.test',
         NODE_ENV: 'development',
       },
     }));
@@ -343,7 +343,7 @@ describe('Chat Routes Cookie Attributes in Production', () => {
       method: 'POST',
       url: '/api/chat/init',
       headers: {
-        origin: 'https://dellshop.ru',
+        origin: 'https://clientsite.test',
         'content-type': 'application/json',
       },
       payload: {},

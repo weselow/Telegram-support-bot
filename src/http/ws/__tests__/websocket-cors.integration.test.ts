@@ -22,7 +22,7 @@ vi.mock('../../../config/env.js', async () => {
 
   return {
     env: {
-      SUPPORT_DOMAIN: 'chat.dellshop.ru',
+      SUPPORT_DOMAIN: 'chat.clientsite.test',
       SUPPORT_GROUP_ID: '-1001234567890',
       BOT_USERNAME: 'test_bot',
       NODE_ENV: 'production',
@@ -165,7 +165,7 @@ describe('WebSocket CORS Integration', () => {
     it('should reject connection with suffix attack origin', async () => {
       const ws = new WebSocket(`${serverAddress}/ws/chat?session=${testSessionId}`, {
         headers: {
-          origin: 'https://evildellshop.ru',
+          origin: 'https://evilclientsite.test',
         },
       });
 
@@ -178,7 +178,7 @@ describe('WebSocket CORS Integration', () => {
     it('should allow connection with valid exact domain origin', async () => {
       const ws = new WebSocket(`${serverAddress}/ws/chat?session=${testSessionId}`, {
         headers: {
-          origin: 'https://dellshop.ru',
+          origin: 'https://clientsite.test',
         },
       });
 
@@ -190,7 +190,7 @@ describe('WebSocket CORS Integration', () => {
     it('should allow connection with valid subdomain origin', async () => {
       const ws = new WebSocket(`${serverAddress}/ws/chat?session=${testSessionId}`, {
         headers: {
-          origin: 'https://www.dellshop.ru',
+          origin: 'https://www.clientsite.test',
         },
       });
 
@@ -202,7 +202,7 @@ describe('WebSocket CORS Integration', () => {
     it('should allow connection with chat subdomain origin', async () => {
       const ws = new WebSocket(`${serverAddress}/ws/chat?session=${testSessionId}`, {
         headers: {
-          origin: 'https://chat.dellshop.ru',
+          origin: 'https://chat.clientsite.test',
         },
       });
 
@@ -263,7 +263,7 @@ describe('WebSocket CORS in Development', () => {
     // Re-mock with development mode
     vi.doMock('../../../config/env.js', () => ({
       env: {
-        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        SUPPORT_DOMAIN: 'chat.clientsite.test',
         SUPPORT_GROUP_ID: '-1001234567890',
         BOT_USERNAME: 'test_bot',
         NODE_ENV: 'development',

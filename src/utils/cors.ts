@@ -68,7 +68,7 @@ function toAsciiHost(host: string): string {
  * Extract base domain (last 2 parts) from a hostname
  *
  * @example
- * getBaseDomain('chat.dellshop.ru') → 'dellshop.ru'
+ * getBaseDomain('chat.clientsite.test') → 'clientsite.test'
  * getBaseDomain('api.staging.example.com') → 'example.com'
  * getBaseDomain('localhost') → 'localhost'
  */
@@ -87,8 +87,8 @@ export function getBaseDomain(hostname: string): string {
  * Check if an origin is allowed based on the base domain
  *
  * Allowed:
- * - Exact match: https://dellshop.ru
- * - Subdomain match: https://*.dellshop.ru
+ * - Exact match: https://clientsite.test
+ * - Subdomain match: https://*.clientsite.test
  * - In development: http://localhost:*
  *
  * @param origin - The Origin header value
@@ -104,12 +104,12 @@ export function isOriginAllowed(origin: string | undefined, baseDomain: string):
     const url = new URL(origin);
     const host = url.hostname;
 
-    // Exact match: dellshop.ru
+    // Exact match: clientsite.test
     if (host === baseDomain) {
       return true;
     }
 
-    // Subdomain match: *.dellshop.ru
+    // Subdomain match: *.clientsite.test
     if (host.endsWith('.' + baseDomain)) {
       return true;
     }
@@ -142,7 +142,7 @@ export function getConfiguredBaseDomain(): string {
  *
  * @example
  * normalizeDomain(' https://example.com/ ') → 'example.com'
- * normalizeDomain('dellshop.ru') → 'dellshop.ru'
+ * normalizeDomain('clientsite.test') → 'clientsite.test'
  * normalizeDomain('сервер-для-1с.рф') → 'xn----1-eddldb4czbcgk3p.xn--p1ai'
  */
 function normalizeDomain(entry: string): string {
@@ -161,10 +161,10 @@ function normalizeDomain(entry: string): string {
  * base domain of SUPPORT_DOMAIN plus everything listed in ALLOWED_ORIGINS
  *
  * The two settings deliberately differ. SUPPORT_DOMAIN is reduced to its base
- * domain, so chat.dellshop.ru also allows dellshop.ru and its other subdomains.
+ * domain, so chat.clientsite.test also allows clientsite.test and its other subdomains.
  * ALLOWED_ORIGINS entries are taken as written: an entry allows itself and its
- * own subdomains, never its parent domain. So 'shop.dellshop.ru' allows
- * shop.dellshop.ru and api.shop.dellshop.ru, but not dellshop.ru — list the
+ * own subdomains, never its parent domain. So 'shop.clientsite.test' allows
+ * shop.clientsite.test and api.shop.clientsite.test, but not clientsite.test — list the
  * parent domain explicitly if that is what you want.
  *
  * The * entry is not a domain and is left out of the list: it is handled in
@@ -222,8 +222,8 @@ export function isOriginAllowedByConfig(origin: string | undefined): boolean {
  * Domain one level up from the given one, or null if there is none
  *
  * @example
- * getParentDomain('shop.dellshop.ru') → 'dellshop.ru'
- * getParentDomain('dellshop.ru') → null
+ * getParentDomain('shop.clientsite.test') → 'clientsite.test'
+ * getParentDomain('clientsite.test') → null
  * getParentDomain('192.168.1.10') → null
  */
 function getParentDomain(domain: string): string | null {
