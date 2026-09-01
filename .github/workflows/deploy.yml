@@ -18,7 +18,7 @@
 #   - COOLIFY_TOKEN (токен API Coolify с правом deploy)
 #
 # Требуемые variables:
-#   - SUPPORT_DOMAIN (боевой домен, например chat.dellshop.ru)
+#   - SUPPORT_DOMAIN (боевой домен, например chat.example.com)
 #
 # =============================================================================
 

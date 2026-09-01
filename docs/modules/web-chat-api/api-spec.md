@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-Production: https://chat.dellshop.ru
+Production: https://chat.example.com
 ```
 
 ## HTTP Endpoints
@@ -223,13 +223,13 @@ Content-Type: application/json
 ### Подключение
 
 ```
-wss://chat.dellshop.ru/ws/chat
+wss://chat.example.com/ws/chat
 Cookie: webchat_session=<sessionId>
 ```
 
 **Или через query parameter (fallback):**
 ```
-wss://chat.dellshop.ru/ws/chat?session=<sessionId>
+wss://chat.example.com/ws/chat?session=<sessionId>
 ```
 
 ### Handshake Response
@@ -406,7 +406,7 @@ Keep-alive от сервера.
 ### CORS
 
 ```
-Access-Control-Allow-Origin: https://dellshop.ru
+Access-Control-Allow-Origin: https://example.com
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type

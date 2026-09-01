@@ -2,10 +2,10 @@
  * DellShop Chat Widget - Main orchestrator class
  */
 
-import type { WidgetConfig } from './types/config'
+import type { PartialWidgetConfig, WidgetConfig } from './types/config'
 import type { Message } from './types/messages'
 import type { WidgetState } from './types/events'
-import { DEFAULT_CONFIG, resolveVariant } from './types/config'
+import { resolveConfig, resolveVariant } from './types/config'
 import { StateManager } from './core/state'
 import { HttpClient, RateLimitError } from './transport/http'
 import { WebSocketClient, ConnectionState } from './transport/websocket'
@@ -24,10 +24,10 @@ import {
 import { errorLogger } from './utils/error-logger'
 
 /** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.12'
+export const WIDGET_VERSION = '0.1.13'
 
 export class ChatWidget {
-  private config: Required<WidgetConfig>
+  private config: WidgetConfig
   private state: StateManager
   private httpClient: HttpClient
   private wsClient: WebSocketClient
@@ -58,12 +58,9 @@ export class ChatWidget {
   // Flag to prevent duplicate history loading requests
   private isLoadingHistory = false
 
-  constructor(config: Partial<WidgetConfig> = {}) {
-    // Merge with defaults
-    this.config = {
-      ...DEFAULT_CONFIG,
-      ...config
-    } as Required<WidgetConfig>
+  constructor(config: PartialWidgetConfig = {}) {
+    // Throws when the server addresses could not be determined
+    this.config = resolveConfig(config)
 
     // Determine variant
     this.currentVariant = resolveVariant(

@@ -11,8 +11,8 @@
 ### Base URL
 
 ```
-Production: https://chat.dellshop.ru
-WebSocket:  wss://chat.dellshop.ru/ws/chat
+Production: https://chat.example.com
+WebSocket:  wss://chat.example.com/ws/chat
 ```
 
 ### HTTP Endpoints
@@ -68,7 +68,7 @@ fetch('/api/chat/init', {
         └────────────────┬────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│  3. WebSocket connect: wss://chat.dellshop.ru/ws/chat   │
+│  3. WebSocket connect: wss://chat.example.com/ws/chat   │
 │     Cookie отправляется автоматически                   │
 └─────────────────────────────────────────────────────────┘
                          ↓
@@ -85,7 +85,7 @@ fetch('/api/chat/init', {
 ```typescript
 class WebSocketClient {
   private ws: WebSocket | null = null
-  private url = 'wss://chat.dellshop.ru/ws/chat'
+  private url = 'wss://chat.example.com/ws/chat'
 
   connect() {
     this.ws = new WebSocket(this.url)
@@ -289,7 +289,7 @@ export class ChatTransport extends EventEmitter {
 ```typescript
 // src/transport/http.ts
 
-const BASE_URL = 'https://chat.dellshop.ru'
+const BASE_URL = 'https://chat.example.com'
 
 export class ChatHttpClient {
   private async request<T>(

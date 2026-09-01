@@ -56,21 +56,20 @@ export interface WidgetConfig {
   notifications: boolean
 }
 
-export type PartialWidgetConfig = Partial<WidgetConfig>
+/** Anything a caller may pass in: nested groups can be filled in piece by piece. */
+export type PartialWidgetConfig = Partial<Omit<WidgetConfig, 'responsive' | 'theme'>> & {
+  responsive?: Partial<ResponsiveConfig>
+  theme?: ThemeConfig
+}
 
 /**
- * Build-time domain configuration
- * Set via SUPPORT_DOMAIN env variable during build
+ * Default configuration.
+ *
+ * Server addresses are deliberately absent: the widget has no idea which host
+ * serves it until it looks at its own script tag, so there is nothing sensible
+ * to bake in here. See resolveConfig below.
  */
-const SUPPORT_DOMAIN = process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru'
-
-/**
- * Default configuration
- */
-export const DEFAULT_CONFIG: WidgetConfig = {
-  apiUrl: SUPPORT_DOMAIN,
-  wsUrl: SUPPORT_DOMAIN.replace(/^https?:/, 'wss:') + '/ws/chat',
-  baseUrl: SUPPORT_DOMAIN + '/chat-widget',
+export const DEFAULT_CONFIG: Omit<WidgetConfig, 'apiUrl' | 'wsUrl' | 'baseUrl'> = {
   variant: 'auto',
   position: 'right',
   responsive: {
@@ -88,13 +87,32 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   notifications: true
 }
 
+/** Shown when the widget cannot tell which host to talk to. */
+export const MISSING_SERVER_URLS_MESSAGE =
+  '[ChatWidget] Cannot determine the support server address. ' +
+  'The widget script tag was not found on the page and no apiUrl, wsUrl and baseUrl were given. ' +
+  'Either keep the widget script tag as its own <script src="..."> (cache plugins that merge ' +
+  'scripts into one file break the lookup), or set window.DellShopChatConfig = ' +
+  '{ apiUrl, wsUrl, baseUrl } before loading the widget.'
+
 /**
- * Merge user config with defaults
+ * Build the full config out of whatever the caller managed to collect.
+ * Throws when the server addresses are missing — a widget pointed at nothing
+ * is worse than a widget that says out loud what is wrong.
  */
-export function mergeConfig(userConfig: PartialWidgetConfig): WidgetConfig {
+export function resolveConfig(userConfig: PartialWidgetConfig): WidgetConfig {
+  const { apiUrl, wsUrl, baseUrl } = userConfig
+
+  if (!apiUrl || !wsUrl || !baseUrl) {
+    throw new Error(MISSING_SERVER_URLS_MESSAGE)
+  }
+
   return {
     ...DEFAULT_CONFIG,
     ...userConfig,
+    apiUrl,
+    wsUrl,
+    baseUrl,
     responsive: {
       ...DEFAULT_CONFIG.responsive,
       ...userConfig.responsive

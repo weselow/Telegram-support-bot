@@ -1,6 +1,6 @@
 # DellShop Live Chat Widget
 
-> Встраиваемый виджет чата для поддержки клиентов на сайте dellshop.ru / rackparts.ru
+> Встраиваемый виджет чата для поддержки клиентов на сайтах заказчиков
 
 ## Обзор
 
@@ -23,7 +23,7 @@
 
 ```html
 <!-- В конце <body> -->
-<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js" async></script>
+<script src="https://chat.example.com/chat-widget/chat-widget.js" async></script>
 ```
 
 Адреса сервера виджет определяет сам — по тому адресу, откуда загружен его скрипт.
@@ -31,13 +31,16 @@
 
 | Настройка | Значение |
 |-----------|----------|
-| `apiUrl` | `https://chat.dellshop.ru` |
-| `wsUrl` | `wss://chat.dellshop.ru/ws/chat` |
-| `baseUrl` (стили) | `https://chat.dellshop.ru/chat-widget` |
+| `apiUrl` | `https://chat.example.com` |
+| `wsUrl` | `wss://chat.example.com/ws/chat` |
+| `baseUrl` (стили) | `https://chat.example.com/chat-widget` |
 
 Поэтому переезд на другой домен — это правка одной строки на сайте, пересобирать
-виджет не нужно. Домен, вшитый при сборке (`SUPPORT_DOMAIN`), остаётся запасным
-значением на случай, когда тег скрипта найти не удалось.
+виджет не нужно. Никакого адреса сервера в сборке нет. Если тег скрипта найти не
+удалось и адреса не заданы иначе, виджет не запускается и один раз пишет в консоль
+браузера, что случилось и как чинить. Самая частая причина — плагин кэширования на
+сайте склеил скрипт виджета с остальными в один файл; такому плагину нужно запретить
+трогать этот скрипт.
 
 Порядок приоритетов, от низшего к высшему:
 адрес скрипта → `window.DellShopChatConfig` → параметры ссылки → `data`-атрибуты.
@@ -46,7 +49,7 @@
 
 ```html
 <script
-  src="https://chat.dellshop.ru/chat-widget/chat-widget.js"
+  src="https://chat.example.com/chat-widget/chat-widget.js"
   data-variant="drawer"
   data-position="bottom-right"
   async
@@ -57,13 +60,13 @@
 только адрес), те же настройки задаются параметрами ссылки:
 
 ```html
-<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js?variant=drawer&theme=chatgpt" async></script>
+<script src="https://chat.example.com/chat-widget/chat-widget.js?variant=drawer&theme=chatgpt" async></script>
 ```
 
 ### Программная инициализация
 
 ```html
-<script src="https://chat.dellshop.ru/chat-widget/chat-widget.js" async></script>
+<script src="https://chat.example.com/chat-widget/chat-widget.js" async></script>
 <script>
   window.DellShopChatConfig = {
     variant: 'auto',           // 'modal' | 'drawer' | 'auto'

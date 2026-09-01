@@ -59,8 +59,9 @@ function parseDataAttributes(script: HTMLScriptElement): PartialWidgetConfig {
 
 /**
  * Collect config from the widget's script tag.
- * Without a script tag only the window config is returned, so the widget falls
- * back to the domain baked in at build time.
+ * Without a script tag only the window config is returned. If that config does
+ * not carry the server addresses either, resolveConfig refuses to start the
+ * widget rather than guessing a host.
  */
 export function parseScriptConfig(
   script: HTMLScriptElement | null,

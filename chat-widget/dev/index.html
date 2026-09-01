@@ -167,19 +167,24 @@
     </div>
   </div>
 
-  <!-- Widget Script -->
-  <script src="/chat-widget.js"></script>
+  <!-- Widget settings. Must come before the widget script: auto-init reads them.
+       baseUrl is left out on purpose - it is derived from the script address,
+       so the CSS is taken from this dev server (3400), while the API and the
+       WebSocket point at the local backend (3500). -->
   <script>
-    // Get variant from URL params
     const params = new URLSearchParams(window.location.search);
     const variant = params.get('variant') || 'drawer';
 
-    // Initialize widget
-    DellShopChat.init({
+    window.DellShopChatConfig = {
       variant: variant,
-      apiUrl: 'http://localhost:3500'  // Local backend
-    });
+      apiUrl: 'http://localhost:3500',
+      wsUrl: 'ws://localhost:3500/ws/chat'
+    };
+  </script>
 
+  <!-- Widget Script -->
+  <script src="/chat-widget.js"></script>
+  <script>
     // Update UI
     document.getElementById('current-variant').textContent = variant;
 
