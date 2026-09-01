@@ -363,6 +363,83 @@ describe('cors', () => {
     });
   });
 
+  describe('isOriginAllowedByConfig with ALLOWED_ORIGINS set to *', () => {
+    beforeEach(() => {
+      vi.resetModules();
+    });
+
+    afterEach(() => {
+      vi.resetModules();
+    });
+
+    async function loadWith(envOverrides: Record<string, string | undefined>) {
+      vi.doMock('../../config/env.js', () => ({
+        env: { NODE_ENV: 'production', ...envOverrides },
+      }));
+      return import('../cors.js');
+    }
+
+    it('should allow any site', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: '*',
+      });
+
+      expect(check('https://any-site.com')).toBe(true);
+      expect(check('https://shop.another-site.org')).toBe(true);
+      expect(check('http://xn----1-eddldb4czbcgk3p.xn--p1ai')).toBe(true);
+    });
+
+    it('should allow any site next to listed domains', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: 'dellshop.ru, * ',
+      });
+
+      expect(check('https://any-site.com')).toBe(true);
+      expect(check('https://dellshop.ru')).toBe(true);
+    });
+
+    it('should still reject a request without an Origin header', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: '*',
+      });
+
+      expect(check(undefined)).toBe(false);
+      expect(check('')).toBe(false);
+    });
+
+    it('should reject an origin that is not an http address', async () => {
+      const { isOriginAllowedByConfig: check } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: '*',
+      });
+
+      expect(check('not-a-url')).toBe(false);
+      expect(check('file:///home/user/page.html')).toBe(false);
+      expect(check('chrome-extension://abcdefghijklmnop')).toBe(false);
+    });
+
+    it('should keep the origin check enabled so websockets require an origin', async () => {
+      const { isOriginCheckEnabled } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: '*',
+      });
+
+      expect(isOriginCheckEnabled()).toBe(true);
+    });
+
+    it('should not treat * as a domain of its own', async () => {
+      const { getAllowedDomains } = await loadWith({
+        SUPPORT_DOMAIN: undefined,
+        ALLOWED_ORIGINS: '*,dellshop.ru',
+      });
+
+      expect(getAllowedDomains()).toEqual(['dellshop.ru']);
+    });
+  });
+
   describe('warnAboutOriginConfig', () => {
     beforeEach(() => {
       vi.clearAllMocks();
@@ -511,6 +588,36 @@ describe('cors', () => {
       warnAboutOriginConfig();
 
       expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should warn that the widget accepts requests from any site', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: '*',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ hint: expect.stringContaining('ALLOWED_ORIGINS') }),
+        'ALLOWED_ORIGINS contains *: requests are accepted from any site',
+      );
+    });
+
+    it('should not warn about domains listed next to *', async () => {
+      const { warnAboutOriginConfig, logger } = await loadWith({
+        SUPPORT_DOMAIN: 'chat.dellshop.ru',
+        ALLOWED_ORIGINS: '*,dellshop.ru,shop.example.com',
+      });
+
+      warnAboutOriginConfig();
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.anything(),
+        'ALLOWED_ORIGINS contains *: requests are accepted from any site',
+      );
     });
   });
 });
