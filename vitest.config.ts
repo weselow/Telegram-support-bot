@@ -23,7 +23,6 @@ export default defineConfig({
         'src/bot/bot.ts',
         'src/utils/logger.ts',
         'src/services/autoclose.service.ts',
-        'src/services/group.service.ts',
         'src/bot/handlers/callback.ts',
         'src/bot/handlers/edit.ts',
         'src/bot/handlers/resolve.ts',
@@ -46,7 +45,8 @@ export default defineConfig({
         'src/http/ws/types.ts',
         'src/jobs/index.ts',
         'src/jobs/workers.ts',
-        'src/jobs/*.worker.ts',
+        // sla.worker.ts из списка убран — у него появились юнит-тесты
+        'src/jobs/autoclose.worker.ts',
       ],
       thresholds: {
         statements: 60,

@@ -13,6 +13,7 @@ import {
 import { messages, formatMessage } from '../config/messages.js';
 import { settings } from '../config/settings.js';
 import { captureError, addBreadcrumb } from '../config/sentry.js';
+import { escapeHtml } from '../utils/telegram-html.js';
 import type { SlaJobData } from './queues.js';
 
 let worker: Worker<SlaJobData> | null = null;
@@ -60,9 +61,11 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
   const message = `// ${baseMessage}\n${mentions}`;
 
   try {
+    // HTML, не Markdown: в упоминаниях стоит имя администратора, а его
+    // владелец волен написать что угодно — см. formatAdminMentions
     await bot.api.sendMessage(supportGroupId, message, {
       message_thread_id: topicId,
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
     });
   } catch (error) {
     captureError(error, { userId, topicId, level, action: 'sendSlaReminder' });
@@ -75,7 +78,9 @@ async function processSlaJob(job: Job<SlaJobData>): Promise<void> {
     const topicLink = `https://t.me/c/${groupIdForLink}/${String(topicId)}`;
     const dmMessage = formatMessage(messages.sla.dmEscalation, {
       hours: settings.sla.escalationMinutes / 60,
-      firstName: user.tgFirstName ?? 'Пользователь',
+      // Имя обратившегося приходит из Telegram и выбирается кем угодно —
+      // самое опасное подстановочное значение из всех трёх
+      firstName: escapeHtml(user.tgFirstName ?? 'Пользователь'),
       topicLink,
     });
 
