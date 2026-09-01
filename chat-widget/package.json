@@ -1,6 +1,6 @@
 {
   "name": "@dellshop/chat-widget",
-  "version": "0.1.0",
+  "version": "0.1.14",
   "description": "Embeddable live chat widget for DellShop support",
   "main": "dist/chat-widget.js",
   "types": "dist/index.d.ts",

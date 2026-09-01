@@ -23,8 +23,12 @@ import {
 } from './ui'
 import { errorLogger } from './utils/error-logger'
 
-/** Widget version - increment on each push to origin/main */
-export const WIDGET_VERSION = '0.1.13'
+/**
+ * Widget version, taken from chat-widget/package.json at build time.
+ * The fallback only shows up if something builds the widget without the define;
+ * it exists so the footer never renders "vundefined".
+ */
+export const WIDGET_VERSION = process.env.WIDGET_VERSION ?? 'dev'
 
 export class ChatWidget {
   private config: WidgetConfig

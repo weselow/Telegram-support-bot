@@ -92,12 +92,17 @@ pnpm run lint && pnpm run typecheck && pnpm test && pnpm run test:coverage
 
 ## Chat Widget
 
-**Версия:** При каждом пуше в `origin/main`, если были изменения в `chat-widget/`, увеличить `WIDGET_VERSION` в `chat-widget/src/widget.ts`
+**Версия:** При каждом пуше в `origin/main`, если были изменения в `chat-widget/`, увеличить patch-версию в `chat-widget/package.json`
 
-```typescript
-// chat-widget/src/widget.ts
-export const WIDGET_VERSION = '0.1.x'  // Инкрементировать patch-версию
+```json
+// chat-widget/package.json
+"version": "0.1.x"
 ```
+
+Это единственное место. Оттуда версия попадает и в подпись собранного файла, и
+в `WIDGET_VERSION` внутри кода (`esbuild.config.js` подставляет её при сборке,
+`vitest.config.ts` — при прогоне тестов). Правку `WIDGET_VERSION` в
+`chat-widget/src/widget.ts` делать не нужно: там она больше не записана строкой.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:6cd5cc61 -->

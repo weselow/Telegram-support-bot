@@ -2,6 +2,11 @@ const esbuild = require('esbuild')
 const fs = require('fs')
 const path = require('path')
 
+// Единственный источник версии виджета. Отсюда она попадает и в подпись
+// собранного файла, и в WIDGET_VERSION внутри кода. Тот же файл читает
+// vitest.config.ts, чтобы версия совпадала и в тестах.
+const { version } = require('./package.json')
+
 const isWatch = process.argv.includes('--watch')
 const isServe = process.argv.includes('--serve')
 const isProd = process.env.NODE_ENV === 'production'
@@ -26,10 +31,11 @@ const jsConfig = {
   minify: isProd,
   sourcemap: !isProd,
   define: {
-    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development')
+    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
+    'process.env.WIDGET_VERSION': JSON.stringify(version)
   },
   banner: {
-    js: `/* DellShop Chat Widget v0.1.0 | (c) ${new Date().getFullYear()} DellShop */`
+    js: `/* DellShop Chat Widget v${version} | (c) ${new Date().getFullYear()} DellShop */`
   }
 }
 
