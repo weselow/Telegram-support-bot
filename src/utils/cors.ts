@@ -13,6 +13,43 @@ import { logger } from './logger.js';
 const IPV4_PATTERN = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /**
+ * ALLOWED_ORIGINS entry that turns the domain check off: the widget is then
+ * accepted on any site. Kept as a setting rather than removed from the code,
+ * so the door is opened and closed without a new release.
+ */
+const ALLOW_ANY_ORIGIN = '*';
+
+/** ALLOWED_ORIGINS as written: a comma separated list, entries not trimmed yet */
+function getOriginEntries(): string[] {
+  return env.ALLOWED_ORIGINS?.split(',') ?? [];
+}
+
+/** Whether ALLOWED_ORIGINS opens the widget to every site */
+export function isAnyOriginAllowed(): boolean {
+  return getOriginEntries().some((entry) => entry.trim() === ALLOW_ANY_ORIGIN);
+}
+
+/**
+ * Whether the value is an origin a browser could have sent.
+ *
+ * Even with the domain check off the origin has to be an http(s) address:
+ * it is echoed back in Access-Control-Allow-Origin, and addresses like
+ * file:// or chrome-extension:// are not sites the widget is embedded on.
+ */
+function isHttpOrigin(origin: string | undefined): boolean {
+  if (!origin) {
+    return false;
+  }
+
+  try {
+    const { protocol } = new URL(origin);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Host in the form a browser sends it: ascii and lower case
  *
  * A browser never sends a domain in cyrillic — сервер-для-1с.рф arrives in the
@@ -129,6 +166,9 @@ function normalizeDomain(entry: string): string {
  * own subdomains, never its parent domain. So 'shop.dellshop.ru' allows
  * shop.dellshop.ru and api.shop.dellshop.ru, but not dellshop.ru — list the
  * parent domain explicitly if that is what you want.
+ *
+ * The * entry is not a domain and is left out of the list: it is handled in
+ * isOriginAllowedByConfig, which then accepts every site.
  */
 export function getAllowedDomains(): string[] {
   const domains: string[] = [];
@@ -138,7 +178,11 @@ export function getAllowedDomains(): string[] {
     domains.push(baseDomain);
   }
 
-  for (const entry of env.ALLOWED_ORIGINS?.split(',') ?? []) {
+  for (const entry of getOriginEntries()) {
+    if (entry.trim() === ALLOW_ANY_ORIGIN) {
+      continue;
+    }
+
     const domain = normalizeDomain(entry);
     if (domain) {
       domains.push(domain);
@@ -154,16 +198,23 @@ export function getAllowedDomains(): string[] {
  * so callers skip the check instead of blocking everyone.
  */
 export function isOriginCheckEnabled(): boolean {
-  return getAllowedDomains().length > 0;
+  return isAnyOriginAllowed() || getAllowedDomains().length > 0;
 }
 
 /**
  * Validate origin against SUPPORT_DOMAIN and ALLOWED_ORIGINS
  *
+ * With ALLOWED_ORIGINS set to * any site is accepted, but a request still has
+ * to carry an http(s) Origin header — a request without one is nobody's site.
+ *
  * @param origin - The Origin header value
  * @returns true if origin is allowed
  */
 export function isOriginAllowedByConfig(origin: string | undefined): boolean {
+  if (isAnyOriginAllowed()) {
+    return isHttpOrigin(origin);
+  }
+
   return getAllowedDomains().some((domain) => isOriginAllowed(origin, domain));
 }
 
@@ -197,12 +248,26 @@ function getParentDomain(domain: string): string | null {
  * 1. the entry repeats the base domain of SUPPORT_DOMAIN — it grants nothing new
  * 2. the entry is a subdomain and its parent domain is not allowed by anything else
  *
+ * A * entry replaces both checks with a single warning: with the door open to
+ * every site, hints about individual domains say nothing.
+ *
  * Warnings only: nothing is blocked and origin resolution stays unchanged.
  */
 export function warnAboutOriginConfig(): void {
+  if (isAnyOriginAllowed()) {
+    logger.warn(
+      {
+        allowedOrigins: env.ALLOWED_ORIGINS,
+        hint: 'Every site may embed the widget and open tickets in the support group. Replace the * entry in ALLOWED_ORIGINS with the domains of your own sites to close this.',
+      },
+      'ALLOWED_ORIGINS contains *: requests are accepted from any site',
+    );
+    return;
+  }
+
   const supportBaseDomain = getConfiguredBaseDomain();
 
-  for (const entry of env.ALLOWED_ORIGINS?.split(',') ?? []) {
+  for (const entry of getOriginEntries()) {
     const domain = normalizeDomain(entry);
     if (!domain) {
       continue;
