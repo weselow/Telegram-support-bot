@@ -5,10 +5,8 @@ const path = require('path')
 const isWatch = process.argv.includes('--watch')
 const isServe = process.argv.includes('--serve')
 const isProd = process.env.NODE_ENV === 'production'
-// In dev server mode, use localhost; otherwise use production domain
-const supportDomain = isServe
-  ? 'http://localhost:3500'
-  : (process.env.SUPPORT_DOMAIN || 'https://chat.dellshop.ru')
+// No server address is baked into the bundle: the widget derives it from the
+// address of its own script tag. See src/utils/script-origin.ts.
 
 // Ensure dist directory exists
 if (!fs.existsSync('dist')) {
@@ -28,8 +26,7 @@ const jsConfig = {
   minify: isProd,
   sourcemap: !isProd,
   define: {
-    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
-    'process.env.SUPPORT_DOMAIN': JSON.stringify(supportDomain)
+    'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development')
   },
   banner: {
     js: `/* DellShop Chat Widget v0.1.0 | (c) ${new Date().getFullYear()} DellShop */`
@@ -119,7 +116,6 @@ async function build() {
       console.log('')
       console.log('='.repeat(50))
       console.log(`  Dev server running at: http://localhost:${port}`)
-      console.log(`  API URL: ${supportDomain}`)
       console.log('='.repeat(50))
       console.log('')
       console.log('Watching for changes... (Ctrl+C to stop)')

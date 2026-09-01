@@ -2,8 +2,8 @@
  * Deriving server URLs from the address the widget script itself was loaded from.
  *
  * This keeps the widget self-configuring: whatever host serves chat-widget.js
- * also serves the API, the WebSocket and the CSS. The domain baked in at build
- * time (SUPPORT_DOMAIN) is only a fallback for when the script tag cannot be found.
+ * also serves the API, the WebSocket and the CSS. Nothing is baked in at build
+ * time, so this is the only automatic source of the server address.
  */
 
 export interface ScriptOriginUrls {

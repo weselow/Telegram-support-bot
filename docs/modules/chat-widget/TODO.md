@@ -11,7 +11,7 @@
 | 1 | ~~Реализовать API по спецификации [backend-api-spec.md](./backend-api-spec.md)~~ | Backend | DONE (задача 021) |
 | 2 | ~~Настроить WebSocket сервер (`/ws/chat`)~~ | Backend | DONE (задача 021) |
 | 3 | ~~Настроить раздачу статики виджета~~ | Backend | DONE (@fastify/static) |
-| 4 | Добавить `<script>` тег на сайт dellshop.ru | Frontend | Ожидает |
+| 4 | Добавить `<script>` тег на сайт example.com | Frontend | Ожидает |
 
 ---
 
@@ -36,19 +36,19 @@
 
 ### Доступные файлы
 ```
-https://chat.dellshop.ru/chat-widget/chat-widget.js
-https://chat.dellshop.ru/chat-widget/base.css
-https://chat.dellshop.ru/chat-widget/modal.css
-https://chat.dellshop.ru/chat-widget/drawer.css
+https://chat.example.com/chat-widget/chat-widget.js
+https://chat.example.com/chat-widget/base.css
+https://chat.example.com/chat-widget/modal.css
+https://chat.example.com/chat-widget/drawer.css
 ```
 
 ### Подключение виджета на сайт
 
 ```html
 <script
-  src="https://chat.dellshop.ru/chat-widget.js"
-  data-api-url="https://chat.dellshop.ru"
-  data-ws-url="wss://chat.dellshop.ru/ws/chat"
+  src="https://chat.example.com/chat-widget.js"
+  data-api-url="https://chat.example.com"
+  data-ws-url="wss://chat.example.com/ws/chat"
   async
 ></script>
 ```
@@ -58,14 +58,14 @@ https://chat.dellshop.ru/chat-widget/drawer.css
 ```html
 <script>
   window.DellShopChatConfig = {
-    apiUrl: 'https://chat.dellshop.ru',
-    wsUrl: 'wss://chat.dellshop.ru/ws/chat',
+    apiUrl: 'https://chat.example.com',
+    wsUrl: 'wss://chat.example.com/ws/chat',
     variant: 'auto',
     sound: true,
     notifications: true
   }
 </script>
-<script src="https://chat.dellshop.ru/chat-widget.js" async></script>
+<script src="https://chat.example.com/chat-widget.js" async></script>
 ```
 
 ---

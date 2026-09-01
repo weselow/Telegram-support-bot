@@ -25,7 +25,7 @@ Authorization: session cookie
 
 Response:
 {
-  "url": "https://chat.dellshop.ru/history?token=<signed_token>",
+  "url": "https://chat.example.com/history?token=<signed_token>",
   "expiresAt": "2025-12-31T12:00:00Z"
 }
 ```

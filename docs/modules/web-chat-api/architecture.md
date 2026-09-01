@@ -125,7 +125,7 @@ Message Router
 ### Подключение
 
 ```
-wss://chat.dellshop.ru/ws/chat?session=<sessionId>
+wss://chat.example.com/ws/chat?session=<sessionId>
 ```
 
 ### События (Server → Client)

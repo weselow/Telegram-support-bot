@@ -6,21 +6,24 @@
  *
  * The widget is self-configuring: API, WebSocket and CSS are taken from the host
  * that served this script, so moving to another domain is a one-line change in
- * the embedding page. The domain baked in at build time is only the fallback.
+ * the embedding page. No domain is baked in at build time; when the script tag
+ * cannot be found and no addresses are given, the widget refuses to start and
+ * says so in the console.
  *
  * Usage:
  *
  * 1. Via script tag with auto-init:
- * <script src="https://chat.dellshop.ru/chat-widget/chat-widget.js"
+ * <script src="https://chat.example.com/chat-widget/chat-widget.js"
  *         data-variant="modal"
  *         data-auto-open="false">
  * </script>
  *
- * 2. Programmatic initialization:
+ * 2. Programmatic initialization (addresses are mandatory here):
  * const widget = new DellShopChat.Widget({
  *   variant: 'modal',
- *   apiUrl: 'https://chat.dellshop.ru',
- *   wsUrl: 'wss://chat.dellshop.ru/ws/chat'
+ *   apiUrl: 'https://chat.example.com',
+ *   wsUrl: 'wss://chat.example.com/ws/chat',
+ *   baseUrl: 'https://chat.example.com/chat-widget'
  * });
  * widget.init();
  */
@@ -61,6 +64,10 @@ const CURRENT_SCRIPT = document.currentScript as HTMLScriptElement | null
   ) => (window as any).DellShopChat.instance?.on(event, handler)
 }
 
+// Why the last attempt failed. Kept so the retries below stay silent and the
+// reason is reported once, instead of five identical errors in a row.
+let lastInitError: unknown = null
+
 // Auto-initialization with retry mechanism
 function autoInit(): boolean {
   try {
@@ -75,7 +82,7 @@ function autoInit(): boolean {
     widget.init()
     return true
   } catch (error) {
-    console.error('[ChatWidget] Auto-init failed:', error)
+    lastInitError = error
     return false
   }
 }
@@ -99,7 +106,9 @@ function initWithRetry(): void {
 
         // Strategy 5: Final attempt (500ms)
         setTimeout(() => {
-          autoInit()
+          if (autoInit()) return
+
+          console.error('[ChatWidget] Auto-init failed:', lastInitError)
         }, 400)
       }, 100)
     })

@@ -4,7 +4,7 @@
 
 ## Обзор
 
-Виджет живого чата для сайта dellshop.ru. Пользователь может анонимно написать в поддержку, получить ответ в реальном времени, и при желании продолжить диалог в Telegram.
+Виджет живого чата для сайта example.com. Пользователь может анонимно написать в поддержку, получить ответ в реальном времени, и при желании продолжить диалог в Telegram.
 
 ---
 
@@ -13,7 +13,7 @@
 ### 1. Подключение к WebSocket
 
 ```javascript
-const ws = new WebSocket('wss://chat.dellshop.ru/ws/chat')
+const ws = new WebSocket('wss://chat.example.com/ws/chat')
 
 ws.onopen = () => {
   console.log('Connected to support chat')
@@ -50,7 +50,7 @@ function handleMessage(msg) {
 
 ### Base URL
 ```
-Production: https://chat.dellshop.ru
+Production: https://chat.example.com
 ```
 
 ### HTTP Endpoints
@@ -65,7 +65,7 @@ Production: https://chat.dellshop.ru
 
 ### WebSocket
 ```
-wss://chat.dellshop.ru/ws/chat
+wss://chat.example.com/ws/chat
 ```
 
 ---
@@ -109,7 +109,7 @@ const { data } = await response.json()
 ### Подключение
 
 ```javascript
-const ws = new WebSocket('wss://chat.dellshop.ru/ws/chat')
+const ws = new WebSocket('wss://chat.example.com/ws/chat')
 // Cookie отправляется автоматически
 ```
 
@@ -316,9 +316,9 @@ ws.onclose = () => {
 
 ### CORS
 
-Виджет должен работать с домена `dellshop.ru`. API настроен на:
+Виджет должен работать с домена `example.com`. API настроен на:
 ```
-Access-Control-Allow-Origin: https://dellshop.ru
+Access-Control-Allow-Origin: https://example.com
 Access-Control-Allow-Credentials: true
 ```
 
@@ -353,12 +353,12 @@ function escapeHtml(text) {
 let ws
 
 async function init() {
-  await fetch('https://chat.dellshop.ru/api/chat/init', {
+  await fetch('https://chat.example.com/api/chat/init', {
     method: 'POST',
     credentials: 'include'
   })
 
-  ws = new WebSocket('wss://chat.dellshop.ru/ws/chat')
+  ws = new WebSocket('wss://chat.example.com/ws/chat')
 
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data)
