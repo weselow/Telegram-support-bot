@@ -6,10 +6,21 @@ import { logger } from '../../utils/logger.js';
 import { botFilterHook } from '../middleware/bot-filter.js';
 import { getLocationByIp, type DaDataLocation } from '../../services/geoip.service.js';
 import { checkIpRateLimit } from '../../services/rate-limit.service.js';
+import { resolveClickedPageUrl } from '../utils/page-url.js';
 
 const REDIRECT_PREFIX = 'redirect:';
 const REDIRECT_TTL = 60 * 60; // 1 hour in seconds
 const SHORT_ID_LENGTH = 8;
+
+/**
+ * Query string of the support link.
+ *
+ * The site adds the address of the page the visitor is on, because the browser
+ * cuts the Referer down to the bare domain when the link leads to another site
+ * — and then the ticket card names the site instead of the page. Old embed code
+ * without the parameter keeps working: the Referer is still the fallback.
+ */
+type AskSupportRequest = FastifyRequest<{ Querystring: { pageUrl?: string } }>;
 
 export interface RedirectData {
   ip: string;
@@ -26,7 +37,7 @@ function generateShortId(): string {
 export function askSupportRoute(fastify: FastifyInstance): void {
   fastify.addHook('onRequest', botFilterHook);
 
-  fastify.get('/ask-support', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/ask-support', async (request: AskSupportRequest, reply: FastifyReply) => {
     const ip = request.ip;
 
     // Check rate limit by IP
@@ -39,7 +50,8 @@ export function askSupportRoute(fastify: FastifyInstance): void {
       });
     }
 
-    const referer = request.headers.referer ?? request.headers.referrer ?? null;
+    const referer = (request.headers.referer ?? request.headers.referrer) as string | undefined;
+    const sourceUrl = resolveClickedPageUrl(request.query.pageUrl, referer) ?? null;
 
     // Get GeoIP data
     const geoResult = await getLocationByIp(ip);
@@ -48,7 +60,7 @@ export function askSupportRoute(fastify: FastifyInstance): void {
     const shortId = generateShortId();
     const redirectData: RedirectData = {
       ip,
-      sourceUrl: referer as string | null,
+      sourceUrl,
       city: geoResult.city,
       geoipResponse: geoResult.fullResponse,
       createdAt: new Date().toISOString(),
@@ -59,7 +71,7 @@ export function askSupportRoute(fastify: FastifyInstance): void {
 
     try {
       await redis.setex(cacheKey, REDIRECT_TTL, JSON.stringify(redirectData));
-      logger.info({ shortId, ip, referer }, 'Created redirect entry');
+      logger.info({ shortId, ip, referer, sourceUrl }, 'Created redirect entry');
     } catch (error) {
       logger.error({ error, shortId }, 'Failed to save redirect data');
       // Continue anyway - bot will work without extra data
