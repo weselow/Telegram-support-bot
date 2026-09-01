@@ -50,7 +50,7 @@
     "first": "⏰ SLA: {minutes} минут без ответа",
     "second": "⚠️ SLA: {minutes} минут без ответа",
     "escalation": "🚨 SLA BREACH: {hours} часа без ответа!",
-    "dmEscalation": "🚨 *SLA BREACH*\n\nТикет без ответа более {hours} часов!\nПользователь: {firstName}\n[Открыть тикет]({topicLink})"
+    "dmEscalation": "🚨 <b>SLA BREACH</b>\n\nТикет без ответа более {hours} часов!\nПользователь: {firstName}\n<a href=\"{topicLink}\">Открыть тикет</a>"
   },
 
   "autoclose": {

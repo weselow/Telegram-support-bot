@@ -6,6 +6,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { formatDateTime } from '../utils/datetime.js';
 import { toDisplayUrl } from '../utils/display-url.js';
+import { escapeHtml } from '../utils/telegram-html.js';
 import { STATUS_LABELS_WITH_EMOJI } from '../constants/status.js';
 
 function buildStatusKeyboard(userId: string, currentStatus: TicketStatus): InlineKeyboard {
@@ -40,16 +41,6 @@ export interface TicketCardData {
   sourceIp?: string | undefined;
   status: TicketStatus;
   createdAt: Date;
-}
-
-/**
- * The card is sent as HTML, so everything coming from outside — the visitor
- * name, the page address, the city — has to be escaped. Markdown would be worse
- * here: a page address like /catalog/dell_poweredge_r740 breaks its parser and
- * Telegram rejects the whole message.
- */
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function formatCardText(data: TicketCardData): string {
