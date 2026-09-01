@@ -8,8 +8,11 @@ node_modules/
 
 # Build output
 dist/
-public/chat-widget/*.js
-public/chat-widget/*.css
+# Собранный виджет кладётся сюда скриптом copy из chat-widget, а в образ
+# попадает из этапа widget-builder. В репозитории хранить нечего — кроме
+# .gitkeep, который держит саму папку.
+public/chat-widget/*
+!public/chat-widget/.gitkeep
 
 # Environment
 .env
